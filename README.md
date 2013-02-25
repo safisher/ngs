@@ -6,8 +6,11 @@ ngs is designed to automate the processing of next generation sequencing data. T
 The TEMPLATE module is an empty, unused module that can be used as an example to build new modules.
 
 Current modules:
+
 		HELP: expanded command help (ex: ngs.sh help blast)
+
 		INIT: prepare read file(s) for processing
+
 		FASTQC: run FastQC
 		BLAST: run blast on randomly sampled subset of reads
 		BOWTIE: run bowtie on untrimmed reads
@@ -22,17 +25,17 @@ Current modules:
 		PIPELINE: run full pipeline
 		VERSION: print version information
 
-Modules are designed to be run independently although many modules depend on the output from other modules. For example the TRIM module uses the read files from the 'raw' subdirectory (created by the INIT module) to create the trimmed reads files that it places in the 'trimAT' subdirectory. The RUMALIGN module expects to find reads in the 'trimAT' directory and hence is expected to run after TRIM.
+Modules are designed to be run independently although many modules depend on the output from other modules. For example the TRIM module uses the read files from the 'orig' subdirectory (created by the INIT module) to create the trimmed reads files that it places in the 'trimAT' subdirectory. The RUMALIGN module expects to find reads in the 'trimAT' directory and hence is expected to run after TRIM.
 
 The PIPELINE module is effectively a meta-module and includes the following modules: init, fastqc, blast, trim, rumalign, post, blastdb, htseq, rsync
 
-The expanded help for each module documents the input files, output files, and required programs needed for that module to function.
+The expanded help for each module documents the input files, output files, and required programs needed for that module to function. To view the expanded help for a module use the HELP command. For example to get help on the RUMALIGN module: ngs.sh help rumalign
 
 
 Notes
 =================
 
-* Only tested on Linux OS. Will likely work on a Mac. Will probably not work on Windows.
+  - Only tested on Linux OS. Will likely work on a Mac. Will probably not work on Windows.
 
 
 To Do
