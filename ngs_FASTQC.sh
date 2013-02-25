@@ -15,8 +15,8 @@
 # under the License.
 
 ##########################################################################################
-# INPUT: raw/unaligned_1.fq and trimAT/unaligned_1.fq if present
-# OUTPUT: fastqc/* and fastqc.trim if trimAT exists
+# INPUT: $SAMPLE/orig/unaligned_1.fq and $SAMPLE/trimAT/unaligned_1.fq (if present)
+# OUTPUT: $SAMPLE/fastqc/* and $SAMPLE/fastqc.trim (if $SAMPLE/trimAT exists)
 # REQUIRES: FastQC
 ##########################################################################################
 
@@ -30,8 +30,11 @@ ngsUsage_FASTQC="Usage: `basename $0` fastqc sampleID    --  run FastQC\n"
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_FASTQC="Usage: `basename $0` fastqc sampleID\n"
-ngsHelp_FASTQC+="\tRun FastQC on raw/unaligned_1.fq file. If the subdirectory 'trimAT' exists (ie data has already been trimmed) then FastQC will also run on trimAT/unaligned_1.fq. When data is trimmed FastQC will automatically be run on the trimmed data, assuming the subdirectory 'fastqc' exists (ie FastQC was previously run on the untrimmed data). The FastQC output from raw will be placed in 'fastqc' while the output from trimAT will be placed in 'fastqc.trim'."
+ngsHelp_FASTQC="Usage:\n\t`basename $0` fastqc sampleID\n"
+ngsHelp_FASTQC+="Input:\n\tsampleID/orig/unaligned_1.fq\n\tsampleID/trimAT/unaligned_1.fq (if sampleID/trimAT exists)\n"
+ngsHelp_FASTQC+="Output:\n\tsampleID/fastqc/*\n\tsampleID/fastqc.trim (if sampleID/trimAT exists)\n"
+ngsHelp_FASTQC+="Requires:\n\tFastQC ( http://www.bioinformatics.babraham.ac.uk/projects/fastqc/ )\n\n"
+ngsHelp_FASTQC+="Run FastQC on sampleID/orig/unaligned_1.fq file. If the subdirectory 'trimAT' exists (ie data has already been trimmed) then FastQC will also run on trimAT/unaligned_1.fq. When data is trimmed FastQC will automatically be run on the trimmed data, assuming the subdirectory 'fastqc' exists (ie FastQC was previously run on the untrimmed data). The FastQC output from orig will be placed in 'fastqc' while the output from trimAT will be placed in 'fastqc.trim'."
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -65,11 +68,11 @@ ngsCmd_FASTQC() {
 	prnCmd "# `fastqc -v`"
 	
     # run fastqc on the untrimmed data
-	prnCmd "fastqc --OUTDIR=$SAMPLE/fastqc $SAMPLE/raw/unaligned_1.fq"
+	prnCmd "fastqc --OUTDIR=$SAMPLE/fastqc $SAMPLE/orig/unaligned_1.fq"
 	if ! $DEBUG; then
 	    # fastqc hangs when extracting the zip file, so we do the
 	    # extraction manually
-		fastqc --OUTDIR=$SAMPLE/fastqc $SAMPLE/raw/unaligned_1.fq
+		fastqc --OUTDIR=$SAMPLE/fastqc $SAMPLE/orig/unaligned_1.fq
 		
 	    # do some cleanup of the output files
 		prnCmd "rm $SAMPLE/fastqc/unaligned_1.fq_fastqc.zip"

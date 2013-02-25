@@ -30,13 +30,16 @@ ngsUsage_PIPELINE="Usage: `basename $0` pipeline OPTIONS sampleID    --  run ful
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_PIPELINE="Usage: `basename $0` pipeline -p numProc -s species -g prefix [-se] sampleID\n"
-ngsHelp_PIPELINE+="\tThis will run init, fastqc, blast, trim, rumalign, post, htseq, blastdb, and rsync.\n"
-ngsHelp_PIPELINE+="\tOPTIONS:\n"
-ngsHelp_PIPELINE+="\t\t-p numProc - number of cpu to use.\n"
-ngsHelp_PIPELINE+="\t\t-s species - species files 'drosophila', 'hg19', 'mm9', 'mm10', 'rat', 'rn5', 'saccer3', and 'zebrafish' ngsHelp_PIPELINE+=are located in /lab/repo/resources/rum2.\n"
-ngsHelp_PIPELINE+="\t\t-g prefix - identifier to extract all gene IDs from output. For example 'ENSDARG' is prefix for all zebrafish genes.\n"
-ngsHelp_PIPELINE+="\t\t-se - single-end reads (default: paired-end)"
+ngsHelp_PIPELINE="Usage:\n\t`basename $0` pipeline -p numProc -s species -g prefix [-se] sampleID\n"
+ngsHelp_PIPELINE+="Input:\n\tsee individual commands\n"
+ngsHelp_PIPELINE+="Output:\n\tsee individual commands\n"
+ngsHelp_PIPELINE+="Requires:\n\tsee individual commands\n"
+ngsHelp_PIPELINE+="OPTIONS:\n"
+ngsHelp_PIPELINE+="\t-p numProc - number of cpu to use.\n"
+ngsHelp_PIPELINE+="\t-s species - species files 'drosophila', 'hg19', 'mm9', 'mm10', 'rat', 'rn5', 'saccer3', and 'zebrafish' are located in $RUM_REPO.\n"
+ngsHelp_PIPELINE+="\t-g prefix - identifier to extract all gene IDs from output. For example 'ENSDARG' is prefix for all zebrafish genes.\n"
+ngsHelp_PIPELINE+="\t-se - single-end reads (default: paired-end)\n\n"
+ngsHelp_PIPELINE+="This will run init, fastqc, blast, trim, rumalign, post, htseq, blastdb, and rsync."
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS

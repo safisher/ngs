@@ -16,15 +16,15 @@
 
 ##########################################################################################
 # SINGLE-END READS:
-# INPUT: raw/unaligned_1.fq
-# OUTPUT: trimAT/unaligned_1.fq, trimAdapters.stats.txt, trimPolyAT.stats.txt
-#         intermediate file trimAD/unaligned_1.fq
+# INPUT: $SAMPLE/raw/unaligned_1.fq
+# OUTPUT: $SAMPLE/trimAT/unaligned_1.fq, $SAMPLE/trimAdapters.stats.txt, $SAMPLE/trimPolyAT.stats.txt
+#         intermediate file $SAMPLE/trimAD/unaligned_1.fq
 # REQUIRES: trimAdaptersSingle.py, trimPolyATSingle.py, FastQC (if fastqc command previously run)
 #
 # PAIRED-END READS:
-# INPUT: raw/unaligned_1.fq and raw/unaligned_2.fq
-# OUTPUT: trimAT/unaligned_1.fq and trimAT/unaligned_2.fq, trimAdapters.stats.txt, trimPolyAT.stats.txt
-#         intermediate files trimAD/unaligned_1.fq and trimAD/unaligned_2.fq
+# INPUT: $SAMPLE/raw/unaligned_1.fq and $SAMPLE/raw/unaligned_2.fq
+# OUTPUT: $SAMPLE/trimAT/unaligned_1.fq and $SAMPLE/trimAT/unaligned_2.fq, $SAMPLE/trimAdapters.stats.txt, $SAMPLE/trimPolyAT.stats.txt
+#         intermediate files $SAMPLE/trimAD/unaligned_1.fq and $SAMPLE/trimAD/unaligned_2.fq
 # REQUIRES: trimAdapters.py, trimPolyAT.py, FastQC (if fastqc command previously run)
 ##########################################################################################
 
@@ -32,16 +32,19 @@
 # USAGE
 ##########################################################################################
 
-ngsUsage_TRIM="Usage: `basename $0` trim OPTIONS sampleID    --  trim reads\n"
+ngsUsage_TRIM="Usage: `basename $0` trim OPTIONS sampleID    --  trim adapter and poly A/T contamination\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
 ngsHelp_TRIM="Usage: `basename $0` trim [-se] sampleID\n"
-ngsHelp_TRIM+="\tRuns trimAdapters.py followed by trimPolyAT.py to trim data. Adapter trimmed data is placed in trimAD while PolyAT trimmed data is placed in trimAT. Trimming must be done in order for RUM to work as it uses the files in trimAT. For single-end reads, use 'trim1' instead of 'trim'. Single-end reads are processed with trimAdaptersSingle.py and trimPolyATSingle.py.\n"
-ngsHelp_TRIM+="\tOPTIONS:\n"
-ngsHelp_TRIM+="\t\t-se - single-end reads (default: paired-end)"
+ngsHelp_TRIM+="Input:\n\tsampleID/orig/unaligned_1.fq\n\tsampleID/orig/unaligned_2.fq (paired-end reads)\n"
+ngsHelp_TRIM+="Output:\n\tsampleID/trimAT/unaligned_1.fq\n\tsampleID/trimAT/unaligned_2.fq  (paired-end reads)\n\tsampleID/trimAdapters.stats.txt\n\tsampleID/trimPolyAT.stats.txt\n\tsampleID/trimAD/* (intermediate files)\n"
+ngsHelp_TRIM+="Requires:\n\ttrimAdapters.py\n\ttrimPolyAT.py\n\tFastQC (if fastqc command previously run)\n"
+ngsHelp_TRIM+="Options:\n"
+ngsHelp_TRIM+="\t-se - single-end reads (default: paired-end)\n\n"
+ngsHelp_TRIM+="Runs trimAdapters.py followed by trimPolyAT.py to trim data. Adapter trimmed data is placed in trimAD while PolyAT trimmed data is placed in trimAT. Trimming must be done in order for RUM to work as it uses the files in trimAT. For single-end reads, use 'trim1' instead of 'trim'. Single-end reads are processed with trimAdaptersSingle.py and trimPolyATSingle.py."
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -88,9 +91,9 @@ ngsCmd_TRIM() {
 	
 	if $SE; then
 		# single-end
-		prnCmd "trimAdaptersSingle.py $SAMPLE/raw/unaligned_1.fq $SAMPLE/trimAD > $SAMPLE/trimAdapter.stats.txt"
+		prnCmd "trimAdaptersSingle.py $SAMPLE/orig/unaligned_1.fq $SAMPLE/trimAD > $SAMPLE/trimAdapter.stats.txt"
 		if ! $DEBUG; then 
-			trimAdaptersSingle.py $SAMPLE/raw/unaligned_1.fq $SAMPLE/trimAD > $SAMPLE/trimAdapter.stats.txt
+			trimAdaptersSingle.py $SAMPLE/orig/unaligned_1.fq $SAMPLE/trimAD > $SAMPLE/trimAdapter.stats.txt
 		fi
 		
 		prnCmd "trimPolyATSingle.py $SAMPLE/trimAD/unaligned_1.fq $SAMPLE/trimAT > $SAMPLE/trimPolyAT.stats.txt"
@@ -99,9 +102,9 @@ ngsCmd_TRIM() {
 		fi
 	else
 		# paired-end
-		prnCmd "trimAdapters.py $SAMPLE/raw/unaligned_1.fq $SAMPLE/raw/unaligned_2.fq $SAMPLE/trimAD > $SAMPLE/trimAdapter.stats.txt"
+		prnCmd "trimAdapters.py $SAMPLE/orig/unaligned_1.fq $SAMPLE/orig/unaligned_2.fq $SAMPLE/trimAD > $SAMPLE/trimAdapter.stats.txt"
 		if ! $DEBUG; then 
-			trimAdapters.py $SAMPLE/raw/unaligned_1.fq $SAMPLE/raw/unaligned_2.fq $SAMPLE/trimAD > $SAMPLE/trimAdapter.stats.txt
+			trimAdapters.py $SAMPLE/orig/unaligned_1.fq $SAMPLE/orig/unaligned_2.fq $SAMPLE/trimAD > $SAMPLE/trimAdapter.stats.txt
 		fi
 		
 		prnCmd "trimPolyAT.py $SAMPLE/trimAD/unaligned_1.fq $SAMPLE/trimAD/unaligned_2.fq $SAMPLE/trimAT > $SAMPLE/trimPolyAT.stats.txt"
@@ -110,9 +113,9 @@ ngsCmd_TRIM() {
 		fi
 	fi
 	
-	# if we ran fastqc on raw data (ie $SAMPLE/fastqc exists), then
+	# if we ran fastqc on orig data (ie $SAMPLE/fastqc exists), then
 	# also run on trimmed data. Put this fastqc output in separate
-	# directory so it doesn't squash the output from raw
+	# directory so it doesn't squash the output from orig
 	if [ -d $SAMPLE/fastqc ]; then 
 		if [ ! -d $SAMPLE/fastqc.trim ]; then 
 			prnCmd "mkdir $SAMPLE/fastqc.trim"

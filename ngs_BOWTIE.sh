@@ -16,12 +16,12 @@
 
 ##########################################################################################
 # SINGLE-END READS:
-# INPUT: raw/unaligned_1.fq
-# OUTPUT: bowtie/bowtie-sorted.bam and bowtie/stats.txt
+# INPUT: $SAMPLE/orig/unaligned_1.fq
+# OUTPUT: $SAMPLE/bowtie/bowtie-sorted.bam and $SAMPLE/bowtie/stats.txt
 #
 # PAIRED-END READS:
-# INPUT: raw/unaligned_1.fq and unaligned_2.fq
-# OUTPUT: bowtie/bowtie-sorted.bam and bowtie/stats.txt
+# INPUT: $SAMPLE/orig/unaligned_1.fq and $SAMPLE/orig/unaligned_2.fq
+# OUTPUT: $SAMPLE/bowtie/bowtie-sorted.bam and $SAMPLE/bowtie/stats.txt
 #
 # REQUIRES: bowtie, samtools
 ##########################################################################################
@@ -30,18 +30,21 @@
 # USAGE
 ##########################################################################################
 
-ngsUsage_BOWTIE="Usage: `basename $0` bowtie OPTIONS sampleID    --  run bowtie\n"
+ngsUsage_BOWTIE="Usage: `basename $0` bowtie OPTIONS sampleID    --  run bowtie on untrimmed reads\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_BOWTIE="Usage: `basename $0` bowtie -p numProc -s species [-se] sampleID\n"
-ngsHelp_BOWTIE+="\tRun bowtie on raw data. See the script runBowtiePaired.sh for bowtie parameters used. Output is placed in the directory called 'bowtie'. Bowtie uses raw, untrimmed, data as input.\n"
-ngsHelp_BOWTIE+="\tOPTIONS:\n"
-ngsHelp_BOWTIE+="\t\t-p numProc - number of cpu to use.\n"
-ngsHelp_BOWTIE+="\t\t-s species - species files are located in $BOWTIE_REPO ('hg19', 'mm9', 'rn4').\n"
-ngsHelp_BOWTIE+="\t\t-se - single-end reads (default: paired-end)"
+ngsHelp_BOWTIE="Usage:\n\t`basename $0` bowtie -p numProc -s species [-se] sampleID\n"
+ngsHelp_BOWTIE+="Input:\n\tsampleID/orig/unaligned_1.fq\n\tsampleID/orig/unaligned_2.fq (paired-end reads)"
+ngsHelp_BOWTIE+="Output:\n\tsampleID/bowtie/bowtie-sorted.bam\n\tsampleID/bowtie/stats.txt\n"
+ngsHelp_BOWTIE+="Requires:\n\tbowtie ( http://bowtie-bio.sourceforge.net/index.shtml )\n\tsamtools ( http://samtools.sourceforge.net/ )\n"
+ngsHelp_BOWTIE+="Options:\n"
+ngsHelp_BOWTIE+="\t-p numProc - number of cpu to use\n"
+ngsHelp_BOWTIE+="\t-s species - species files are located in $BOWTIE_REPO ('hg19', 'mm9', 'rn4')\n"
+ngsHelp_BOWTIE+="\t-se - single-end reads (default: paired-end)\n\n"
+ngsHelp_BOWTIE+="Run bowtie on the original, untrimmed data (ie sampleID/orig). Output is placed in the directory sampleID/bowtie."
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -97,15 +100,15 @@ ngsCmd_BOWTIE() {
 	
 	if $SE; then 
         # single-end
-		prnCmd "bowtie -t -v 3 -a -m 10 --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES $SAMPLE/raw/unaligned_1.fq $SAMPLE/bowtie/output_p.sam > $SAMPLE/bowtie/stats.txt 2>&1"
+		prnCmd "bowtie -t -v 3 -a -m 10 --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES $SAMPLE/orig/unaligned_1.fq $SAMPLE/bowtie/output_p.sam > $SAMPLE/bowtie/stats.txt 2>&1"
 		if ! $DEBUG; then 
-			bowtie -t -v 3 -a -m 10 --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES $SAMPLE/raw/unaligned_1.fq $SAMPLE/bowtie/output_p.sam > $SAMPLE/bowtie/stats.txt 2>&1
+			bowtie -t -v 3 -a -m 10 --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES $SAMPLE/orig/unaligned_1.fq $SAMPLE/bowtie/output_p.sam > $SAMPLE/bowtie/stats.txt 2>&1
 		fi
 	else 
         # paired-end
-		prnCmd "bowtie -t -v 3 -a -m 10 --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES -1 $SAMPLE/raw/unaligned_1.fq -2 $SAMPLE/raw/unaligned_2.fq $SAMPLE/bowtie/output_p.sam > $SAMPLE/bowtie/stats.txt 2>&1"
+		prnCmd "bowtie -t -v 3 -a -m 10 --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES -1 $SAMPLE/orig/unaligned_1.fq -2 $SAMPLE/orig/unaligned_2.fq $SAMPLE/bowtie/output_p.sam > $SAMPLE/bowtie/stats.txt 2>&1"
 		if ! $DEBUG; then 
-			bowtie -t -v 3 -a -m 10 --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES -1 $SAMPLE/raw/unaligned_1.fq -2 $SAMPLE/raw/unaligned_2.fq $SAMPLE/bowtie/output_p.sam > $SAMPLE/bowtie/stats.txt 2>&1
+			bowtie -t -v 3 -a -m 10 --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES -1 $SAMPLE/orig/unaligned_1.fq -2 $SAMPLE/orig/unaligned_2.fq $SAMPLE/bowtie/output_p.sam > $SAMPLE/bowtie/stats.txt 2>&1
 		fi
 	fi
 	

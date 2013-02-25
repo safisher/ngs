@@ -23,14 +23,14 @@
 # USAGE
 ##########################################################################################
 
-ngsUsage_HELP="Usage: `basename $0` help COMMAND    --  more information (ex: `basename $0` help blast)\n"
+ngsUsage_HELP="Usage: `basename $0` help COMMAND    --  expanded command help (ex: `basename $0` help blast)\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_HELP="Usage: `basename $0` help COMMAND\n"
-ngsHelp_HELP+="\tExample: `basename $0` help blastdb"
+ngsHelp_HELP="Usage:\n\t`basename $0` help COMMAND\n"
+ngsHelp_HELP+="Example:\n\t`basename $0` help blastdb"
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS

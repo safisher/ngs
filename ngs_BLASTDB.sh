@@ -16,12 +16,12 @@
 
 ##########################################################################################
 # SINGLE-END READS
-# INPUT: raw/unaligned_1.fq
-# OUTPUT: blastdb/*
+# INPUT: $SAMPLE/raw/unaligned_1.fq
+# OUTPUT: $SAMPLE/blastdb/*
 #
 # PAIRED-END READS
-# INPUT: raw/unaligned_1.fq and raw/unaligned_2.fq
-# OUTPUT: blastdb/*
+# INPUT: $SAMPLE/raw/unaligned_1.fq and $SAMPLE/raw/unaligned_2.fq
+# OUTPUT: $SAMPLE/blastdb/*
 #
 # REQUIRES: makeblastdb (provided with Blast version 2)
 ##########################################################################################
@@ -30,16 +30,19 @@
 # USAGE
 ##########################################################################################
 
-ngsUsage_BLASTDB="Usage: `basename $0` blastdb sampleID    --  create blast database from reads\n"
+ngsUsage_BLASTDB="Usage: `basename $0` blastdb OPTIONS sampleID    --  create blast database from reads\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_BLASTDB="Usage: `basename $0` blastdb [-se] sampleID\n"
-ngsHelp_BLASTDB+="\tGenerates blast database from reads.\n"
-ngsHelp_BLASTDB+="\tOPTIONS:\n"
-ngsHelp_BLASTDB+="\t\t-se - single-end reads (default: paired-end)"
+ngsHelp_BLASTDB="Usage:\n\t`basename $0` blastdb [-se] sampleID\n"
+ngsHelp_BLASTDB+="Input:\n\tsampleID/orig/unaligned_1.fq\n\tsampleID/orig/unaligned_2.fq (paired-end reads)\n"
+ngsHelp_BLASTDB+="Output:\n\tsampleID/blastdb/*\n"
+ngsHelp_BLASTDB+="Requires:\n\tmakeblastdb ( ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/ )\n"
+ngsHelp_BLASTDB+="Options:\n"
+ngsHelp_BLASTDB+="\t-se - single-end reads (default: paired-end)\n\n"
+ngsHelp_BLASTDB+="Generates blast database from reads."
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -83,16 +86,16 @@ ngsCmd_BLASTDB() {
 		if ! $DEBUG; then mkdir $SAMPLE/blast.db; fi
 	fi
 	
-	# Convert raw fastq files into single fasta file
-	prnCmd "awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,\">\");print}; if(P==4)P=0; P++}' $SAMPLE/raw/unaligned_1.fq > $SAMPLE/blast.db/raw.fa"
+	# Convert orig/fastq files into single fasta file (raw.fa)
+	prnCmd "awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,\">\");print}; if(P==4)P=0; P++}' $SAMPLE/orig/unaligned_1.fq > $SAMPLE/blast.db/raw.fa"
 	if ! $DEBUG; then 
-		awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,">");print}; if(P==4)P=0; P++}' $SAMPLE/raw/unaligned_1.fq > $SAMPLE/blast.db/raw.fa
+		awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,">");print}; if(P==4)P=0; P++}' $SAMPLE/orig/unaligned_1.fq > $SAMPLE/blast.db/raw.fa
 	fi
 	if ! $SE; then
 		# only necessary for paired-end
-		prnCmd "awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,\">\");print}; if(P==4)P=0; P++}' $SAMPLE/raw/unaligned_2.fq >> $SAMPLE/blast.db/raw.fa"
+		prnCmd "awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,\">\");print}; if(P==4)P=0; P++}' $SAMPLE/orig/unaligned_2.fq >> $SAMPLE/blast.db/raw.fa"
 		if ! $DEBUG; then 
-			awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,">");print}; if(P==4)P=0; P++}' $SAMPLE/raw/unaligned_2.fq >> $SAMPLE/blast.db/raw.fa
+			awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,">");print}; if(P==4)P=0; P++}' $SAMPLE/orig/unaligned_2.fq >> $SAMPLE/blast.db/raw.fa
 		fi
 	fi
 	

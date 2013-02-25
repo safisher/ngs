@@ -15,8 +15,8 @@
 # under the License.
 
 ##########################################################################################
-# INPUT: raw/unaligned_1.fq
-# OUTPUT: blast/species.txt (species hit counts) and blast/blast.txt (blast output)
+# INPUT: $SAMPLE/raw/unaligned_1.fq
+# OUTPUT: $SAMPLE/blast/blast.txt (blast output), $SAMPLE/blast/species.txt (species hit counts)
 # REQUIRES: blastn (provided with Blast version 2), randomSample.py, parseBlast.py
 ##########################################################################################
 
@@ -24,16 +24,19 @@
 # USAGE
 ##########################################################################################
 
-ngsUsage_BLAST="Usage: `basename $0` blast OPTIONS sampleID    --  run blast on subset of reads\n"
+ngsUsage_BLAST="Usage: `basename $0` blast OPTIONS sampleID    --  run blast on randomly sampled subset of reads\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_BLAST="Usage: `basename $0` blast -p numProc sampleID\n"
-ngsHelp_BLAST+="\tRun blast on 5000 reads randomly sampled from raw/unaligned_1.fq. Blast paramters used are 'num_descriptions: 10 num_alignments: 10 word_size: 15 gapopen: 3 gapextend: 1 culling_limit: 1 evalue: 1e-15'. The output is put in a directory called 'blast'. The species.txt file contains number of reads mapping to each species (mouse, rat, human, bacteria).\n"
-ngsHelp_BLAST+="\tOPTIONS:\n"
-ngsHelp_BLAST+="\t\t-p numProc - number of cpu to use."
+ngsHelp_BLAST="Usage:\n\t`basename $0` blast -p numProc sampleID\n"
+ngsHelp_BLAST+="Input:\n\tsampleID/raw/unaligned_1.fq\n"
+ngsHelp_BLAST+="Output:\n\tsampleID/blast/blast.txt (blast output)\n\tsampleID/blast/species.txt (species hit counts)\n"
+ngsHelp_BLAST+="Requires:\n\tblastn ( ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/ )\n\trandomSample.py ( https://github.com/safisher/ngs )\n\tparseBlast.py ( https://github.com/safisher/ngs )\n"
+ngsHelp_BLAST+="Options:\n"
+ngsHelp_BLAST+="\t-p numProc - number of cpu to use\n\n"
+ngsHelp_BLAST+="Run blast on 5000 reads randomly sampled from raw/unaligned_1.fq. Blast paramters used are 'num_descriptions: 10 num_alignments: 10 word_size: 15 gapopen: 3 gapextend: 1 culling_limit: 1 evalue: 1e-15'. The output is put in a directory called 'blast'. The species.txt file contains number of reads mapping to each species (mouse, rat, human, bacteria)."
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -81,9 +84,9 @@ ngsCmd_BLAST() {
 	
     # Get 5,000 randomly sampled reads
     # Usage: randomSample.py <num lines> <lines grouped> <input> <output>
-	prnCmd "randomSample.py 5000 4 $SAMPLE/raw/unaligned_1.fq $SAMPLE/blast/raw.fq > $SAMPLE/blast/species.txt"
+	prnCmd "randomSample.py 5000 4 $SAMPLE/orig/unaligned_1.fq $SAMPLE/blast/raw.fq > $SAMPLE/blast/species.txt"
 	if ! $DEBUG; then 
-		randomSample.py 5000 4 $SAMPLE/raw/unaligned_1.fq $SAMPLE/blast/raw.fq > $SAMPLE/blast/species.txt
+		randomSample.py 5000 4 $SAMPLE/orig/unaligned_1.fq $SAMPLE/blast/raw.fq > $SAMPLE/blast/species.txt
 	fi
 	
     # Convert fastq file to fasta file

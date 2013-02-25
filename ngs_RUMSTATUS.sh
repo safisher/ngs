@@ -24,14 +24,14 @@
 # USAGE
 ##########################################################################################
 
-ngsUsage_RUMSTATUS="Usage: `basename $0` rumstatus sampleID    --  status RUM\n"
+ngsUsage_RUMSTATUS="Usage: `basename $0` rumstatus sampleID    --  get status of RUM run\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_RUMSTATUS="Usage: `basename $0` rumstatus sampleID\n"
-ngsHelp_RUMSTATUS+="\treturns the output from RUM status command. This will only work if rumalign has previously been run."
+ngsHelp_RUMSTATUS="Usage:\n\t`basename $0` rumstatus sampleID\n\n"
+ngsHelp_RUMSTATUS+="Returns the output from RUM status command. This will only work if rumalign has previously been run."
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS

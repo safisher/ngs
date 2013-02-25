@@ -29,8 +29,8 @@ ngsUsage_VERSION="Usage: `basename $0` version    --  print version information\
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_VERSION="Usage: `basename $0` version\n"
-ngsHelp_VERSION+="\tPrints version information."
+ngsHelp_VERSION="Usage:\n\t`basename $0` version\n\n"
+ngsHelp_VERSION+="Prints version information for `basename $0`."
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS

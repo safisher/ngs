@@ -17,26 +17,30 @@
 ##########################################################################################
 # SINGLE-END READS:
 # INPUT: $SRC/$SAMPLE/*R1*.gz
-# OUTPUT: raw/unaligned_1.fq
+# OUTPUT: $SAMPLE/raw/unaligned_1.fq
 #
 # PAIRED-END READS:
 # INPUT: $SRC/$SAMPLE/*R1*.gz and $SRC/$SAMPLE/*R2*.gz
-# OUTPUT: raw/unaligned_1.fq and raw/unaligned_2.fq
+# OUTPUT: $SAMPLE/raw/unaligned_1.fq and $SAMPLE/raw/unaligned_2.fq
 ##########################################################################################
 
 ##########################################################################################
 # USAGE
 ##########################################################################################
 
-ngsUsage_INIT="Usage: `basename $0` init [-se] sampleID    --  prepare files for processing\n"
+ngsUsage_INIT="Usage: `basename $0` init OPTIONS sampleID    --  prepare read file(s) for processing\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_INIT="Usage: `basename $0` init [-se] sampleID\n"
-ngsHelp_INIT+="\tExpects a directory called 'raw' that contains a subdirectory with demultiplexed reads. The subdirectory's name should be the sample ID. The demultiplexed reads need to be gzipped. The files with the first reads need to include 'R1' in their filenames and the second read files need to contain 'R2' in the filenames.\n"
-ngsHelp_INIT+="\tThis will uncompress the raw files and place them in a subdirectory called 'raw'. Output files are named 'unaligned_1.fq' and 'unaligned_2.fq'."
+ngsHelp_INIT="Usage:\n\t`basename $0` init [-se] sampleID\n"
+ngsHelp_INIT+="Input:\n\t$SRC/sampleID/*R1*.gz\n\t$SRC/sampleID/*R2*.gz (paired-end reads)\n"
+ngsHelp_INIT+="Output:\n\tsampleID/orig/unaligned_1.fq\n\tsampleID/orig/unaligned_2.fq (paired-end reads)\n"
+ngsHelp_INIT+="Options:\n"
+ngsHelp_INIT+="\t-se - single-end reads (default: paired-end)\n\n"
+ngsHelp_INIT+="Expects a directory called 'raw' that contains a subdirectory with demultiplexed reads. The subdirectory's name should be the sample ID. The demultiplexed reads need to be gzipped. The files with the first reads need to include 'R1' in their filenames and the second read files need to contain 'R2' in the filenames.\n\n"
+ngsHelp_INIT+="This will uncompress the raw files and place them in a subdirectory called 'orig'. Output files are named 'unaligned_1.fq' and 'unaligned_2.fq'. Only unaligned_1.fq will be generated in the case of single-end reads."
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -67,7 +71,6 @@ ngsArgs_INIT() {
 
 ##########################################################################################
 # RUNNING COMMAND ACTION
-# There is no command action for the VERSION module.
 ##########################################################################################
 
 ngsCmd_INIT() {
@@ -75,23 +78,23 @@ ngsCmd_INIT() {
 	else prnCmd "# BEGIN: INIT PAIRED-END"; fi
 	
     # make relevant directory
-	if [ ! -d $SAMPLE/raw ]; then 
-		prnCmd "mkdir $SAMPLE/raw"
-		if ! $DEBUG; then mkdir $SAMPLE/raw; fi 
+	if [ ! -d $SAMPLE/orig ]; then 
+		prnCmd "mkdir $SAMPLE/orig"
+		if ! $DEBUG; then mkdir $SAMPLE/orig; fi 
 	fi
 	
-    # unzip raw files to raw subdirectory. Assumes raw is a link to
-    # the directory containing the original compressed raw files
-	prnCmd "zcat $SRC/$SAMPLE/*R1* > $SAMPLE/raw/unaligned_1.fq"
+    # unzip raw files to orig subdirectory. Assumes contains
+    # the original compressed raw files
+	prnCmd "zcat $SRC/$SAMPLE/*R1* > $SAMPLE/orig/unaligned_1.fq"
 	if ! $DEBUG; then 
-		zcat $SRC/$SAMPLE/*R1* > $SAMPLE/raw/unaligned_1.fq
+		zcat $SRC/$SAMPLE/*R1* > $SAMPLE/orig/unaligned_1.fq
 	fi
 	
 	if ! $SE; then 
         # paired-end
-		prnCmd "zcat $SRC/$SAMPLE/*R2* > $SAMPLE/raw/unaligned_2.fq;"
+		prnCmd "zcat $SRC/$SAMPLE/*R2* > $SAMPLE/orig/unaligned_2.fq;"
 		if ! $DEBUG; then 
-			zcat $SRC/$SAMPLE/*R2* > $SAMPLE/raw/unaligned_2.fq
+			zcat $SRC/$SAMPLE/*R2* > $SAMPLE/orig/unaligned_2.fq
 		fi
 	fi
 	

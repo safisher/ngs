@@ -16,7 +16,7 @@
 
 ##########################################################################################
 # INPUT: n/a
-# OUTPUT: all subdirectories except raw are copied to $ANALYZED
+# OUTPUT: all subdirectories in $SAMPLE except 'orig' are copied to $ANALYZED\$SAMPLE
 ##########################################################################################
 
 ##########################################################################################
@@ -29,8 +29,9 @@ ngsUsage_RSYNC="Usage: `basename $0` rsync sampleID    --  copy data to analyzed
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_RSYNC="Usage: `basename $0` rsync sampleID\n"
-ngsHelp_RSYNC+="\tCopies all data to analyzed directory. Does not copy raw or bowtie directories. Rsync is run twice as a consistency check."
+ngsHelp_RSYNC="Usage:\n\t`basename $0` rsync sampleID\n"
+ngsHelp_RSYNC+="Output\n\tall subdirectories in sampleID except 'orig' are copied to $ANALYZED\sampleID\n\n"
+ngsHelp_RSYNC+="Copies all data to $ANALYZED directory. Does not copy sampleID/orig directory. Rsync is run twice as a consistency check."
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -54,10 +55,10 @@ ngsArgs_RSYNC() {
 ngsCmd_RSYNC() {
 	prnCmd "# BEGIN: COPYING TO REPO"
 	
-    # we exclude raw since that's the unaligned data which is already in the repo
-	prnCmd "rsync -avh --stats --exclude raw $SAMPLE analyzed/."
+    # we exclude orig since that's the unaligned data which is already in the repo
+	prnCmd "rsync -avh --stats --exclude orig $SAMPLE analyzed/."
 	if ! $DEBUG; then 
-		rsync -avh --stats --exclude raw $SAMPLE analyzed/.
+		rsync -avh --stats --exclude orig $SAMPLE analyzed/.
 	fi
 	
 	prnCmd "# FINISHED: COPYING TO REPO"
@@ -66,6 +67,6 @@ ngsCmd_RSYNC() {
 	# have the full transfer since we just changed $JOURNAL with the
 	# prnCmd above.
 	if ! $DEBUG; then 
-		rsync -avh --stats --exclude raw $SAMPLE analyzed/.
+		rsync -avh --stats --exclude orig $SAMPLE analyzed/.
 	fi
 }

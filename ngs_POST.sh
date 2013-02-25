@@ -15,10 +15,10 @@
 # under the License.
 
 ##########################################################################################
-# INPUT: rum.trim/RUM.sam
-# OUTPUT: rum.trim/RUM.sorted.bam, rum.trim/RUM_Unique.sorted.bam
-#         directory trimAT renamed trim.Ad.PolyAT and contents compressed
-#         directory trimAD deleted
+# INPUT: $SAMPLE/rum.trim/RUM.sam
+# OUTPUT: $SAMPLE/rum.trim/RUM.sorted.bam, $SAMPLE/rum.trim/RUM_Unique.sorted.bam
+#         directory $SAMPLE/trimAT renamed $SAMPLE/trim.Ad.PolyAT and contents compressed
+#         directory $SAMPLE/trimAD deleted
 # REQUIRES: samtools
 ##########################################################################################
 
@@ -26,14 +26,17 @@
 # USAGE
 ##########################################################################################
 
-ngsUsage_POST="Usage: `basename $0` post sampleID    --  clean up processed files\n"
+ngsUsage_POST="Usage: `basename $0` post sampleID    --  clean up RUM and trimmed data\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_POST="Usage: `basename $0` post sampleID\n"
-ngsHelp_POST+="\tCleans up RUM output, compressing files as feasible, converting SAM output to sorted BAM, running parseFeatureQuant.py script to summarize transcript output, removed trimAD, compresses trimAT files and moves them into a directory called 'trim.Ad.PolyAT'."
+ngsHelp_POST="Usage:\n\t`basename $0` post sampleID\n"
+ngsHelp_POST+="Input:\n\tsampleID/rum.trim/RUM.sam\n"
+ngsHelp_POST+="Output:\n\tsampleID/rum.trim/RUM.sorted.bam\n\tsampleID/rum.trim/RUM_Unique.sorted.bam\n\tdirectory sampleID/trimAT renamed sampleID/trim.Ad.PolyAT and contents compressed\n\tdirectory sampleID/trimAD deleted\n"
+ngsHelp_POST+="Requires:\n\tsamtools ( http://samtools.sourceforge.net/ )\n\n"
+ngsHelp_POST+="Cleans up RUM output, compressing files as feasible, converting SAM output to sorted BAM, running parseFeatureQuant.py script to summarize transcript output, removed trimAD, compresses trimAT files and moves them into a directory called 'trim.Ad.PolyAT'."
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS

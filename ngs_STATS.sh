@@ -15,7 +15,7 @@
 # under the License.
 
 ##########################################################################################
-# INPUT: blast/species.txt, trimAdapters.stats.txt, trimPolyAT.stats.txt, rum.trim/mappings_stats.txt
+# INPUT: $SAMPLE/blast/species.txt, $SAMPLE/trimAdapters.stats.txt, $SAMPLE/trimPolyAT.stats.txt, $SAMPLE/rum.trim/mappings_stats.txt
 # OUTPUT: printing to console
 ##########################################################################################
 
@@ -29,8 +29,8 @@ ngsUsage_STATS="Usage: `basename $0` stats sampleID    --  print stats from blas
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_STATS="Usage: `basename $0` stats sampleID\n"
-ngsHelp_STATS+="\tPrints out blast, trim, and RUM stats."
+ngsHelp_STATS="Usage:\n\t`basename $0` stats sampleID\n\n"
+ngsHelp_STATS+="Prints out blast, trim, and RUM stats."
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS

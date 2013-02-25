@@ -34,8 +34,8 @@ ngsUsage_TEMPLATE="put usage and brief description here\n"
 # ngsHelp_TEMPLATE should contain expanded help
 ##########################################################################################
 
-ngsHelp_TEMPLATE="put usage here\n"
-ngsHelp_TEMPLATE+="\tdescriptive help here"
+ngsHelp_TEMPLATE="put usage here\n\n"
+ngsHelp_TEMPLATE+="descriptive help here"
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS

@@ -16,12 +16,12 @@
 
 ##########################################################################################
 # SINGLE-END READS
-# INPUT: trimAT/unaligned_1.fq
-# OUTPUT: rum.trim/RUM.sam
+# INPUT: $SAMPLE/trimAT/unaligned_1.fq
+# OUTPUT: $SAMPLE/rum.trim/RUM.sam
 #
 # PAIRED-END READS
-# INPUT: trimAT/unaligned_1.fq and trimAT/unaligned_2.fq
-# OUTPUT: rum.trim/RUM.sam
+# INPUT: $SAMPLE/trimAT/unaligned_1.fq and $SAMPLE/trimAT/unaligned_2.fq
+# OUTPUT: $SAMPLE/rum.trim/RUM.sam
 #
 # REQUIRES: RUM version 2
 ##########################################################################################
@@ -36,12 +36,15 @@ ngsUsage_RUMALIGN="Usage: `basename $0` rumalign OPTIONS sampleID    --   run RU
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_RUMALIGN="Usage: `basename $0` rumalign -p numProc -s species [-se] sampleID\n"
-ngsHelp_RUMALIGN+="\tRuns RUM using the trimmed files from trimAT. Output is stored in directory 'rum.trim'.\n"
-ngsHelp_RUMALIGN+="\tOPTIONS:\n"
-ngsHelp_RUMALIGN+="\t\t-p numProc - number of cpu to use.\n"
-ngsHelp_RUMALIGN+="\t\t-s species - species files are located in $RUM_REPO ('drosophila', 'hg19', 'mm9', 'mm10', 'rat', 'rn5', 'saccer3', 'zebrafish').\n"
-ngsHelp_RUMALIGN+="\t\t-se - single-end reads (default: paired-end)"
+ngsHelp_RUMALIGN="Usage:\n\t`basename $0` rumalign -p numProc -s species [-se] sampleID\n"
+ngsHelp_RUMALIGN+="Input:\n\tsampleID/trimAT/unaligned_1.fq\n\tsampleID/trimAT/unaligned_2.fq (paired-end reads)\n"
+ngsHelp_RUMALIGN+="Output:\n\tsampleID/rum.trim/RUM.sam\n"
+ngsHelp_RUMALIGN+="Requires:\n\tRUM ( http://cbil.upenn.edu/RUM )\n"
+ngsHelp_RUMALIGN+="Options:\n"
+ngsHelp_RUMALIGN+="\t-p numProc - number of cpu to use.\n"
+ngsHelp_RUMALIGN+="\t-s species - species files are located in $RUM_REPO ('drosophila', 'hg19', 'mm9', 'mm10', 'rat', 'rn5', 'saccer3', 'zebrafish').\n"
+ngsHelp_RUMALIGN+="\t-se - single-end reads (default: paired-end)\n\n"
+ngsHelp_RUMALIGN+="Runs RUM using the trimmed files from sampleID/trimAT. Output is stored in sampleID/rum.trim directory."
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
