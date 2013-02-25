@@ -8,9 +8,7 @@ The TEMPLATE module is an empty, unused module that can be used as an example to
 Current modules:
 
 		HELP: expanded command help (ex: ngs.sh help blast)
-
 		INIT: prepare read file(s) for processing
-
 		FASTQC: run FastQC
 		BLAST: run blast on randomly sampled subset of reads
 		BOWTIE: run bowtie on untrimmed reads
@@ -35,7 +33,7 @@ The expanded help for each module documents the input files, output files, and r
 Notes
 =================
 
-  - Only tested on Linux OS. Will likely work on a Mac. Will probably not work on Windows.
+  - Only tested on Linux OS. Will likely work on a Mac. May work on Windows with Cygwin.
 
 
 To Do
