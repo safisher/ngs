@@ -123,11 +123,14 @@ ngsCmd_TRIM() {
 		fi
 		prnCmd "fastqc --OUTDIR=$SAMPLE/fastqc.trim $SAMPLE/trimAT/unaligned_1.fq"
 		if ! $DEBUG; then 
-			fastqc --noextract --OUTDIR=$SAMPLE/fastqc.trim $SAMPLE/trimAT/unaligned_1.fq
+			fastqc --OUTDIR=$SAMPLE/fastqc.trim $SAMPLE/trimAT/unaligned_1.fq
 			
 			# do some cleanup of the output files
-			prnCmd "mv $SAMPLE/fastqc.trim/unaligned_1.fq_fastqc.zip $SAMPLE/fastqc.trim/$SAMPLE.fastqc.zip"
-			mv $SAMPLE/fastqc.trim/unaligned_1.fq_fastqc.zip $SAMPLE/fastqc.trim/$SAMPLE.fastqc.zip
+			prnCmd "mv $SAMPLE/fastqc.trim/unaligned_1.fq_fastqc/* $SAMPLE/fastqc.trim/."
+			mv $SAMPLE/fastqc.trim/unaligned_1.fq_fastqc/* $SAMPLE/fastqc.trim/.
+			
+			prnCmd "rmdir $SAMPLE/fastqc.trim/unaligned_1.fq_fastqc"
+			rmdir $SAMPLE/fastqc.trim/unaligned_1.fq_fastqc
 		fi
 	fi
 	

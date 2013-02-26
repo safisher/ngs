@@ -42,4 +42,6 @@ To Do
   - GitHub missing trimming scripts. Need to rewrite existing trimming programs and upload to github.
   - Better documentation on how to use the pipeline and how the files relate to one another.
   - Need to untangle POST and perhap create POSTTRIM and POSTRUM.
+  - Deal with rerunning commands. Example if we run INIT twice, then what happens?
+  - Allow PIPELINE to pick up where it left off. Example, if INIT, FASTQC, and BLAST directories exist, then should it start with the TRIMMING command?
 
