@@ -44,4 +44,5 @@ To Do
   - Need to untangle POST and perhap create POSTTRIM and POSTRUM.
   - Deal with rerunning commands. Example if we run INIT twice, then what happens?
   - Allow PIPELINE to pick up where it left off. Example, if INIT, FASTQC, and BLAST directories exist, then should it start with the TRIMMING command?
+  - untangle fastqc from trimming. have 2 fastqc commands, one for orig/* and one for trimAT/*.
 
