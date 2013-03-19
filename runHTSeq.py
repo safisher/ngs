@@ -21,6 +21,8 @@ usage: runHTSeq.py <SOURCE BAM> <OUTPUT FILE PREFIX> <GENE MODEL GTF>
 
 HTSeq requires a SAM file that is sorted by read names and had reads fixed with samtools 'fixmate'. This script handles the conversion from an unsorted BAM file.
 
+HTSeq parameters: --mode=intersection-nonempty --stranded=no --type=exon --idattr=gene_id
+
 Example:
   runHTSeq.py RUM_Unique.bam Sample_xeno3 /lab/repo/resources/htseq/zebrafish/zebrafish.Zv9.69.gtf.gz
 

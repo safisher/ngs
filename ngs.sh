@@ -36,15 +36,6 @@
 #    section: ADD MODULE COMMAND FUNCTIONS HERE
 ##########################################################################################
 
-##########################################################################################
-# To-Do
-# - need updated trimming scripts. They need to offer version information
-# - make journal output optional
-# - add argument for setting of journal file
-# - make DEBUG an argument
-# - better integration of bowtie/RUM post processing. Currently 'post' assumes RUM was used.
-##########################################################################################
-
 VERSION=1.0
 
 # all commands will be output to this file as a report of what was done

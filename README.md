@@ -39,11 +39,16 @@ Notes
 To Do
 =================
 
-  - GitHub missing trimming scripts. Need to rewrite existing trimming programs and upload to github.
+  - GitHub missing trimming scripts. Need to rewrite existing trimming programs and upload to github. Trimming also needs to log version number.
   - Better documentation on how to use the pipeline and how the files relate to one another.
-  - Need to untangle POST and perhap create POSTTRIM and POSTRUM.
+  - Need to untangle POST and perhap create POSTTRIM, POSTBOWTIE and POSTRUM.
   - Deal with rerunning commands. Example if we run INIT twice, then what happens?
   - Allow PIPELINE to pick up where it left off. Example, if INIT, FASTQC, and BLAST directories exist, then should it start with the TRIMMING command?
   - untangle fastqc from trimming. have 2 fastqc commands, one for orig/* and one for trimAT/*.
   - save rum output in rum.$SPECIES instead of rum.trim. This would have implications in rumalign, rumstatus, htseq, stats, and post
   - add flag to STATS that will run stats on all samples and output stats to the specified xls file 
+  - need updated trimming scripts. They need to offer version information
+  - make journal output optional
+  - add argument for setting of journal file
+  - make DEBUG an argument
+  - Need to version each module.
