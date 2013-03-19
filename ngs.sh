@@ -17,7 +17,6 @@
 # TEST:
 # - handle printing version of trimming scripts
 # - add htseq to pipeline
-# - fix htseq to remove need for prefix and properly filter output
 
 ##########################################################################################
 # Adding new processing step:

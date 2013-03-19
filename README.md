@@ -45,4 +45,5 @@ To Do
   - Deal with rerunning commands. Example if we run INIT twice, then what happens?
   - Allow PIPELINE to pick up where it left off. Example, if INIT, FASTQC, and BLAST directories exist, then should it start with the TRIMMING command?
   - untangle fastqc from trimming. have 2 fastqc commands, one for orig/* and one for trimAT/*.
-
+  - save rum output in rum.$SPECIES instead of rum.trim. This would have implications in rumalign, rumstatus, htseq, stats, and post
+  - add flag to STATS that will run stats on all samples and output stats to the specified xls file 
