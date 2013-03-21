@@ -52,3 +52,4 @@ To Do
   - add argument for setting of journal file
   - make DEBUG an argument
   - Need to version each module.
+  - Integrate annotateGeneCnts.py into HTSEQ
