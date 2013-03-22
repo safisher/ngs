@@ -19,7 +19,10 @@ by: S. Fisher, 2013
 
 usage: flyBase2HTSeq.py <exons GFF> <FBgn_FBtr> <Output>
 
-Convert FlyBase GFF file to gene model appropriate for HTSeq
+Convert FlyBase GFF file to gene model appropriate for HTSeq. FlyBase
+exon positions are "1-based and closed" while HTSeq expects them to be
+"0-based and half-open" so exon coordinates are converted to 0-based
+and half-open.
 """
 
 import sys, os
@@ -33,10 +36,13 @@ if DEBUG: print 'DEBUG MODE: ON'
 
 # expect 3 args
 if len(sys.argv) < 4:
-    print 'Usage: flyBase2HTSeq.py <exons GFF> <FBgn_FBtr> <Output>'
-    print '\texons GFF - list of exons from dmel-all-no-analysis-r5.49.gff'
-    print '\tFBgn_FBtr - table gene and transcript IDs (fbgn_fbtr_fbpp_fb_2013_01.tsv)'
-    print '\toutput - output file'
+    print 'Usage: flyBase2HTSeq.py <exons GFF> <FBgn_FBtr> <Output>\n'
+    print '\texons GFF - list of exons from dmel-all-no-analysis-r5.50.gff'
+    print '\tFBgn_FBtr - table of gene and transcript IDs (fbgn_fbtr_fbpp_fb_2013_02.tsv)'
+    print '\toutput - output file\n'
+    print 'Convert FlyBase GFF file to gene model appropriate for HTSeq. FlyBase exon'
+    print 'positions are 1-based, closed while HTSeq expects them to be 0-based, half-open'
+    print 'so exon coordinates are converted to 0-based, half-open.'
     sys.exit()
 
 EXONS_FILE = sys.argv[1]
@@ -54,7 +60,7 @@ if DEBUG: tcounts = {}  # count every time we find an exon in our GFF file
 count = 0
 for line in gn2trFile:
     gene = line.split('\t')
-    transcriptID = gene[1].strip() # need to remove \n from name
+    transcriptID = gene[1].strip() # need to remove \n from name. this will be the case when there is no protein id.
     transcripts[transcriptID] = gene[0] # gene ID
     if DEBUG: tcounts[transcriptID] = 0 # reset all counts
     count = count + 1
@@ -84,8 +90,17 @@ for line in exonFile:
                 sys.exit()
             else:
                 if DEBUG: tcounts[name] = tcounts[name] + 1
+
+                # adjust exon positions to be 0-based and
+                # half-open. To do this we need to subtract 1 from the
+                # start and end positions (1-based to 0-based). We
+                # then add 1 to the end position (half-open). The net
+                # result is that we are just subtracting 1 from the
+                # start position and not adjusting the end position.
+                start = str(int(exon[3]) - 1)
+
                 # include transcript ID
-                outFile.write(exon[0] + '\t' + exon[1] + '\t' + exon[2] + '\t' + exon[3] + '\t' + exon[4] + '\t' + exon[5] + '\t' + exon[6] + '\t' + exon[7] + '\tgene_id=' + transcripts[name] + ';trans_id=' + name + '\n')
+                outFile.write(exon[0] + '\t' + exon[1] + '\t' + exon[2] + '\t' + start + '\t' + exon[4] + '\t' + exon[5] + '\t' + exon[6] + '\t' + exon[7] + '\tgene_id=' + transcripts[name] + ';trans_id=' + name + '\n')
 
     count = count + 1
 
