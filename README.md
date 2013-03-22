@@ -30,6 +30,12 @@ The PIPELINE module is effectively a meta-module and includes the following modu
 The expanded help for each module documents the input files, output files, and required programs needed for that module to function. To view the expanded help for a module use the HELP command. For example to get help on the RUMALIGN module: ngs.sh help rumalign
 
 
+Ancillary
+=================
+
+This directory contains files that are not required by any modules provided herein although thay may be helpful to prepare files for use with the pipeline and/or process files after pipeline processing.
+
+
 Notes
 =================
 
@@ -53,3 +59,14 @@ To Do
   - make DEBUG an argument
   - Need to version each module.
   - Integrate annotateGeneCnts.py into HTSEQ
+  - Update STATS to include percent of unique reads that overlap
+
+
+No Warranty
+=================
+
+Unless otherwise noted in the individual applications, the following disclaimer applies to all applications provided herein.
+
+There is no warranty to the extent permitted by applicable law. Except when otherwise stated in writing the copyright holders and/or other parties provide these applications "as is" without warranty of any kind, either expressed or implied, including, but not limited to, the implied warranties of merchantability and fitness for a particular purpose. The entire risk as to the quality and performance of these applications, and data is with you. Should these applications or data prove defective, you assume the cost of all necessary servicing, repair or correction.
+
+In no event unless required by applicable law or agreed to in writing will any copyright holder, or any other party who may modify and/or redistribute these applications as permitted above, be liable to you for damages, including any general, special, incidental or consequential damages arising out of the use or inability to use these applications and data (including but not limited to loss of data or data being rendered inaccurate or losses sustained by you or third parties or a failure of these applications and data to operate with any other programs), even if such holder or other party has been advised of the possibility of such damages.
