@@ -4,6 +4,7 @@ ngs is designed to automate the processing of next generation sequencing data. S
 
 https://github.com/safisher/ngs/wiki
 
+***
 
 ### No Warranty
 
