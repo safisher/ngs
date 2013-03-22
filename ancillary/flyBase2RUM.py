@@ -20,9 +20,9 @@ by: S. Fisher, 2013
 usage: flyBase2RUM.py <exons GFF> <output>
 
 LOCATION OF GFF FILE
-ftp://ftp.flybase.net/genomes/Drosophila_melanogaster/dmel_r5.49_FB2013_01/gff/dmel-all-no-analysis-r5.49.gff.gz
+ftp://ftp.flybase.net/genomes/Drosophila_melanogaster/dmel_r5.49_FB2013_01/gff/dmel-all-no-analysis-r5.50.gff.gz
 PREPARING INPUT FILE:
-  grep -p "exon\t" dmel-all-no-analysis-r5.49.gff > exons.tmp
+  grep -P "exon\t" dmel-all-no-analysis-r5.50.gff > exons.tmp
   uniq exons.tmp > exons.gff
   rm exons.tmp
 
@@ -33,6 +33,9 @@ start positions are adjusted as needed.
 There are transcripts in the FlyBase transcriptome that contain exons
 on both the + and - strands. The SINGLE_STRAND can be used to specify
 how these transcripts should be handled.
+  http://en.wikipedia.org/wiki/Trans-splicing
+
+REQUIRES python 2.7: viewvalues()
 """
 
 #------------------------------------------------------------------------------------------
@@ -52,11 +55,23 @@ if DEBUG: print 'DEBUG MODE: ON'
 # will be split into two transcripts (one for each strand) and the
 # strings a ".1" and ".2" will be appended to the respective
 # transcript names.
-SINGLE_STRAND = True
+SINGLE_STRAND = False
 
 # expect 2 argument
 if len(sys.argv) < 3:
-    print 'Usage: flyBase2RUM.py <exons GFF> <output>'
+    print 'Usage: flyBase2RUM.py <exons GFF> <output>\n'
+    print 'LOCATION OF GFF FILE'
+    print 'ftp://ftp.flybase.net/genomes/Drosophila_melanogaster/dmel_r5.49_FB2013_01/gff/dmel-all-no-analysis-r5.50.gff.gz\n'
+    print 'PREPARING INPUT FILE:'
+    print '  grep -P "exon\\t" dmel-all-no-analysis-r5.50.gff > exons.tmp'
+    print '  uniq exons.tmp > exons.gff'
+    print '  rm exons.tmp\n'
+    print 'RUM requires that start is 0-based and end is 1-based. This is based'
+    print 'on a USCS requirement. The exons from FlyBase are 1-based, so the'
+    print 'start positions are adjusted as needed.\n'
+    print 'There are transcripts in the FlyBase transcriptome that contain exons'
+    print 'on both the + and - strands. The SINGLE_STRAND can be used to specify'
+    print 'how these transcripts should be handled.'
     sys.exit()
 
 EXON_FILE = sys.argv[1]
@@ -105,7 +120,10 @@ class Transcript:
             self.ends += "," + end
         else:
             # if transcript contains exons on both +/- strands, then we track both sets of exons.
-            print "WARNING: Transcript (" + self.name + ") on two strands. Skipping exon - Chr: %s\tStrand: %s\tStart: %s\tEnd: %s" % (chrom, strand, start, end)
+            if SINGLE_STRAND:
+                print "WARNING: Transcript (" + self.name + ") on two strands. Skipping exon - Chr: %s\tStrand: %s\tStart: %s\tEnd: %s" % (chrom, strand, start, end)
+            else:
+                print "WARNING: Transcript (" + self.name + ") on two strands. Splitting transcript - Chr: %s\tStrand: %s\tStart: %s\tEnd: %s" % (chrom, strand, start, end)
             if not SINGLE_STRAND:
                 if self.starts0 == "":
                     self.starts0 = str(start)
@@ -168,6 +186,7 @@ for line in exonFile:
 outFile.write("#name\tchrom\tstrand\texonStarts\texonEnds\n")
 
 cnt = 0
+# viewvalues() requires python 2.7
 for transcript in transcripts.viewvalues():
     transcript.writeToFile()
 
