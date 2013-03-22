@@ -1,13 +1,11 @@
-ngs: Next Generation Sequencing Pipeline
-========================================
+## ngs: Next Generation Sequencing Pipeline
 
 ngs is designed to automate the processing of next generation sequencing data. See Wiki for documentation.
 
 https://github.com/safisher/ngs/wiki
 
 
-No Warranty
-=================
+### No Warranty
 
 Unless otherwise noted in the individual applications, the following disclaimer applies to all applications provided herein.
 
