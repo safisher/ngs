@@ -50,9 +50,10 @@ SRC=raw
 ANALYZED=analyzed
 
 # location of genomic databases and library files
-BOWTIE_REPO=/lab/repo/resources/bowtie
-RUM_REPO=/lab/repo/resources/rum2
-HTSEQ_REPO=/lab/repo/resources/htseq
+REPO_LOCATION=/lab/repo/resources
+BOWTIE_REPO=$REPO_LOCATION/bowtie
+RUM_REPO=$REPO_LOCATION/rum2
+HTSEQ_REPO=$REPO_LOCATION/htseq
 
 # make comparisons case insensitive
 shopt -s nocasematch

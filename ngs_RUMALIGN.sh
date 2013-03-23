@@ -36,13 +36,14 @@ ngsUsage_RUMALIGN="Usage: `basename $0` rumalign OPTIONS sampleID    --   run RU
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_RUMALIGN="Usage:\n\t`basename $0` rumalign -p numProc -s species [-se] sampleID\n"
-ngsHelp_RUMALIGN+="Input:\n\tsampleID/trimAT/unaligned_1.fq\n\tsampleID/trimAT/unaligned_2.fq (paired-end reads)\n"
+ngsHelp_RUMALIGN="Usage:\n\t`basename $0` rumalign -i inputDir -p numProc -s species [-se] sampleID\n"
+ngsHelp_RUMALIGN+="Input:\n\tsampleID/INPUTDIR/unaligned_1.fq\n\tsampleID/INPUTDIR/unaligned_2.fq (paired-end reads)\n"
 ngsHelp_RUMALIGN+="Output:\n\tsampleID/rum.trim/RUM.sam\n"
 ngsHelp_RUMALIGN+="Requires:\n\tRUM ( http://cbil.upenn.edu/RUM )\n"
 ngsHelp_RUMALIGN+="Options:\n"
+ngsHelp_RUMALIGN+="\t-i inputDir - location of source files (default: trimAT).\n"
 ngsHelp_RUMALIGN+="\t-p numProc - number of cpu to use.\n"
-ngsHelp_RUMALIGN+="\t-s species - species files are located in $RUM_REPO ('drosophila', 'hg19', 'mm9', 'mm10', 'rat', 'rn5', 'saccer3', 'zebrafish').\n"
+ngsHelp_RUMALIGN+="\t-s species - species from repository: $RUM_REPO.\n"
 ngsHelp_RUMALIGN+="\t-se - single-end reads (default: paired-end)\n\n"
 ngsHelp_RUMALIGN+="Runs RUM using the trimmed files from sampleID/trimAT. Output is stored in sampleID/rum.trim directory."
 
@@ -57,9 +58,15 @@ ngsArgs_RUMALIGN() {
 		exit 0
 	fi
 	
+    # default value
+	INPDIR="trimAT" 
+
 	# getopts doesn't allow for optional arguments so handle them manually
 	while true; do
 		case $1 in
+			-p) INPDIR=$2
+				shift; shift;
+				;;
 			-p) NUMCPU=$2
 				shift; shift;
 				;;
@@ -73,7 +80,7 @@ ngsArgs_RUMALIGN() {
 				printHelp $COMMAND
 				exit 0
 				;;
-			*) break ;;
+ 			*) break ;;
 		esac
 	done
 	
@@ -101,17 +108,17 @@ ngsCmd_RUMALIGN() {
 	
 	if $SE; then
 		# single-end
-		prnCmd "rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/trimAT/unaligned_1.fq"
+		prnCmd "rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$INPDIR/unaligned_1.fq"
 		if ! $DEBUG; then 
-			rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/trimAT/unaligned_1.fq
+			rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$INPDIR/unaligned_1.fq
 		fi
 		
 		prnCmd "# FINISHED: RUM SINGLE-END ALIGNMENT"
 	else
 		# paired-end
-		prnCmd "rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/trimAT/unaligned_1.fq $SAMPLE/trimAT/unaligned_2.fq"
+		prnCmd "rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$INPDIR/unaligned_1.fq $SAMPLE/$INPDIR/unaligned_2.fq"
 		if ! $DEBUG; then 
-			rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/trimAT/unaligned_1.fq $SAMPLE/trimAT/unaligned_2.fq
+			rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$INPDIR/unaligned_1.fq $SAMPLE/$INPDIR/unaligned_2.fq
 		fi
 		
 		prnCmd "# FINISHED: RUM PAIRED-END ALIGNMENT"

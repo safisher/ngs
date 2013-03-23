@@ -42,7 +42,7 @@ ngsHelp_BOWTIE+="Output:\n\tsampleID/bowtie/bowtie-sorted.bam\n\tsampleID/bowtie
 ngsHelp_BOWTIE+="Requires:\n\tbowtie ( http://bowtie-bio.sourceforge.net/index.shtml )\n\tsamtools ( http://samtools.sourceforge.net/ )\n"
 ngsHelp_BOWTIE+="Options:\n"
 ngsHelp_BOWTIE+="\t-p numProc - number of cpu to use\n"
-ngsHelp_BOWTIE+="\t-s species - species files are located in $BOWTIE_REPO ('hg19', 'mm9', 'rn4')\n"
+ngsHelp_BOWTIE+="\t-s species - species from repository: $BOWTIE_REPO\n"
 ngsHelp_BOWTIE+="\t-se - single-end reads (default: paired-end)\n\n"
 ngsHelp_BOWTIE+="Run bowtie on the original, untrimmed data (ie sampleID/orig). Output is placed in the directory sampleID/bowtie."
 
