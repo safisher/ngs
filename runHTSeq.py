@@ -24,7 +24,7 @@ HTSeq requires a SAM file that is sorted by read names and had reads fixed with 
 HTSeq parameters: --mode=intersection-nonempty --stranded=no --type=exon --idattr=gene_id
 
 Example:
-  runHTSeq.py RUM_Unique.bam Sample_xeno3 /lab/repo/resources/htseq/zebrafish/zebrafish.Zv9.69.gtf.gz
+  runHTSeq.py RUM_Unique.bam Sample_xeno3 /lab/repo/resources/htseq/zebrafish.gz
 
 The goal here is to quantify reads in preprocessed BAM files 
 (unique reads only, with paired end names identical, sorted by 
