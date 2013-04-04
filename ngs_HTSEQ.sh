@@ -52,7 +52,7 @@ ngsArgs_HTSEQ() {
 		exit 0
 	fi
 	
-	while getopts "s:g:" opt; do
+	while getopts "s:" opt; do
 		case $opt in
 			s) SPECIES=$OPTARG
 				;;

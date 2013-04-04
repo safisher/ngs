@@ -53,6 +53,7 @@ ANALYZED=analyzed
 REPO_LOCATION=/lab/repo/resources
 BOWTIE_REPO=$REPO_LOCATION/bowtie
 RUM_REPO=$REPO_LOCATION/rum2
+STAR_REPO=$REPO_LOCATION/star
 HTSEQ_REPO=$REPO_LOCATION/htseq
 
 # make comparisons case insensitive
@@ -73,6 +74,7 @@ source ngs_FASTQC.sh
 source ngs_BLAST.sh
 source ngs_BOWTIE.sh
 source ngs_TRIM.sh
+source ngs_STAR.sh
 source ngs_RUMALIGN.sh
 source ngs_RUMSTATUS.sh
 source ngs_POST.sh
@@ -97,6 +99,7 @@ usage+=$ngsUsage_FASTQC
 usage+=$ngsUsage_BLAST
 usage+=$ngsUsage_BOWTIE
 usage+=$ngsUsage_TRIM
+usage+=$ngsUsage_STAR
 usage+=$ngsUsage_RUMALIGN
 usage+=$ngsUsage_RUMSTATUS
 usage+=$ngsUsage_POST
@@ -119,6 +122,7 @@ printHelp() {
 		 'blast') echo -e $ngsHelp_BLAST;;
 		 'bowtie') echo -e $ngsHelp_BOWTIE;;
 		 'trim') echo -e $ngsHelp_TRIM;;
+		 'star') echo -e $ngsHelp_STAR;;
 		 'rumalign') echo -e $ngsHelp_RUMALIGN;;
 		 'rumstatus') echo -e $ngsHelp_RUMSTATUS;;
 		 'post') echo -e $ngsHelp_POST;;
@@ -160,6 +164,7 @@ if [ "$COMMAND" = "fastqc" ]; then ngsArgs_FASTQC $@; fi
 if [ "$COMMAND" = "blast" ]; then ngsArgs_BLAST $@; fi
 if [ "$COMMAND" = "bowtie" ]; then ngsArgs_BOWTIE $@; fi
 if [ "$COMMAND" = "trim" ]; then ngsArgs_TRIM $@; fi
+if [ "$COMMAND" = "star" ]; then ngsArgs_STAR $@; fi
 if [ "$COMMAND" = "rumalign" ]; then ngsArgs_RUMALIGN $@; fi
 if [ "$COMMAND" = "rumstatus" ]; then ngsArgs_RUMSTATUS $@; fi
 if [ "$COMMAND" = "post" ]; then ngsArgs_POST $@; fi
@@ -250,6 +255,7 @@ if [ "$COMMAND" = "fastqc" ]; then ngsCmd_FASTQC; fi
 if [ "$COMMAND" = "blast" ]; then ngsCmd_BLAST; fi
 if [ "$COMMAND" = "bowtie" ]; then ngsCmd_BOWTIE; fi
 if [ "$COMMAND" = "trim" ]; then ngsCmd_TRIM; fi
+if [ "$COMMAND" = "star" ]; then ngsCmd_STAR; fi
 if [ "$COMMAND" = "rumalign" ]; then ngsCmd_RUMALIGN; fi
 if [ "$COMMAND" = "rumstatus" ]; then ngsCmd_RUMSTATUS; fi
 if [ "$COMMAND" = "post" ]; then ngsCmd_POST; fi

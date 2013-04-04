@@ -56,17 +56,15 @@ ngsCmd_STATS() {
 	
 	echo "-- BLAST --"
 	cat $SAMPLE/blast/species.txt; 
-	
-	NUMREADS=`grep "Total Lines" $SAMPLE/blast/species.txt | awk '{print $3}'`
-	BLASTHITS=`grep "Number hits:" $SAMPLE/blast/species.txt | awk '{print $3}'`
-	RAT=`grep "Rat Hits" $SAMPLE/blast/species.txt | awk '{print $3}'`
-	MOUSE=`grep "Mouse Hits" $SAMPLE/blast/species.txt | awk '{print $3}'`
-	HUMAN=`grep "Human Hits" $SAMPLE/blast/species.txt | awk '{print $3}'`
-	BACTER=`grep "Bacteria Hits" $SAMPLE/blast/species.txt | awk '{print $3}'`
+
+	# the last line of the species.txt file is the following tab-delimited list of values:
+	# Total Hits	Hits Not Counted	Bacteria	Fish	Fly	Human	Mouse	Rat	Yeast
+	BLASTFIELDS=`tail -1 $SAMPLE/blast/species.txt`
 	
 	echo -e "\n-- Adapter Trimming --"
 	cat $SAMPLE/trimAdapter.stats.txt; 
-	
+
+	NUMREADS=`grep "total reads processed" $SAMPLE/trimAdapter.stats.txt | awk '{print $1}'`
 	TRIMAD_K=`grep "trimmed and kept" $SAMPLE/trimAdapter.stats.txt | awk '{print $1}'`
 	TRIMAD_D=`grep "discarded with final" $SAMPLE/trimAdapter.stats.txt | awk '{print $1}'`
 	
@@ -90,8 +88,9 @@ ngsCmd_STATS() {
 	fi
 	
 	echo -e "\n-- $SAMPLE --"
-	echo -e "Num Reads\tNum Reads Trimmed\tRUM\tBlast Tot Hits\tRat\tMouse\tHuman\tBacteria\tBowtie\tAdapt Trim Kept\tAdapt Trim Disc\tPolyAT Trim Kept\tPolyAT Trim Disc\tDate\n"
-	echo -e "$NUMREADS\t$NUMTRIM\t$RUMALI\t$BLASTHITS\t$RAT\t$MOUSE\t$HUMAN\t$BACTER\t\t$TRIMAD_K\t$TRIMAD_D\t$TRIMAT_K\t$TRIMAT_D\t$(date +%m/%d/%Y)\n"
+	echo -e "Num Reads\tNum Reads Trimmed\tRUM\tTotal Hits\tHits Not Counted\tBacteria\tFish\tFly\tHuman\tMouse\tRat\tYeast\tBowtie\tAdapt Trim Kept\tAdapt Trim Disc\tPolyAT Trim Kept\tPolyAT Trim Disc\tDate"
+	# extra tab between blast and trimming to account for lacking bowtie stats
+	echo -e "$NUMREADS\t$NUMTRIM\t$RUMALI\t$BLASTFIELDS\t\t$TRIMAD_K\t$TRIMAD_D\t$TRIMAT_K\t$TRIMAT_D\t$(date +%m/%d/%Y)\n"
 	
 	prnCmd "# FINISHED: STATS"
 }

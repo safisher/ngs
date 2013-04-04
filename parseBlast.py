@@ -25,76 +25,72 @@ and will generate
   <blast prefix>.hits - the alignments, when there is more than one alignment for a read
 """
 
+#------------------------------------------------------------------------------------------
+# Initializations
+#------------------------------------------------------------------------------------------
+
 import sys, os
 
-#------------------------------------------------------------------------------------------
-# 
-#------------------------------------------------------------------------------------------
-
-DEBUG = 0
-
+DEBUG = False
 if DEBUG: print 'DEBUG MODE: ON'
 
-# expect 2 args
-if len(sys.argv) < 3:
-    print 'Usage: parseBlast.py <reads fasta file> <blast prefix>'
-    print '  assumes the input file:'
-    print '\t<blast prefix>.txt'
-    print '  and will generate'
-    print '\t<blast prefix>.csv - list of each hit per read and count of total number of hits per read'
-    print '\t<blast prefix>.hits - the alignments, when there is more than one alignment for a read'
-    print '\tfailed-<reads fasta file> - fasta file with reads that did not align'
-    print '\n\tmouse.fa - fasta file with all mouse reads'
-    print '\trat.fa - fasta file with all rat reads'
-    print '\thuman.fa - fasta file with all human reads'
-    print '\tbact.fa - fasta file with all bacteria reads'
-    print '\tdanio.fa - fasta file with all zebrafish, danio rerio reads'
-    print '\n\tmouse.fq - fastq file with all mouse reads'
-    print '\trat.fq - fastq file with all rat reads'
-    print '\thuman.fq - fastq file with all human reads'
-    print '\tbact.fq - fastq file with all bacteria reads'
-    print '\tdanio.fq - fastq file with all zebrafish, danio rerio reads'
+# expect 3 args
+if len(sys.argv) < 4:
+    print 'Usage: parseBlast.py targetSpecies readsFastaFile blastFile'
+    print '\ttargetSpecies - reads mapped to this species will not be counted for other species. Target species must be one of the following species: bact, fish, fly, human, mouse, rat, yeast'
+    print '\tblast.csv - list of each hit per read and count of total number of hits per read'
+    print '\tblast.hits - the alignments, when there is more than one alignment for a read'
+    print '\tfailed.fa - fasta file with reads that did not align'
+    print '\tfailed.tsv - blast results for read that did not map to any of the counted species'
+    print '\tspecies.txt - species counts'
+    print '\ttargetSpecies.tsv - blast results that mapped to target species'
+    print '\ttargetSpecies.fa - fasta file with all target species reads'
     sys.exit()
 
 
-RAW_FILE = sys.argv[1]
-BLAST_FILE = sys.argv[2]
+TARGET = sys.argv[1]
+RAW_FILE = sys.argv[2]
+BLAST_FILE = sys.argv[3]
 BLAST_PATH = os.path.dirname(RAW_FILE)
 if len(BLAST_PATH) > 0:
-    BLAST_PATH = BLAST_PATH + "/"
+    BLAST_PATH = BLAST_PATH + '/'
 
 rawFile = open(RAW_FILE, 'r')
-blastFile = open(BLAST_FILE+".txt", 'r')
-csvFile = open(BLAST_FILE+".csv", 'w')
-hitFile = open(BLAST_FILE+".hits", 'w')
-failedFile = open(BLAST_PATH+"failed."+os.path.basename(RAW_FILE), 'w')
+blastFile = open(BLAST_FILE, 'r')
+csvFile = open(BLAST_PATH+'blast.csv', 'w')
+hitFile = open(BLAST_PATH+'blast.hits', 'w')
+failedFile = open(BLAST_PATH+'failed.fa', 'w')
+uncountedFile = open(BLAST_PATH+'uncounted.tsv', 'w')
+speciesFile = open(BLAST_PATH+'species.txt', 'w')
 
-mouseFile = open(BLAST_PATH+'mouse.txt', 'w')
-ratFile = open(BLAST_PATH+'rat.txt', 'w')
-humanFile = open(BLAST_PATH+'human.txt', 'w')
-bactFile = open(BLAST_PATH+'bact.txt', 'w')
-danioFile = open(BLAST_PATH+'danio.txt', 'w')
+# convert from repo species name to names used here.
+targetSpecies = TARGET.lower()
+if TARGET == 'mm9' or TARGET == 'mm10': targetSpecies = 'mouse'
+if TARGET == 'rn5': targetSpecies = 'rat'
+if TARGET == 'drosophila' or TARGET == 'dmel5.50': targetSpecies = 'fly'
+if TARGET == 'hg19': targetSpecies = 'human'
+if TARGET == 'saccer3': targetSpecies = 'yeast'
+if TARGET == 'zebrafish': targetSpecies = 'fish'
 
-mouseFileFa = open(BLAST_PATH+'mouse.fa', 'w')
-ratFileFa = open(BLAST_PATH+'rat.fa', 'w')
-humanFileFa = open(BLAST_PATH+'human.fa', 'w')
-bactFileFa = open(BLAST_PATH+'bact.fa', 'w')
-danioFileFa = open(BLAST_PATH+'danio.fa', 'w')
+targetFile = open(BLAST_PATH+targetSpecies+'.tsv', 'w')
+targetFileFa = open(BLAST_PATH+targetSpecies+'.fa', 'w')
 
-mouseFileFq = open(BLAST_PATH+'mouse.fq', 'w')
-ratFileFq = open(BLAST_PATH+'rat.fq', 'w')
-humanFileFq = open(BLAST_PATH+'human.fq', 'w')
-bactFileFq = open(BLAST_PATH+'bact.fq', 'w')
-danioFileFq = open(BLAST_PATH+'danio.fq', 'w')
-
+#------------------------------------------------------------------------------------------
+# Functions
+#------------------------------------------------------------------------------------------
 
 def error(line):
     # this should never happen
-    print "Got to this line in error: ", line, "\n"
+    print 'Got to this line in error: ', line, '\n'
     rawFile.close()
     blastFile.close()
     csvFile.close()
     hitFile.close()
+    failedFile.close()
+    uncountedFile.close()
+    speciesFile.close()
+    targetFile.close()
+    targetFileFa.close()
     sys.exit()
 
 def getLine():
@@ -110,64 +106,41 @@ def getRaw():
     if not line1: error(line1)
     return line1.rstrip(), line0.rstrip()
 
-def median(vals):
-    if len(vals) == 0: return -1
-    vals = sorted(vals)
-    size = len(vals)
-    if size % 2 == 1: return vals[(size - 1) / 2]
-    else: return (vals[size/2 - 1] + vals[size/2]) / 2
+#------------------------------------------------------------------------------------------
+# Do counts
+#------------------------------------------------------------------------------------------
 
 numReads = 0
 numFails = 0
 numHits = 0
+numNotCounted = 0
 
 # we count each time a read is aligned to one of the following. Since
 # we only want to count the species once per read, we use a flag to
 # denote whether or not the read has already been counted.
-numHuman = 0
-numMouse = 0
-numRat = 0
-numBact = 0
-numDanio = 0
-
-numHsMm = 0
-numHsRn = 0
-numMmRn = 0
-numHsMmRn = 0
-
-# store values to compute median scores
-humanTotId = []
-humanPercId = []
-humanPercGap = []
-mouseTotId = []
-mousePercId = []
-mousePercGap = []
-ratTotId = []
-ratPercId = []
-ratPercGap = []
-bactTotId = []
-bactPercId = []
-bactPercGap = []
-danioTotId = []
-danioPercId = []
-danioPercGap = []
+counts = {}
+counts['bact'] = 0
+counts['fish'] = 0
+counts['fly'] = 0
+counts['human'] = 0
+counts['mouse'] = 0
+counts['rat'] = 0
+counts['yeast'] = 0
 
 while True:
     line = blastFile.readline()
     if not line: break
 
     if not 'Query=' in line:
-        # keep going until fine a "Query="
+        # keep going until fine a 'Query='
         continue
     
     ###############################################
     # starting a new read
     query = line
-    if DEBUG: print "\n---------------------------------------------------------------------------------\n", line,
+    if DEBUG: print '\n--------------------------------------------------------------------------\n', line,
 
     rawSeq, seqHeader = getRaw()
-    #csvFile.write("Seq=   " + rawSeq)
-    #csvFile.write(line)
 
     # count the read
     numReads += 1
@@ -177,110 +150,89 @@ while True:
 
     # test if no alignments 
     if 'No hits' in line:
-        if DEBUG: print "  Hits: 0"
+        if DEBUG: print '  Hits: 0'
 
-        csvFile.write("0, " + rawSeq + ", " + seqHeader + "\n")
+        csvFile.write('0, ' + rawSeq + ', ' + seqHeader + '\n')
 
         # generate fasta file with sequences that didn't align
-        failedFile.write(seqHeader + "\n" + rawSeq + "\n")
+        failedFile.write(seqHeader + '\n' + rawSeq + '\n')
         
         # didn't align, so count the no hit and continue to next read
         numFails += 1
 
-        # this will skip to next "Query=" statement
+        # this will skip to next 'Query=' statement
         continue
     
     ###############################################
     # process hits
+
+    # count number of hits for the read
     hits = 0
-    humanFlag = 0
-    mouseFlag = 0
-    ratFlag = 0
-    bactFlag = 0
-    danioFlag = 0
-    HsMmFlag = 0
-    HsRnFlag = 0
-    MmRnFlag = 0
-    HsMmRnFlag = 0
+
+    # when species is found then save the line so we can output to
+    # targetFile (in the case of the target species). This also
+    # servers to flag when a species has already been counted, so we
+    # only count a species once per read.
+    found = {}
+
+    # flag if none of the hits were our species of interest
+    notFound = ''
+
     while True:
         line = getLine()
 
         # if empty line then ran out of alignments
-        if line == "": break
+        if line == '': break
 
         hits += 1
 
         lLine = line.lower() # test lowercase version of line
-        if not humanFlag and (('human' in lLine) or ('sapiens' in lLine)): 
-            numHuman += 1
-            humanFlag = 1 # only count once per read
-            humanFile.write(seqHeader + "\t" + rawSeq + "\t" + lLine + "\n")
-            humanFileFa.write(seqHeader + "\n" + rawSeq + "\n")
-            humanFileFq.write("@" + seqHeader + "\n" + rawSeq + "\n+\n" + "#"*101 + "\n")
-            if mouseFlag and not HsMmFlag:
-                numHsMm += 1
-                HsMmFlag = 1
-            if ratFlag and not HsRnFlag:
-                numHsRn += 1
-                HsRnFlag = 1
-            if mouseFlag and ratFlag and not HsMmRnFlag:
-                numHsMmRn += 1
-                HsMmRnFlag = 1
-        if not mouseFlag and (('mouse' in lLine) or ('musculus' in lLine)): 
-            numMouse += 1
-            mouseFlag = 1
-            mouseFile.write(seqHeader + "\t" + rawSeq + "\t" + lLine + "\n")
-            mouseFileFa.write(seqHeader + "\n" + rawSeq + "\n")
-            mouseFileFq.write("@" + seqHeader + "\n" + rawSeq + "\n+\n" + "#"*101 + "\n")
-            if humanFlag and not HsMmFlag:
-                numHsMm += 1
-                HsMmFlag = 1
-            if ratFlag and not MmRnFlag:
-                numMmRn += 1
-                MmRnFlag = 1
-            if humanFlag and ratFlag and not HsMmRnFlag:
-                numHsMmRn += 1
-                HsMmRnFlag = 1
-        if not ratFlag and (('rattus' in lLine) or ('norvegicus' in lLine)): 
-            numRat += 1
-            ratFlag = 1
-            ratFile.write(seqHeader + "\t" + rawSeq + "\t" + lLine + "\n")
-            ratFileFa.write(seqHeader + "\n" + rawSeq + "\n")
-            ratFileFq.write("@" + seqHeader + "\n" + rawSeq + "\n+\n" + "#"*101 + "\n")
-            if mouseFlag and not MmRnFlag:
-                numMmRn += 1
-                MmRnFlag = 1
-            if humanFlag and not HsRnFlag:
-                numHsRn += 1
-                HsRnFlag = 1
-            if mouseFlag and humanFlag and not HsMmRnFlag:
-                numHsMmRn += 1
-                HsMmRnFlag = 1
-        if not bactFlag and ('bacter' in lLine): 
-            numBact += 1
-            bactFlag = 1
-            bactFile.write(seqHeader + "\t" + rawSeq + "\t" + lLine + "\n")
-            bactFileFa.write(seqHeader + "\n" + rawSeq + "\n")
-            bactFileFq.write("@" + seqHeader + "\n" + rawSeq + "\n+\n" + "#"*101 + "\n")
-        if not danioFlag and (('zebrafish' in lLine) or ('danio rerio' in lLine)):
-            numDanio +=1
-            danioFlag = 1
-            danioFile.write(seqHeader + "\t" + rawSeq + "\t" + lLine + "\n")
-            danioFileFa.write(seqHeader + "\n" + rawSeq + "\n")
-            danioFileFq.write("@" + seqHeader + "\n" + rawSeq + "\n+\n" + "#"*101 + "\n")
+
+        # keep first mapping as that will be the best mapping
+        if 'bacter' in lLine: 
+            if 'bact' not in found: found['bact'] = line
+        elif ('zebrafish' in lLine) or ('danio' in lLine) or ('rerio' in lLine):
+            if 'fish' not in found: found['fish'] = line
+        elif ('drosophila' in lLine) or ('melanogaster' in lLine):
+            if 'fly' not in found: found['fly'] = line
+        elif ('human' in lLine) or ('sapiens' in lLine): 
+            if 'human' not in found: found['human'] = line
+        elif ('mouse' in lLine) or ('musculus' in lLine): 
+            if 'mouse' not in found: found['mouse'] = line
+        elif ('rattus' in lLine) or ('norvegicus' in lLine): 
+            if 'rat' not in found: found['rat'] = line
+        elif 'cerevisiae' in lLine:
+            if 'yeast' not in found: found['yeast'] = line
+        else:
+            # count how many reads only mapped to species we are not tracking
+            if len(notFound) == 0: notFound = line
 
         # print alignment
-        if DEBUG: print " ", line
-        #csvFile.write("     " + line)
+        if DEBUG: print ' ', line
 
-    if DEBUG: print "  Hits:", hits
-    csvFile.write(str(hits) + ", " + rawSeq + ", " + seqHeader + "\n")
+    # finished processing read's hits so now figure out if target was mapped
+    if targetSpecies in found:
+        counts[targetSpecies] += 1
+        
+        targetFile.write(seqHeader + '\t' + rawSeq + '\t' + found[targetSpecies] + '\n')
+        targetFileFa.write(seqHeader + '\n' + rawSeq + '\n')
+    else:
+        if found:
+            for species in found.keys():
+                counts[species] += 1
+        else:
+            numNotCounted += 1
+            uncountedFile.write(line + '\t' + rawSeq + '\t' + seqHeader + '\n')
+            
+
+    if DEBUG: print '  Hits:', hits
+    csvFile.write(str(hits) + ', ' + rawSeq + ', ' + seqHeader + '\n')
 
     # count number of hits
     if hits > 0: numHits += 1
 
     ###############################################
-    # XXX If this is set to "<2" then only multiple alignments will be included in hits file
+    # XXX If this is set to '<2' then only multiple alignments will be included in hits file
     # if no alignments, then start on next query
     if hits == 0: continue
 
@@ -288,37 +240,34 @@ while True:
     # process multiple alignments
 
     # output alignment info to hitFile
-    hitFile.write("------------------------------------------------------------------------------------------\n" )
-    #hitFile.write("Seq=   " + rawSeq + "\n")
+    hitFile.write('------------------------------------------------------------------------------------\n' )
     hitFile.write(query)
     for hit in range(0, hits):
-        #hitFile.write("\n  Alignment: " + str(hit+1) + "\n")
-
         # step through until we find an alignment
         while True:
             line = getLine()
 
             # stop when we get to the alignment
-            if ">" in line: break
+            if '>' in line: break
 
             # if we don't find any alignments, then there's a problem with the blast file
-            if "Effective search space used" in line: error(line)
+            if 'Effective search space used' in line: error(line)
 
         # get alignement descriptor. It might be multiple lines and
-        # will always begin with a ">" and end with a line with the length
-        desc = ""
-        while not "Length=" in line:
-            desc += line + " "
+        # will always begin with a '>' and end with a line with the length
+        desc = ''
+        while not 'Length=' in line:
+            desc += line + ' '
             line = getLine()
-        if len(desc) > 80: desc = desc[:77] + "..."
-        hitFile.write("\n   " + desc + "\n")
+        if len(desc) > 80: desc = desc[:77] + '...'
+        hitFile.write('\n   ' + desc + '\n')
 
         # skip blank line
         getLine()
 
         # print line with E value
         line = getLine()
-        hitFile.write("  " + line + "\n")
+        hitFile.write('  ' + line + '\n')
 
         # print line with Identities and Gaps
         line = getLine()
@@ -326,28 +275,6 @@ while True:
         line = line.replace('%)', ' ')
         line = line.replace('/', ' ')
         vals = line.split()
-        desc= desc.lower() # test lowercase version of description
-        if ('human' in desc) or ('sapiens' in desc): 
-            humanTotId.append(int(vals[3]))
-            humanPercId.append(int(vals[4]))
-            humanPercGap.append(int(vals[10]))
-        if ('mouse' in desc) or ('musculus' in desc): 
-            mouseTotId.append(int(vals[3]))
-            mousePercId.append(int(vals[4]))
-            mousePercGap.append(int(vals[10]))
-        if ('rattus' in desc): 
-            ratTotId.append(int(vals[3]))
-            ratPercId.append(int(vals[4]))
-            ratPercGap.append(int(vals[10]))
-        if ('bacter' in desc): 
-            bactTotId.append(int(vals[3]))
-            bactPercId.append(int(vals[4]))
-            bactPercGap.append(int(vals[10]))
-        if ('zebrafish' in desc) or ('danio rerio' in desc):
-            danioTotId.append(int(vals[3]))
-            danioPercId.append(int(vals[4]))
-            danioPercGap.append(int(vals[10]))
-                
 
         # skip next 2 lines
         for cnt in range(0, 2): getLine()
@@ -355,81 +282,58 @@ while True:
         # an alignment has 3 lines
         for cnt in range(0, 3): 
             line = getLine()
-            hitFile.write("      " + line + "\n")
+            hitFile.write('      ' + line + '\n')
         
         # skip blank line
         line = getLine()
 
         # test if the alignment continues
         line = getLine()
-        if "Query" in line:
-            hitFile.write("\n")
+        if 'Query' in line:
+            hitFile.write('\n')
             for cnt in range(0, 3): 
-                hitFile.write("      " + line + "\n")
+                hitFile.write('      ' + line + '\n')
                 line = getLine()
 
-    hitFile.write("\n")
+    hitFile.write('\n')
 
+#------------------------------------------------------------------------------------------
+# Output counts to species file
+#------------------------------------------------------------------------------------------
+
+speciesFile.write('Target Species: ' + targetSpecies + '\n')
+speciesFile.write('Num reads: ' + str(numReads) + '\n')
+speciesFile.write('Num reads that did not align: ' + str(numFails) + '\n')
+speciesFile.write('Number hits: %d ( %.1f%% )\n' % (numHits, (100*float(numHits)/float(numReads))))
+speciesFile.write('Hits not accounted for: ' + str(numNotCounted) + '\n\n')
+
+# print out species counts
+keyList = sorted(counts.keys())
+for species in keyList:
+    speciesFile.write(species + ' hits\t\t' + str(counts[species]) + '\n')
+
+speciesFile.write('\nTotal Hits\tHits Not Counted\tBacteria\tFish\tFly\tHuman\tMouse\tRat\tYeast\n')
+speciesFile.write(str(numHits) + '\t' + str(numNotCounted))
+speciesFile.write('\t' + str(counts['bact']))
+speciesFile.write('\t' + str(counts['fish']))
+speciesFile.write('\t' + str(counts['fly']))
+speciesFile.write('\t' + str(counts['human']))
+speciesFile.write('\t' + str(counts['mouse']))
+speciesFile.write('\t' + str(counts['rat']))
+speciesFile.write('\t' + str(counts['yeast']))
+speciesFile.write('\n')
+
+#------------------------------------------------------------------------------------------
+# Clean up
+#------------------------------------------------------------------------------------------
 
 rawFile.close()
 blastFile.close()
 csvFile.close()
 hitFile.close()
 failedFile.close()
-
-mouseFile.close()
-humanFile.close()
-ratFile.close()
-bactFile.close()
-danioFile.close()
-
-mouseFileFa.close()
-humanFileFa.close()
-ratFileFa.close()
-bactFileFa.close()
-danioFileFa.close()
-
-mouseFileFq.close()
-humanFileFq.close()
-ratFileFq.close()
-bactFileFq.close()
-danioFileFq.close()
-
-print "\nNum reads:", numReads
-print "Num reads that did not align:", numFails
-print 'Number hits: %d ( %.1f%% )' % (numHits, (100*float(numHits)/float(numReads)))
-
-print "\nRat Hits\t\t", numRat, "\tIdentity\t", median(ratTotId), "\tPerc Ident\t", median(ratPercId)
-print "Mouse Hits\t\t", numMouse, "\tIdentity\t", median(mouseTotId), "\tPerc Ident\t", median(mousePercId)
-print "Human Hits\t\t", numHuman, "\tIdentity\t", median(humanTotId), "\tPerc Ident\t", median(humanPercId)
-print "Bacteria Hits\t\t", numBact, "\tIdentity\t", median(bactTotId), "\tPerc Ident\t", median(bactPercId)
-print "Zebrafish Hits\t\t", numDanio, "\tIdentity\t", median(danioTotId), "\tPerc Ident\t", median(danioPercId)
-print ""
-print "Hits conserved Human and Mouse\t\t", numHsMm
-print "Hits conserved Human and Rat\t\t", numHsRn
-print "Hits conserved Mouse and Rat\t\t", numMmRn
-print "Hits conserved Human, Mouse, and Rat\t", numHsMmRn,
-
-#print "\nRat Hits\t\t", numRat, "\tIdentity\t", median(ratTotId), "\tPerc Ident\t", median(ratPercId), "\tPerc Gap\t", median(ratPercGap)
-#print "Mouse Hits\t\t", numMouse, "\tIdentity\t", median(mouseTotId), "\tPerc Ident\t", median(mousePercId), "\tPerc Gap\t", median(mousePercGap)
-#print "Human Hits\t\t", numHuman, "\tIdentity\t", median(humanTotId), "\tPerc Ident\t", median(humanPercId), "\tPerc Gap\t", median(humanPercGap)
-#print "Bacteria Hits\t\t", numBact, "\tIdentity\t", median(bactTotId), "\tPerc Ident\t", median(bactPercId), "\tPerc Gap\t", median(bactPercGap)
-#print "Zebrafish Hits\t\t", numDanio, "\tIdentity\t", median(danioTotId), "\tPerc Ident\t", median(danioPercId),"\tPerc Gap\t", median(danioPercGap)
-
-if DEBUG:
-    print humanTotId
-    print humanPercId
-    print humanPercGap
-    print mouseTotId
-    print mousePercId
-    print mousePercGap
-    print ratTotId
-    print ratPercId
-    print ratPercGap
-    print bactTotId
-    print bactPercId
-    print bactPercGap
-    print danioTotId
-    print danioPercId
-    print danioPercGap
+uncountedFile.close()
+speciesFile.close()
+targetFile.close()
+targetFileFa.close()
 
