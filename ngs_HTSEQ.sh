@@ -82,9 +82,11 @@ ngsCmd_HTSEQ() {
 	fi
 	
 	# We assume that RUM worked and 'post' has completed.
-	prnCmd "runHTSeq.py $SAMPLE/rum.trim/RUM_Unique.sorted.bam $SAMPLE/htseq/$SAMPLE $HTSEQ_REPO/$SPECIES.gz"
+	#prnCmd "runHTSeq.py $SAMPLE/rum.trim/RUM_Unique.sorted.bam $SAMPLE/htseq/$SAMPLE $HTSEQ_REPO/$SPECIES.gz"
+	prnCmd "runHTSeq.py $SAMPLE/rum.trim/RUM_Unique.bam $SAMPLE/htseq/$SAMPLE $HTSEQ_REPO/$SPECIES.gz"
 	if ! $DEBUG; then 
-		runHTSeq.py $SAMPLE/rum.trim/RUM_Unique.sorted.bam $SAMPLE/htseq/$SAMPLE $HTSEQ_REPO/$SPECIES.gz
+		#runHTSeq.py $SAMPLE/rum.trim/RUM_Unique.sorted.bam $SAMPLE/htseq/$SAMPLE $HTSEQ_REPO/$SPECIES.gz
+		runHTSeq.py $SAMPLE/rum.trim/RUM_Unique.bam $SAMPLE/htseq/$SAMPLE $HTSEQ_REPO/$SPECIES.gz
 	fi
 	
 	# parse output into three files: gene counts ($SAMPLE.htseq.cnts.txt), 

@@ -132,10 +132,11 @@ def run_cmd(cmd):
 
 try:
     # remove RUM suffix
-    renamedBam = rename_reads()
+    #renamedBam = rename_reads()
     
     # sort BAM by read name
-    sortedBam = sort_by_readname(renamedBam)
+    #sortedBam = sort_by_readname(renamedBam)
+    sortedBam = sort_by_readname(SOURCE_BAM)
 
     # run fixmate on sorted BAM
     fixedBam = SAMPLE + '.fixed.bam'
@@ -148,7 +149,7 @@ try:
     count_features(sortedSam)
 
     # remove temporary files
-    os.remove(renamedBam)
+    #os.remove(renamedBam)
     os.remove(sortedBam)
     os.remove(fixedBam)
     os.remove(sortedSam)

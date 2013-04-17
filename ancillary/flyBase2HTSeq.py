@@ -41,8 +41,8 @@ if len(sys.argv) < 4:
     print '\tFBgn_FBtr - table of gene and transcript IDs (fbgn_fbtr_fbpp_fb_2013_02.tsv)'
     print '\toutput - output file\n'
     print 'Convert FlyBase GFF file to gene model appropriate for HTSeq. FlyBase exon'
-    print 'positions are 1-based, closed while HTSeq expects them to be 0-based, half-open'
-    print 'so exon coordinates are converted to 0-based, half-open.'
+    print 'positions are 1-based, closed which is what HTSeq expects (HTSeq converts the'
+    print 'coordinates to 0-based, half-open internally).'
     sys.exit()
 
 EXONS_FILE = sys.argv[1]
@@ -91,16 +91,8 @@ for line in exonFile:
             else:
                 if DEBUG: tcounts[name] = tcounts[name] + 1
 
-                # adjust exon positions to be 0-based and
-                # half-open. To do this we need to subtract 1 from the
-                # start and end positions (1-based to 0-based). We
-                # then add 1 to the end position (half-open). The net
-                # result is that we are just subtracting 1 from the
-                # start position and not adjusting the end position.
-                start = str(int(exon[3]) - 1)
-
                 # include transcript ID
-                outFile.write(exon[0] + '\t' + exon[1] + '\t' + exon[2] + '\t' + start + '\t' + exon[4] + '\t' + exon[5] + '\t' + exon[6] + '\t' + exon[7] + '\tgene_id=' + transcripts[name] + ';trans_id=' + name + '\n')
+                outFile.write(exon[0] + '\t' + exon[1] + '\t' + exon[2] + '\t' + exon[3] + '\t' + exon[4] + '\t' + exon[5] + '\t' + exon[6] + '\t' + exon[7] + '\tgene_id=' + transcripts[name] + ';trans_id=' + name + '\n')
 
     count = count + 1
 
