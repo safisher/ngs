@@ -76,7 +76,10 @@ for line in cntsFile:
     geneID = geneID.replace('"', '').strip()
 
     # remove new line
-    outFile.write(line.strip() + '\t' + annotations[geneID][0] + '\t' + annotations[geneID][1] + '\n')
+    geneDesc = annotations[geneID][1].strip()
+
+    # print to file
+    outFile.write(line.strip() + '\t' + annotations[geneID][0] + '\t' + geneDesc + '\n')
     count = count + 1
 
 print 'Processed ' + str(count) + ' genes.'
