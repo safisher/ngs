@@ -77,8 +77,8 @@ ngsArgs_BLASTDB() {
 ##########################################################################################
 
 ngsCmd_BLASTDB() {
-	if $SE; then prnCmd "# FINISHED: CREATE BLAST DATABASE SINGLE-END"
-	else prnCmd "# FINISHED: CREATE BLAST DATABASE PAIRED-END"; fi
+	if $SE; then prnCmd "# BEGIN: CREATE BLAST DATABASE SINGLE-END"
+	else prnCmd "# BEGIN: CREATE BLAST DATABASE PAIRED-END"; fi
 	
 	# make relevant directory
 	if [ ! -d $SAMPLE/blast.db ]; then 
