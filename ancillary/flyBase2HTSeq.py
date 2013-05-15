@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright (c) 2012, Stephen Fisher and Junhyong Kim, University of
+# Copyright (c) 2013, Stephen Fisher and Junhyong Kim, University of
 # Pennsylvania.  All Rights Reserved.
 #
 # You may not use this file except in compliance with the Kim Lab License
