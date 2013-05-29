@@ -30,14 +30,16 @@ Contaminants file:
   max: maximum number of bases to trim. useful with poly A/T trimming. (default all matches)
   method: there are three trimming methods (0 = full contaminant, 1 = mapped contaminant, 2 = identity based). (default 2)
   name: this option is required for every sequence
+  percentIdentity: percent identity threshold for trimming method 2 (0.0 < percentIdentity <= 1.0). (default 0.9)
   size: size of k-mer (default 7)
-  threshold: percent identity threshold for trimming method # 2 (default 80)
+  totalIdentity: total identity threshold for trimming method 2. If this is less than the k-mer size then it will have no impact on trimming. (default 16)
   windows: how many k-mers to seek. can not be larger than (contaminant length - k-mer). (default 6)
 
 **********************************************************************
 TODO
 - add option to output discarded reads to separate output file
 - use contaminant name to print contaminant specific stats
+- need to add minimum mapping length to method 2. we need to check the total identity along with the percent identity.
 **********************************************************************
 
 """
@@ -63,9 +65,10 @@ TRIMMED = 'trimmed'
 DEFAULT_END = 3
 DEFAULT_MAX = 0
 DEFAULT_METHOD = 2
-DEFAULT_KMER_SIZE = 7
-DEFAULT_THRESHOLD = .8
-DEFAULT_NUMBER_WINDOWS = 6
+DEFAULT_PERCENT_IDENTITY = .9
+DEFAULT_SIZE_KMER = 7
+DEFAULT_TOTAL_IDENTITY = 16
+DEFAULT_WINDOWS_NUMBER = 6
 
 argParser = argparse.ArgumentParser(version=str(VERSION), 
                                     description='Trim NGS reads.',
@@ -92,10 +95,11 @@ argParser = argparse.ArgumentParser(version=str(VERSION),
 '\t\t * method: there are three trimming methods (0 = full contaminant, 1 = mapped contaminant, 2 = identity based). (default 2)\n' +
 '\t\t\t 0. Full contaminant trimming means that when a k-mer is mapped then it is expected that the entire contaminant mapped and the read is trimmed accordingly. For example lets assume we have a k-mer that is located 4 bases from the 5\' end of a contaminant. Furthermore lets assume the contaminant is expected to be located on the 3\' end if a read. If that k-mer maps then we would shift where we trim the read by 4 bases in the direction of the 5\' end of the read. We would then remove all bases from that position to the 3\' end of the read, regardless if the additional bases mapped to the contaminant.\n' +
 '\t\t\t 1. Mapped contaminant trimming means that when a k-mer is mapped then we extend the mapping and  trimmed accord to the mapping. For example lets assume we have a k-mer that is located 4 bases from the 5\' end of a contaminant. Furthermore lets assume the contaminant is expected to be located on the 3\' end if a read. If that k-mer maps then we would extend the mapped region one base at a time, in the 5\' direction until we found a base that didn\'t map. We would then trim from that postion to the 3\' end of the read.\n' +
-'\t\t\t 2. If a k-mer maps to the read then the location of the mapping is used to anchor the contaminant to the read. The percent identity between the contaminant and the read is computed. If the percent identity is above a user-defined threshold then the read is trimmed from the beginning of the contaminant to the end of the read. If the percent identity is not above the threshold then the read is not trimmed.\n' +
+'\t\t\t 2. If a k-mer maps to the read then the location of the mapping is used to anchor the contaminant to the read. The percent and total identity between the contaminant and the read is computed. If both the percent and total identity are above a user-defined threshold then the read is trimmed from the beginning of the contaminant to the end of the read. If not then the read is not trimmed.\n' +
 '\t\t * name: this option is required for every sequence\n' +
+'\t\t * percentIdentity: percent identity threshold for trimming method 2 (0.0 < percentIdentity <= 1.0). (default 0.9)\n' +
 '\t\t * size: size of k-mer (default 7)\n' +
-'\t\t * threshold: percent identity threshold for trimming method 2 (0.0 < threshold <= 1.0). (default 0.8)\n' +
+'\t\t * totalIdentity: total identity threshold for trimming method 2. If this is less than the k-mer size then it will have no impact on trimming. (default 16)\n' +
 '\t\t * windows: how many k-mers to seek. can not be larger than (contaminant length - k-mer). (default 6)\n'
                                     )
 argParser.add_argument( '-p', '--padPaired', dest='padPaired', action='store_true', default=False,
@@ -462,8 +466,8 @@ def mappedContaminantTrimming(read, contaminant):
 
 # trim contaminant removing entire contaminant based on single k-mer
 # mapping and whether or not the percent identity between the
-# contaminant and the read is above the specified threshold
-def percentIdentityTrimming(read, contaminant):
+# contaminant and the read is above the specified thresholds
+def identityTrimming(read, contaminant):
     """
     Trim read based on contaminant. Contaminant is expected to be a
     tuple containing a set of trimming options and the contaminant
@@ -497,13 +501,16 @@ def percentIdentityTrimming(read, contaminant):
     # which end to trim
     endTrimmed = options['end']
     # percent identity threshold
-    threshold = options['threshold']
+    percIdentityThreshold = options['percentIdentity']
+    # total identity threshold
+    totIdentityThreshold = options['totalIdentity']
 
     # we attempt to perfectly align each k-mer against the
     # sequence. If any alignment succeeds, then we compute the percent
     # identity between the contaminant and read. If above our
     # threshold then trim, otherwise do not trim.
     percIdentity = 0
+    totIdentity = 0
     for kmer, offset in kmers:
         # look for k-mer in read sequence. Index is the 5' position in
         # the read where the k-mer mapped
@@ -529,11 +536,11 @@ def percentIdentityTrimming(read, contaminant):
                 cPos = 0
                 # rPos is the read sequence position
                 rPos = pos
-                match = 0
+                totIdentity = 0
                 count = 0
                 while cPos < cLength and rPos < length:
                     # count the number of matching bases
-                    if seq[rPos] == cSeq[cPos]: match += 1
+                    if seq[rPos] == cSeq[cPos]: totIdentity += 1
                     
                     # increment positions so we check next base
                     cPos += 1
@@ -544,7 +551,7 @@ def percentIdentityTrimming(read, contaminant):
 
                 # we've now checked all overlapping bases, so we can
                 # compute the percent identity.
-                percIdentity = float(match) / float(count)
+                percIdentity = float(totIdentity) / float(count)
 
             else: 
                 # since we're now expecting the contaminant on the 5'
@@ -560,11 +567,11 @@ def percentIdentityTrimming(read, contaminant):
                 cPos = cLength - (offset + index)
                 # rPos is the read sequence position
                 rPos = 0
-                match = 0
+                totIdentity = 0
                 count = 0
                 while cPos < cLength and rPos < length:
                     # count the number of matching bases
-                    if seq[rPos] == cSeq[cPos]: match += 1
+                    if seq[rPos] == cSeq[cPos]: totIdentity += 1
 
                     # increment positions so we check next base
                     cPos += 1
@@ -575,14 +582,14 @@ def percentIdentityTrimming(read, contaminant):
 
                 # we've now checked all overlapping bases, so we can
                 # compute the percent identity.
-                percIdentity = float(match) / float(count)
+                percIdentity = float(totIdentity) / float(count)
 
             # break out of loop since we found a match
             break
 
     # if the k-mers were not found or the contaminant didn't map
     # sufficiently to the read then we don't trim.
-    if percIdentity < threshold: return read
+    if (percIdentity < percIdentityThreshold) or (totIdentity < totIdentityThreshold): return read
 
     # if k-mers not found, then no trimming
     if pos == -1: return read
@@ -684,29 +691,46 @@ if clArgs.contaminants_fa:
             # convert options string into set. Initialize values to
             # defaults. The initialized set doesn't include the name
             # as name is required.
-            options = {'end':DEFAULT_END, 'max':DEFAULT_MAX, 'method':DEFAULT_METHOD, 'size':DEFAULT_KMER_SIZE, 'threshold':DEFAULT_THRESHOLD, 'windows':DEFAULT_NUMBER_WINDOWS}
+            options = { 'end':DEFAULT_END, 
+                        'max':DEFAULT_MAX, 
+                        'method':DEFAULT_METHOD, 
+                        'pecentIdentity':DEFAULT_PERCENT_IDENTITY, 
+                        'size':DEFAULT_SIZE_KMER, 
+                        'totalIdentity':DEFAULT_TOTAL_IDENTITY, 
+                        'windows':DEFAULT_WINDOWS_NUMBER }
             for option in args:
                 key, value = option.split(':')
 
-                # if not name then convert to int before adding to options
-                if key != 'name' and key != 'threshold': value = int(value)
-
                 if key == 'end':
+                    value = int(value)
                     if value != 3 and value != 5:
-                        msg = 'Invalid end option (%d) for contaminant. Must be 3 or 5.' % value
+                        msg = 'Invalid "end" option (%d) for contaminant. Must be 3 or 5.' % value
                         quitOnError(msg)
-
-                if key == 'method':
+                elif key == 'max':
+                    value = int(value)
+                elif key == 'method':
+                    value = int(value)
                     if value != 0 and value != 1 and value != 2:
-                        msg = 'Invalid method option (%d) for contaminant. Must be 0, 1, or 2.' % value
+                        msg = 'Invalid "method" option (%d) for contaminant. Must be 0, 1, or 2.' % value
                         quitOnError(msg)
-
-                if key == 'threshold':
+                elif key == 'percentIdentity':
                     value = float(value)
                     if value <= 0.0 or value > 1.0:
-                        msg = 'Invalid method option (%f) for contaminant. Must be greater than 0 and less than or equal to 1.' % value
+                        msg = 'Invalid "percentIdentity" option (%f) for contaminant. Percent identity must be greater than 0 and less than or equal to 1.' % value
                         quitOnError(msg)
-
+                elif key == 'size':
+                    value = int(value)
+                elif key == 'totalIdentity':
+                    value = int(value)
+                elif key == 'windows':
+                    value = int(value)
+                # at this point we've accounted for all options but
+                # the name. If we don't have a name then the option
+                # doesn't exist.
+                elif key != 'name':
+                    msg = 'Invalid contamination option "%s".' % option
+                    quitOnError(msg)
+                
                 # save value in options
                 options[key] = value
 
@@ -805,8 +829,8 @@ while 1:
                 forRead = mappedContaminantTrimming(forRead, contaminant)
                 if PAIRED: revRead = mappedContaminantTrimming(revRead, contaminant)
             else:
-                forRead = percentIdentityTrimming(forRead, contaminant)
-                if PAIRED: revRead = percentIdentityTrimming(revRead, contaminant)
+                forRead = identityTrimming(forRead, contaminant)
+                if PAIRED: revRead = identityTrimming(revRead, contaminant)
 
     #--------------------------------------------------------------------------------------
     # compute trimming stats
