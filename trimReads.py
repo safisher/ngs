@@ -744,6 +744,10 @@ if clArgs.contaminants_fa:
             # compute set of k-mers
             kmerList = computeKMers(seq, options['size'], options['windows'], options['end'], options['method'])
 
+            if len(seq) < options['size']:
+                msg = 'The k-mer size (%d) must be smaller than the length of the sequence (%s).' % (options['size'], seq)
+                quitOnError(msg)
+
             # save contaminant and related values in tuple
             contaminantList.append([options, seq, kmerList])
 
