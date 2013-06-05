@@ -64,7 +64,7 @@ ngsArgs_RUMALIGN() {
 	# getopts doesn't allow for optional arguments so handle them manually
 	while true; do
 		case $1 in
-			-p) INPDIR=$2
+			-i) INPDIR=$2
 				shift; shift;
 				;;
 			-p) NUMCPU=$2

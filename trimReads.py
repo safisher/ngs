@@ -39,7 +39,6 @@ Contaminants file:
 TODO
 - add option to output discarded reads to separate output file
 - use contaminant name to print contaminant specific stats
-- need to add minimum mapping length to method 2. we need to check the total identity along with the percent identity.
 **********************************************************************
 
 """
@@ -50,10 +49,10 @@ TODO
 
 import sys, os, argparse
 
-DEBUG = True
+DEBUG = False
 if DEBUG: print 'DEBUG MODE: ON'
 
-VERSION = 0.1
+VERSION = 0.2
 
 # indecies for the read set
 HEADER = 'header'
