@@ -42,7 +42,7 @@ if len(sys.argv) < 4:
     print '\tblast.hits - the alignments, when there is more than one alignment for a read'
     print '\tfailed.fa - fasta file with reads that did not align'
     print '\tfailed.tsv - blast results for read that did not map to any of the counted species'
-    print '\tspecies.txt - species counts'
+    print '\tspeciesCounts.txt - species counts'
     print '\ttargetSpecies.tsv - blast results that mapped to target species'
     print '\ttargetSpecies.fa - fasta file with all target species reads'
     sys.exit()
@@ -61,7 +61,7 @@ csvFile = open(BLAST_PATH+'blast.csv', 'w')
 hitFile = open(BLAST_PATH+'blast.hits', 'w')
 failedFile = open(BLAST_PATH+'failed.fa', 'w')
 uncountedFile = open(BLAST_PATH+'uncounted.tsv', 'w')
-speciesFile = open(BLAST_PATH+'species.txt', 'w')
+speciesFile = open(BLAST_PATH+'speciesCounts.txt', 'w')
 
 # convert from repo species name to names used here.
 targetSpecies = TARGET.lower()
@@ -201,7 +201,7 @@ while True:
             if 'mouse' not in found: found['mouse'] = line
         elif ('rattus' in lLine) or ('norvegicus' in lLine): 
             if 'rat' not in found: found['rat'] = line
-        elif 'cerevisiae' in lLine:
+        elif ('yeast' in lLine) or ('cerevisiae' in lLine) or ('carlsbergensis' in lLine):
             if 'yeast' not in found: found['yeast'] = line
         else:
             # count how many reads only mapped to species we are not tracking

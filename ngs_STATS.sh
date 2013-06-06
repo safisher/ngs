@@ -15,7 +15,7 @@
 # under the License.
 
 ##########################################################################################
-# INPUT: $SAMPLE/blast/species.txt, $SAMPLE/trimAdapters.stats.txt, $SAMPLE/trimPolyAT.stats.txt, $SAMPLE/rum.trim/mappings_stats.txt
+# INPUT: $SAMPLE/blast/speciesCounts.txt, $SAMPLE/trimAdapters.stats.txt, $SAMPLE/trimPolyAT.stats.txt, $SAMPLE/rum.trim/mappings_stats.txt
 # OUTPUT: printing to console
 ##########################################################################################
 
@@ -55,11 +55,11 @@ ngsCmd_STATS() {
 	prnCmd "# BEGIN: STATS"
 	
 	echo "-- BLAST --"
-	cat $SAMPLE/blast/species.txt; 
+	cat $SAMPLE/blast/speciesCounts.txt; 
 
-	# the last line of the species.txt file is the following tab-delimited list of values:
+	# the last line of the speciesCounts.txt file is the following tab-delimited list of values:
 	# Total Hits	Hits Not Counted	Bacteria	Fish	Fly	Human	Mouse	Rat	Yeast
-	BLASTFIELDS=`tail -1 $SAMPLE/blast/species.txt`
+	BLASTFIELDS=`tail -1 $SAMPLE/blast/speciesCounts.txt`
 	
 	echo -e "\n-- Adapter Trimming --"
 	cat $SAMPLE/trimAdapter.stats.txt; 
