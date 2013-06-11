@@ -40,8 +40,7 @@ import sys, os, subprocess, datetime, pysam
 # 
 #------------------------------------------------------------------------------------------
 
-DEBUG = 0
-
+DEBUG = False
 if DEBUG: print 'DEBUG MODE: ON'
 
 # expect 3 args
@@ -74,39 +73,6 @@ def count_features(sortedSam):
 	
     if DEBUG: update('Completed counting: ' + countsFile)
 
-def rename_reads():
-    # Remove the suffix that RUM adds to read names (_a, _b, a or b).
-    # Could add check to this method to skip unneeded loops.
-    if DEBUG: update('Renaming pairs.')
-
-    try:
-        renamedBam = SAMPLE + '.renamed.bam'
-        samfile = pysam.Samfile(SOURCE_BAM, "rb")
-        renamed_reads = pysam.Samfile(renamedBam, "wb", template=samfile)
-		
-        for read in samfile.fetch():
-            if read.qname[len(read.qname) - 2: len(read.qname)] == '_a':
-                read.qname = read.qname[0:len(read.qname) - 2]
-            elif read.qname[len(read.qname) - 2: len(read.qname)] == '_b':
-                read.qname = read.qname[0:len(read.qname) - 2]
-            elif read.qname[len(read.qname) - 1: len(read.qname)] == 'a':
-                read.qname = read.qname[0:len(read.qname) - 1]
-            elif read.qname[len(read.qname) - 1: len(read.qname)] == 'b':
-                read.qname = read.qname[0:len(read.qname) - 1]
-        renamed_reads.write(read)	
-		
-        renamed_reads.close()
-        samfile.close()
-		
-    except:
-        print 'Error during renaming of reads: '
-        print sys.exc_info()
-
-    if DEBUG: update('Completed renaming: ' + renamedBam)
-
-    return renamedBam
-
-
 def sort_by_readname(bamToSort):
     # Given a path to a bam file, saves a bam file sorted by read name as outpath_name_sorted.bam.
     if DEBUG: update('Sorting by read name.')
@@ -131,11 +97,7 @@ def run_cmd(cmd):
     return p.communicate()[0]
 
 try:
-    # remove RUM suffix
-    #renamedBam = rename_reads()
-    
     # sort BAM by read name
-    #sortedBam = sort_by_readname(renamedBam)
     sortedBam = sort_by_readname(SOURCE_BAM)
 
     # run fixmate on sorted BAM
@@ -149,10 +111,9 @@ try:
     count_features(sortedSam)
 
     # remove temporary files
-    #os.remove(renamedBam)
-    os.remove(sortedBam)
-    os.remove(fixedBam)
-    os.remove(sortedSam)
+    if not DEBUG: os.remove(sortedBam)
+    if not DEBUG: os.remove(fixedBam)
+    if not DEBUG: os.remove(sortedSam)
     
     if DEBUG: update('Finished.')
 except:

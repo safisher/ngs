@@ -111,13 +111,13 @@ ngsCmd_POST() {
 	prnCmd "# generating RUM_Unique.bam file"
 	prnCmd "samtools view -H -S RUM.sam > header.sam"
 	# (1) extract all mapped reads from SAM file, (2) filter by number of mappings, (3) add header, (4) convert to BAM
-	prnCmd "samtools view -S -F 0x4 RUM.sam | grep -P 'IH:i:1\t' RUM.sam | cat header.sam - | samtools view -bS - > RUM_Unique.bam"
+	prnCmd "samtools view -S -F 0x4 RUM.sam | grep -P 'IH:i:1\t' | cat header.sam - | samtools view -bS - > RUM_Unique.bam"
 	prnCmd "samtools sort RUM_Unique.bam RUM_Unique.sorted"
 	prnCmd "samtools index RUM_Unique.sorted.bam"
 	prnCmd "rm header.sam RUM_Unique.bam"
 	if ! $DEBUG; then 
 		samtools view -H -S RUM.sam > header.sam
-		samtools view -S -F 0x4 RUM.sam | grep -P 'IH:i:1\t' RUM.sam | cat header.sam - | samtools view -bS - > RUM_Unique.bam
+		samtools view -S -F 0x4 RUM.sam | grep -P 'IH:i:1\t' | cat header.sam - | samtools view -bS - > RUM_Unique.bam
 		samtools sort RUM_Unique.bam RUM_Unique.sorted
 		samtools index RUM_Unique.sorted.bam
 		rm header.sam RUM_Unique.bam
