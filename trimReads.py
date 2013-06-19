@@ -1,4 +1,5 @@
 #!/usr/bin/python
+#!/home/fisher/local/bin/python2.7
 
 # Copyright (c) 2013, Stephen Fisher and Junhyong Kim, University of
 # Pennsylvania.  All Rights Reserved.
@@ -24,23 +25,20 @@ Contaminants file:
 1. Sequences must be on a single line (ie can't contain line breaks)
 2. No blank lines in file.
 3. Sequence header is space delimited list of options. Option names and values should be separated by a colon. 
-   Ex "> name:oligo end:3 size:10 windows:5"
+   Ex "> name:oligo size:10 windows:5"
 4. Options:
-  end: expect contaminant on the 3' or 5' end. (default 3)
-  max: maximum number of bases to trim. useful with poly A/T trimming. (default all matches)
-  method: there are three trimming methods (0 = full contaminant, 1 = mapped contaminant, 2 = identity based). (default 2)
   name: this option is required for every sequence
-  percentIdentity: percent identity threshold for trimming method 2 (0.0 < percentIdentity <= 1.0). (default 0.9)
+  method: there are three trimming methods (0 = full contaminant, 1 = mapped contaminant, 2 = identity based). (default 2)
   size: size of k-mer (default 7)
-  totalIdentity: total identity threshold for trimming method 2. If this is less than the k-mer size then it will have no impact on trimming. (default 16)
   windows: how many k-mers to seek. can not be larger than (contaminant length - k-mer). (default 6)
+  percentIdentity: percent identity threshold for trimming method 2 (0.0 < percentIdentity <= 1.0). (default 0.9)
+  totalIdentity: total identity threshold for trimming method 2. If this is less than the k-mer size then it will have no impact on trimming. (default 16)
 
 **********************************************************************
 TODO
 - add option to output discarded reads to separate output file
 - use contaminant name to print contaminant specific stats
 **********************************************************************
-
 """
 
 #------------------------------------------------------------------------------------------
@@ -49,7 +47,7 @@ TODO
 
 import sys, os, argparse
 
-DEBUG = False
+DEBUG = True
 if DEBUG: print 'DEBUG MODE: ON'
 
 VERSION = 0.2
@@ -89,17 +87,15 @@ argParser = argparse.ArgumentParser(version=str(VERSION),
 '\t3. Sequence header is space delimited list of options. Option names and values should be separated by a colon. \n' +
 '\t\t Example header "> name:oligo end:3 size:10 windows:5"\n' +
 '\t4. Options:\n' +
-'\t\t * end: expect contaminant on the 3\' or 5\' end (values: 3 or 5). (default 3)\n' +
-'\t\t * max: maximum number of bases to trim. useful with poly A/T trimming. (default all matches)\n' +
-'\t\t * method: there are three trimming methods (0 = full contaminant, 1 = mapped contaminant, 2 = identity based). (default 2)\n' +
-'\t\t\t 0. Full contaminant trimming means that when a k-mer is mapped then it is expected that the entire contaminant mapped and the read is trimmed accordingly. For example lets assume we have a k-mer that is located 4 bases from the 5\' end of a contaminant. Furthermore lets assume the contaminant is expected to be located on the 3\' end if a read. If that k-mer maps then we would shift where we trim the read by 4 bases in the direction of the 5\' end of the read. We would then remove all bases from that position to the 3\' end of the read, regardless if the additional bases mapped to the contaminant.\n' +
-'\t\t\t 1. Mapped contaminant trimming means that when a k-mer is mapped then we extend the mapping and  trimmed accord to the mapping. For example lets assume we have a k-mer that is located 4 bases from the 5\' end of a contaminant. Furthermore lets assume the contaminant is expected to be located on the 3\' end if a read. If that k-mer maps then we would extend the mapped region one base at a time, in the 5\' direction until we found a base that didn\'t map. We would then trim from that postion to the 3\' end of the read.\n' +
-'\t\t\t 2. If a k-mer maps to the read then the location of the mapping is used to anchor the contaminant to the read. The percent and total identity between the contaminant and the read is computed. If both the percent and total identity are above a user-defined threshold then the read is trimmed from the beginning of the contaminant to the end of the read. If not then the read is not trimmed.\n' +
 '\t\t * name: this option is required for every sequence\n' +
-'\t\t * percentIdentity: percent identity threshold for trimming method 2 (0.0 < percentIdentity <= 1.0). (default 0.9)\n' +
+'\t\t * method: there are three trimming methods (0 = full contaminant, 1 = mapped contaminant, 2 = identity based). (default 2)\n' +
+'\t\t\t 0. Full contaminant trimming means that when a k-mer is mapped then it is expected that the entire contaminant mapped and the read is trimmed accordingly. For example lets assume we have a k-mer that is located 4 bases from the 5\' end of a contaminant. If that k-mer maps then we would shift where we trim the read by 4 bases in the direction of the 5\' end of the read. We would then remove all bases from that position to the 3\' end of the read, regardless of the additional bases mapped to the contaminant.\n' +
+'\t\t\t 1. Mapped contaminant trimming means that when a k-mer is mapped then we extend the mapping and trimmed accord to the mapping. For example lets assume we have a k-mer that is located 4 bases from the 5\' end of a contaminant. If that k-mer maps then we would extend the mapped region one base at a time, in the 5\' direction until we found a base that didn\'t map. We would then trim from that postion to the 3\' end of the read.\n' +
+'\t\t\t 2. If a k-mer maps to the read then the location of the mapping is used to anchor the contaminant to the read. The percent and total identity between the contaminant and the read is computed. If both the percent and total identity are above a user-defined threshold then the read is trimmed from the beginning of the contaminant to the 3\' end of the read. If not then the read is not trimmed.\n' +
 '\t\t * size: size of k-mer (default 7)\n' +
-'\t\t * totalIdentity: total identity threshold for trimming method 2. If this is less than the k-mer size then it will have no impact on trimming. (default 16)\n' +
-'\t\t * windows: how many k-mers to seek. can not be larger than (contaminant length - k-mer). (default 6)\n'
+'\t\t * windows: how many k-mers to seek. can not be larger than (contaminant length - k-mer). (default 6)\n' +
+'\t\t * percentIdentity: percent identity threshold for trimming method 2 (0.0 < percentIdentity <= 1.0). (default 0.9)\n' +
+'\t\t * totalIdentity: total identity threshold for trimming method 2. If this is less than the k-mer size then it will have no impact on trimming. (default 16)\n'
                                     )
 argParser.add_argument( '-p', '--padPaired', dest='padPaired', action='store_true', default=False,
                         help='Pad paired reads so that they are the same length after trimming all trimming has occured. N\'s will be added to the 3\' end with \'#\' added to the quality score for each N that is added. This will not do anything for single-end reads. (default: no)' )
@@ -108,11 +104,13 @@ argParser.add_argument( '-m', '--minLen', dest='minLen', action='store', default
 argParser.add_argument( '-c3', '--cut3', dest='num_cut_3', action='store', default='0', type=int, 
                         help='number of bases to remove from 3\' end of read. Truncating reads does not count toward trimming totals. (default: 0)' )
 argParser.add_argument( '-c5', '--cut5', dest='num_cut_5', action='store', default='0', type=int, 
-                        help='number of bases to remove from 5\' end of read. Truncating reads does not count toward trimming totals.  (default: 0)' )
+                        help='number of bases to remove from 5\' end of read. Truncating reads does not count toward trimming totals. (default: 0)' )
 argParser.add_argument( '-rN', '--removeNs', dest='removeN', action='store_true', default=False,
                         help='remove N\'s from both ends of the read. (default: no)' )
+argParser.add_argument( '-pAT', '--removePolyAT', dest='removeAT', action='store_true', default=False,
+                        help='remove poly-A\'s from 3\' end of the read and poly-T\'s from the 5\' end of the read. (default: no)' )
 argParser.add_argument( '-c', dest='contaminants_fa', action='store', default=None, 
-                        help='fasta-like file containing list of contaminants to trim' )
+                        help='fasta-like file containing list of contaminants to trim from the 3\' end of the read' )
 argParser.add_argument( '-f', dest='forward_fq', action='store', required=True,
                         help='fastq file with reads to be trimmed' )
 argParser.add_argument( '-r', dest='reverse_fq', 
@@ -141,6 +139,14 @@ nTotalReads = 0 # total number of reads
 def quitOnError(msg):
     print 'ERROR:', msg
     sys.exit(0)
+
+# generate output file with every trim event. Forward and reverse
+# reads will be combined in this output file.
+if DEBUG:
+    try: 
+        debugFile = open("debug.tsv", 'w')
+    except: 
+        quitOnError('Unable to open output file debug.tsv')
 
 #------------------------------------------------------------------------------------------
 # FUNCTIONS FOR HANDLING READING AND WRITING OF READS
@@ -187,6 +193,12 @@ def writeRead(read, outFile):
     outFile.write('+\n') # +
     outFile.write(read[QUALS] + '\n') # quals
 
+def debugTrimOutput(origSeq, origLen, trimSeq, trimLen, trimType, misc):
+    """
+    Output information about the trim event.
+    """
+    debugFile.write(origSeq + '\t' + str(origLen) + '\t' + trimSeq + '\t' + str(trimLen) + '\t' + trimType + '\t' + misc + '\n')
+    
 #------------------------------------------------------------------------------------------
 # TRIMMING FUNCTIONS
 #------------------------------------------------------------------------------------------
@@ -264,14 +276,17 @@ def removeNs(read):
         # flag read as having been trimmed
         read[TRIMMED] = True
 
-    read[SEQUENCE] = seq
-    read[QUALS] = quals
-    read[LENGTH] = len(seq)
+    if read[TRIMMED]:
+        if DEBUG: debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'removeNs', '')
+
+        read[SEQUENCE] = seq
+        read[QUALS] = quals
+        read[LENGTH] = len(seq)
     return read
 
 # trim contaminant removing entire contaminant based on single k-mer
-# mapping, from the inner end of the contaminant to the outer end of
-# the read sequence.
+# mapping, from the 5' end of the contaminant to the 3' end of the
+# read.
 def fullContaminantTrimming(read, contaminant):
     """
     Trim read based on contaminant. Contaminant is expected to be a
@@ -281,10 +296,6 @@ def fullContaminantTrimming(read, contaminant):
     of the k-mer within the contaminant to the end of the read. Note
     that this function is an agressive trimming scheme and may remove
     portions of the read that don't map to the contaminant.
-    Contaminant example: [{'windows': 5, 'max': 0, 'end': 3, 'name':
-    'oligo', 'size': 10}, 'AATTTAAATTTAATTTCCGGGGAATTANN',
-    [('AATTTAAATT', 0), ('TAAATTTAAT', 4), ('TTTAATTTCC', 8),
-    ('ATTTCCGGGG', 12), ('CCGGGGAATT', 16)]]
     """
     seq = read[SEQUENCE]
     quals = read[QUALS]
@@ -296,21 +307,14 @@ def fullContaminantTrimming(read, contaminant):
     options = contaminant[0]
     # contaminant name
     name = options['name']
-    # max number of bases to trim
-    maxTrimmed = options['max']
-    # which end to trim
-    endTrimmed = options['end']
 
     # we attempt to perfectly align each k-mer against the
-    # sequence. If any alignment succeeds, the index position of the
-    # start or end of the original k-mer sequence is used for
-    # trimming, depending on which end of the read sequence is
-    # expected to contain the contaminant. For example if the mapped
-    # k-mer begins at the 5th base in sequence A and it's expected to
-    # map to the 3' end of sequence B then sequence A is assumed to
-    # extend another 4 bases toward the 5' end of sequence B and hence
-    # that position in sequence B is used for trimming. If none of the
-    # k-mer's map then no trimming occurs.
+    # sequence. If any alignment succeeds, the position of the 5' end
+    # of the contaminant is used for trimming. For example if the
+    # mapped k-mer begins at the 5th base in sequence A then sequence
+    # A is assumed to extend another 4 bases toward the 5' end of
+    # sequence B and hence that position in sequence B is used for
+    # trimming. If none of the k-mer's map then no trimming occurs.
     pos = -1
     for kmer, offset in kmers:
         # look for k-mer in read sequence. Index is the 5' position in
@@ -319,13 +323,10 @@ def fullContaminantTrimming(read, contaminant):
         if index > -1: 
             # the read sequence may not contain the entire contaminant
             # so change the order of the k-mer search based on the end
-            # we are searching. If we're expecting the k-mer to map to
-            # the 3' end of the read then we search the k-mers that
-            # are located near the 5' end of the contaminant before
-            # searching for the k-mers located near the 3' end of the
-            # contaminant.
-            if endTrimmed == 3: pos = index - offset
-            else: pos = index + offset
+            # we are searching. Search the k-mers that are located
+            # near the 5' end of the contaminant before searching for
+            # the k-mers located near the 3' end of the contaminant.
+            pos = index - offset
 
             # break out of loop since we found a match
             break
@@ -333,12 +334,10 @@ def fullContaminantTrimming(read, contaminant):
     # if k-mers not found, then no trimming
     if pos == -1: return read
 
-    if endTrimmed == 3:
-        seq = seq[:pos]
-        quals = quals[:pos]
-    else:
-        seq = seq[pos:]
-        quals = quals[pos:]
+    seq = seq[:pos]
+    quals = quals[:pos]
+
+    if DEBUG: debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'fullContaminantTrimming', contaminant[1])
 
     read[SEQUENCE] = seq
     read[QUALS] = quals
@@ -349,19 +348,15 @@ def fullContaminantTrimming(read, contaminant):
 # trim contaminant removing the portion of the contaminant that maps
 # from the k-mer region to the end of the sequence.
 def mappedContaminantTrimming(read, contaminant):
-    """
-    Trim read based on contaminant. Contaminant is expected to be a
+    """Trim read based on contaminant. Contaminant is expected to be a
     tuple containing a set of trimming options and the contaminant
     sequence. For trimming first map a k-mer then extend the mapping
-    toward the opposite end of the read. After the mapping is fully
-    extended, trim the read from the contaminant mapping regaion to
-    the end of the read. Note that this function is a more
-    conservative trimming scheme and may miss contaminate regions that
-    are smaller than the size of a k-mer. Contaminant example:
-    [{'windows': 5, 'max': 0, 'end': 3, 'name': 'oligo', 'size': 10},
-    'AATTTAAATTTAATTTCCGGGGAATTANN', [('AATTTAAATT', 0),
-    ('TAAATTTAAT', 4), ('TTTAATTTCC', 8), ('ATTTCCGGGG', 12),
-    ('CCGGGGAATT', 16)]]
+    toward the 5' end of the read. After the mapping is fully
+    extended, trim the read from the contaminant mapping region to the
+    3' end of the read. Note that this function is a more conservative
+    trimming scheme and may miss contaminate regions that are smaller
+    than the size of a k-mer.
+
     """
     seq = read[SEQUENCE]
     quals = read[QUALS]
@@ -376,19 +371,14 @@ def mappedContaminantTrimming(read, contaminant):
     options = contaminant[0]
     # contaminant name
     name = options['name']
-    # max number of bases to trim
-    maxTrimmed = options['max']
-    # which end to trim
-    endTrimmed = options['end']
 
     # we attempt to perfectly align each k-mer against the
-    # sequence. Once we find a match, then we extend the mapping away
-    # from the end of the read, only allowing for exact matches. We
-    # then remove the mapped region of the read and any additional
-    # bases on that end of the read. For example if the mapped k-mer
-    # begins at the 5th base in sequence A and it's expected to map to
-    # the 3' end of sequence B then we extend the k-mer mapped toward
-    # the 5' end of the sequences.  The position returned is the last
+    # sequence. Once we find a match, then we extend the mapping
+    # toward the 5' end of the read, only allowing for exact
+    # matches. We then trim from the mapped region of the read to the
+    # 3' end of the read. For example if the mapped k-mer begins at
+    # the 5th base in seuence A then we extend the k-mer mapped toward
+    # the 5' end of the sequences. The position returned is the last
     # mapped base on the 5' end of the mapping. If none of the k-mer's
     # map then no trimming occurs.
     pos = -1
@@ -398,64 +388,36 @@ def mappedContaminantTrimming(read, contaminant):
         if pos > -1: break
 
         # look for k-mer in read sequence. Index is the 5' position in
-        # the read where the k-mer mapped
+        # the read where the k-mer mapped. We're expecting the k-mer
+        # to map to the 3' end of the read so we search the k-mers
+        # that are located near the 5' end of the contaminant before
+        # searching for the k-mers located near the 3' end of the
+        # contaminant.
         index = seq.find(kmer)
         if index > -1: 
-            # the read sequence may not contain the entire contaminant
-            # so change the order of the k-mer search based on the end
-            # we are searching. If we're expecting the k-mer to map to
-            # the 3' end of the read then we search the k-mers that
-            # are located near the 5' end of the contaminant before
-            # searching for the k-mers located near the 3' end of the
-            # contaminant.
-            if endTrimmed == 3:
-                # found mapping so now extend mapping toward 5' end
+            # found mapping so now extend mapping toward 5' end
 
-                pos = 0
-                while offset > 0 and index > 0:
-                    # offset is the position of the 5' end of the k-mer
-                    # in the contaminant. So if equal to 0 then we are
-                    # already at the 5' end of the contaminant. index
-                    # is our position in the read sequence. If that's
-                    # 0 then we are at the 5' end of the read.
-                    if seq[index-1] != cSeq[offset-1]:
-                        pos = index
-                        break
-                    else:
-                        index -= 1
-                        offset -= 1
-            else: 
-                # found mapping so now extend mapping toward 3' end
-
-                # need to adjust index since it's registering the 5'
-                # end of the mapping and we are interested in the 3'
-                # end of the mapping.
-                index += options['size']
-
-                pos = length
-                while offset < cLength and index < length:
-                    # offset is the position of the 3' end of the k-mer
-                    # in the contaminant. So if equal to length of
-                    # contaminant then we are already at the 3' end of
-                    # the contaminant. index is our position in the
-                    # read sequence. If that's equal to the length of
-                    # the read sequence then we are at the 3' end of
-                    # the read.
-                    index += 1
-                    offset += 1
-                    if seq[index] != cSeq[offset]:
-                        pos = index
-                        break
+            pos = 0
+            while offset > 0 and index > 0:
+                # offset is the position of the 5' end of the k-mer
+                # in the contaminant. So if equal to 0 then we are
+                # already at the 5' end of the contaminant. index
+                # is our position in the read sequence. If that's
+                # 0 then we are at the 5' end of the read.
+                if seq[index-1] != cSeq[offset-1]:
+                    pos = index
+                    break
+                else:
+                    index -= 1
+                    offset -= 1
 
     # if k-mers not found, then no trimming
     if pos == -1: return read
 
-    if endTrimmed == 3:
-        seq = seq[:pos]
-        quals = quals[:pos]
-    else:
-        seq = seq[pos:]
-        quals = quals[pos:]
+    seq = seq[:pos]
+    quals = quals[:pos]
+
+    if DEBUG: debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'mappedContaminantTrimming', cSeq)
 
     read[SEQUENCE] = seq
     read[QUALS] = quals
@@ -471,16 +433,24 @@ def identityTrimming(read, contaminant):
     Trim read based on contaminant. Contaminant is expected to be a
     tuple containing a set of trimming options and the contaminant
     sequence. For trimming first map a k-mer to align the contaminant
-    to the read. Then compute the percent identity between the read
-    and contaminant. If the percent identity is above the specified
-    threshold then trim read. If the threshold is not reached then do
-    not trim the read. With a high threshold this function will biast
-    away from trimming. As the threshold is decreased (toward 0) then
-    the likelyhood of trimming increases.  Contaminant example:
-    [{'windows': 5, 'max': 0, 'end': 3, 'name': 'oligo', 'size': 10},
-    'AATTTAAATTTAATTTCCGGGGAATTANN', [('AATTTAAATT', 0),
-    ('TAAATTTAAT', 4), ('TTTAATTTCC', 8), ('ATTTCCGGGG', 12),
-    ('CCGGGGAATT', 16)]]
+    to the read. Then compute the percent identity between the
+    contaminant and the read. If the percent identity is above the
+    specified threshold then trim read from the position of the 5' end
+    of the contaminant to the 3' end of the read. If the threshold is
+    not reached then do not trim the read. With a high threshold this
+    function will bias away from trimming. As the threshold is
+    decreased (toward 0) then the likelyhood of trimming increases.
+    Note that the identity is only computed for the portion of the
+    read that overlaps with the contaminant. So if a short contaminant
+    perfectly maps in the middle of a long read then it would have a
+    high percent identity, causing the read to be trimmed.
+    Contaminant example: [{'name': 'indexAdapter', 'windows': 6,
+    'percentIdentity': 0.9, 'method': 2, 'pecentIdentity': 0.9,
+    'totalIdentity': 16, 'size': 10},
+    'AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC', [('AGATCGGAAG', 0),
+    ('CGGAAGAGCA', 4), ('AGAGCACACG', 8), ('CACACGTCTG', 12),
+    ('CGTCTGAACT', 16), ('TGAACTCCAG', 20), ('CTCCAGTCAC', 24)]]
+
     """
     seq = read[SEQUENCE]
     quals = read[QUALS]
@@ -495,10 +465,6 @@ def identityTrimming(read, contaminant):
     options = contaminant[0]
     # contaminant name
     name = options['name']
-    # max number of bases to trim
-    maxTrimmed = options['max']
-    # which end to trim
-    endTrimmed = options['end']
     # percent identity threshold
     percIdentityThreshold = options['percentIdentity']
     # total identity threshold
@@ -507,81 +473,46 @@ def identityTrimming(read, contaminant):
     # we attempt to perfectly align each k-mer against the
     # sequence. If any alignment succeeds, then we compute the percent
     # identity between the contaminant and read. If above our
-    # threshold then trim, otherwise do not trim.
+    # threshold then trim the entire contaminant, otherwise do not
+    # trim anything.
     percIdentity = 0
     totIdentity = 0
     for kmer, offset in kmers:
-        # look for k-mer in read sequence. Index is the 5' position in
-        # the read where the k-mer mapped
+        # look for k-mer in read sequence. Index is the position from
+        # the 5' end of the read where the k-mer mapped to the read.
         index = seq.find(kmer)
         if index > -1: 
-            # the read sequence may not contain the entire contaminant
-            # so change the order of the k-mer search based on the end
-            # we are searching. If we're expecting the k-mer to map to
-            # the 3' end of the read then we search the k-mers that
-            # are located near the 5' end of the contaminant before
-            # searching for the k-mers located near the 3' end of the
+            # Pos is the position where the 5' end of contaminant
+            # overlaps the read, based in k-mer mapping. Offset is
+            # the position of the 5' end of the k-mer within the
             # contaminant.
-            if endTrimmed == 3:
-                # Pos is the position where the 5' end of contaminant
-                # maps to read, based in k-mer mapping. This is the
-                # position that will be trimmed if the percent
-                # identity is high enough to allow for
-                # trimming. Offset is the position of the 5' end of
-                # the contaminant.
-                pos = index - offset
+            pos = index - offset
 
-                # cPos is the position in the contaminant
-                cPos = 0
-                # rPos is the read sequence position
-                rPos = pos
-                totIdentity = 0
-                count = 0
-                while cPos < cLength and rPos < length:
-                    # count the number of matching bases
-                    if seq[rPos] == cSeq[cPos]: totIdentity += 1
-                    
-                    # increment positions so we check next base
-                    cPos += 1
-                    rPos += 1
+            # cPos is the position in the contaminant
+            cPos = 0
+            # rPos is the position in the read
+            rPos = pos
+            totIdentity = 0
+            count = 0
+            while cPos < cLength and rPos < length:
+                # count the number of matching bases
+                if seq[rPos] == cSeq[cPos]: totIdentity += 1
+                
+                # increment positions so we check next base
+                cPos += 1
+                rPos += 1
+                
+                # count the number of bases checked
+                count += 1
 
-                    # count the number of bases checked
-                    count += 1
+            # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+            # what about if the contaminant hangs off the 5' end
+            # of the read? Will need to adjust cPos.
+            # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
-                # we've now checked all overlapping bases, so we can
-                # compute the percent identity.
-                percIdentity = float(totIdentity) / float(count)
-
-            else: 
-                # since we're now expecting the contaminant on the 5'
-                # end, pos is the position where the 3' end of
-                # contaminant maps to the read, based in k-mer
-                # mapping. This is the position that will be trimmed
-                # if the percent identity is high enough to allow for
-                # trimming. Offset is the position of the 5' end of
-                # the contaminant.
-                pos = index + offset
-
-                # cPos is the position in the contaminant
-                cPos = cLength - (offset + index)
-                # rPos is the read sequence position
-                rPos = 0
-                totIdentity = 0
-                count = 0
-                while cPos < cLength and rPos < length:
-                    # count the number of matching bases
-                    if seq[rPos] == cSeq[cPos]: totIdentity += 1
-
-                    # increment positions so we check next base
-                    cPos += 1
-                    rPos += 1
-
-                    # count the number of bases checked
-                    count += 1
-
-                # we've now checked all overlapping bases, so we can
-                # compute the percent identity.
-                percIdentity = float(totIdentity) / float(count)
+            # we've now checked all overlapping bases, so we can
+            # compute the percent identity.
+            percIdentity = float(totIdentity) / float(count)
 
             # break out of loop since we found a match
             break
@@ -593,12 +524,17 @@ def identityTrimming(read, contaminant):
     # if k-mers not found, then no trimming
     if pos == -1: return read
 
-    if endTrimmed == 3:
-        seq = seq[:pos]
-        quals = quals[:pos]
-    else:
-        seq = seq[pos:]
-        quals = quals[pos:]
+    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    # WE SHOULD BE TRIMMING FROM BEGINNING ON CONTAMINANT, NOT THE
+    # BEGINNING OF MAPPED POSITION
+    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
+    seq = seq[:pos]
+    quals = quals[:pos]
+
+    if DEBUG: 
+        misc = cSeq + "\t" + str(percIdentity) + "\t" + str(totIdentity)
+        debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'identityTrimming', misc)
 
     read[SEQUENCE] = seq
     read[QUALS] = quals
@@ -610,21 +546,17 @@ def identityTrimming(read, contaminant):
 # LOAD CONTAMINANTS
 #------------------------------------------------------------------------------------------
 
-def computeKMers(seq, kmerSize, numWindows, end, method):
+def computeKMers(seq, kmerSize, numWindows):
     """
     This will return a tuple of k-mers that includes the k-mer
-    sequence. The tuple will also include either the 5' position of
-    the k-mer within the original sequence or the 3' position of the
-    k-mer within the original sequence, depending on which end the
-    contaminant is expected to be located within the read
-    sequence. Lastly, the order of the k-mers within the tuple will
-    also depend on the read sequence end. We don't expect the read
-    sequence to contain the entire contaminant so change the order of
-    the k-mer search based on the end we are searching. If we're
-    expecting the k-mer to map to the 3' end of the read then we
-    search the k-mers that are located near the 5' end of the
-    contaminant before searching for the k-mers located near the 3'
-    end of the contaminant.
+    sequence. The tuple will also include either 5' position of the
+    k-mer within the original sequence. The k-mers are ordered from
+    the 5' end of the contaminant to the 3' end. We don't expect the
+    read sequence to contain the entire contaminant so we start at the
+    5' end when we are searching. Expecting the k-mer to map to the 3'
+    end of the read then we search the k-mers that are located near
+    the 5' end of the contaminant before searching for the k-mers
+    located near the 3' end of the contaminant.
     """
     seqLength = len(seq)
 
@@ -643,34 +575,18 @@ def computeKMers(seq, kmerSize, numWindows, end, method):
     # of the contaminant might not be in any k-mer. For a contaminant
     # expected to be found on the 5' end of a read then the last few
     # bases on the 5' end of the contaminant might not be in a k-mer.
-    windowStep = lastWindow / (numWindows - 1)
+    if numWindows > 1:
+        windowStep = lastWindow / (numWindows - 1)
+    else:
+        # make sure we only get one k-mer
+        windowStep = seqLength
 
     kmerList = []
     # slice up the sequence based on the window step size and the k-mer size
-    if end == 3:
-        for index in range(0, lastWindow + 1, windowStep):
-            # store k-mer and the k-mer position offset for a 3'
-            # mapping. Offset is the 5' position of the k-mer.
-            kmerList.append((seq[index:index+kmerSize], index))
-    else:
-        for index in range(lastWindow, 0, -1 * windowStep):
-            if method == 0:
-                # store k-mer and the k-mer position offset for a 5'
-                # mapping using the Full trimming method. Offset is
-                # the number of positions from the 5' end of the k-mer
-                # to the 3' end of the contaminant.
-                kmerList.append((seq[index:index+kmerSize], (seqLength-1) - (index-1)))
-            elif method == 1:
-                # store k-mer and the k-mer position offset for a 5'
-                # mapping using the Mapped trimming method. Offset is
-                # the 3' position of the k-mer.
-                kmerList.append((seq[index:index+kmerSize], index+kmerSize))
-            else:
-                # store k-mer and the k-mer position offset for a 5'
-                # mapping using the Percent Identity trimming
-                # method. Offset is the 3' position of the k-mer.
-                kmerList.append((seq[index:index+kmerSize], (seqLength-1) - (index-1)))
-                #kmerList.append((seq[index:index+kmerSize], index+kmerSize))
+    for index in range(0, lastWindow + 1, windowStep):
+        # store k-mer and the k-mer position offset for a 3'
+        # mapping. Offset is the 5' position of the k-mer.
+        kmerList.append((seq[index:index+kmerSize], index))
 
     return kmerList
 
@@ -690,39 +606,30 @@ if clArgs.contaminants_fa:
             # convert options string into set. Initialize values to
             # defaults. The initialized set doesn't include the name
             # as name is required.
-            options = { 'end':DEFAULT_END, 
-                        'max':DEFAULT_MAX, 
-                        'method':DEFAULT_METHOD, 
-                        'pecentIdentity':DEFAULT_PERCENT_IDENTITY, 
+            options = { 'method':DEFAULT_METHOD, 
                         'size':DEFAULT_SIZE_KMER, 
-                        'totalIdentity':DEFAULT_TOTAL_IDENTITY, 
-                        'windows':DEFAULT_WINDOWS_NUMBER }
+                        'windows':DEFAULT_WINDOWS_NUMBER,
+                        'percentIdentity':DEFAULT_PERCENT_IDENTITY, 
+                        'totalIdentity':DEFAULT_TOTAL_IDENTITY }
             for option in args:
                 key, value = option.split(':')
 
-                if key == 'end':
-                    value = int(value)
-                    if value != 3 and value != 5:
-                        msg = 'Invalid "end" option (%d) for contaminant. Must be 3 or 5.' % value
-                        quitOnError(msg)
-                elif key == 'max':
-                    value = int(value)
-                elif key == 'method':
+                if key == 'method':
                     value = int(value)
                     if value != 0 and value != 1 and value != 2:
                         msg = 'Invalid "method" option (%d) for contaminant. Must be 0, 1, or 2.' % value
                         quitOnError(msg)
+                elif key == 'size':
+                    value = int(value)
+                elif key == 'windows':
+                    value = int(value)
+                elif key == 'totalIdentity':
+                    value = int(value)
                 elif key == 'percentIdentity':
                     value = float(value)
                     if value <= 0.0 or value > 1.0:
                         msg = 'Invalid "percentIdentity" option (%f) for contaminant. Percent identity must be greater than 0 and less than or equal to 1.' % value
                         quitOnError(msg)
-                elif key == 'size':
-                    value = int(value)
-                elif key == 'totalIdentity':
-                    value = int(value)
-                elif key == 'windows':
-                    value = int(value)
                 # at this point we've accounted for all options but
                 # the name. If we don't have a name then the option
                 # doesn't exist.
@@ -741,7 +648,7 @@ if clArgs.contaminants_fa:
             seq = line.strip().upper()
 
             # compute set of k-mers
-            kmerList = computeKMers(seq, options['size'], options['windows'], options['end'], options['method'])
+            kmerList = computeKMers(seq, options['size'], options['windows'])
 
             if len(seq) < options['size']:
                 msg = 'The k-mer size (%d) must be smaller than the length of the sequence (%s).' % (options['size'], seq)
@@ -763,21 +670,33 @@ if clArgs.contaminants_fa:
 #------------------------------------------------------------------------------------------
 
 forReadIn = ''
-try: forReadIn = open(clArgs.forward_fq, 'r')
-except: print 'ERROR: Unable to load reads file', clArgs.forward_fq
+try: 
+    forReadIn = open(clArgs.forward_fq, 'r')
+except: 
+    msg = 'Unable to load reads file ' + clArgs.forward_fq
+    quitOnError(msg)
 
 forReadOut = ''
-try: forReadOut = open(clArgs.output_prefix + "_1.fq", 'w')
-except: print 'ERROR: Unable to open output file', clArgs.output_prefix + "_1.fq"
+try: 
+    forReadOut = open(clArgs.output_prefix + "_1.fq", 'w')
+except: 
+    msg = 'Unable to open output file ' + clArgs.output_prefix + "_1.fq"
+    quitOnError(msg)
 
 if PAIRED:
     revReadIn = ''
-    try: revReadIn = open(clArgs.reverse_fq, 'r')
-    except: print 'ERROR: Unable to load reads file', clArgs.reverse_fq
+    try: 
+        revReadIn = open(clArgs.reverse_fq, 'r')
+    except: 
+        msg = 'Unable to load reads file ' + clArgs.reverse_fq
+        quitOnError(msg)
 
     revReadOut = ''
-    try: revReadOut = open(clArgs.output_prefix + "_2.fq", 'w')
-    except: print 'ERROR: Unable to open output file', clArgs.output_prefix + "_2.fq"
+    try: 
+        revReadOut = open(clArgs.output_prefix + "_2.fq", 'w')
+    except: 
+        msg = 'Unable to open output file ' + clArgs.output_prefix + "_2.fq"
+        quitOnError(msg)
 
 #------------------------------------------------------------------------------------------
 # TRIM READS.  LOAD ONE READ FROM BOTH FQ FILES AT SAME TIME. PROCESS
