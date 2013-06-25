@@ -47,10 +47,10 @@ TODO
 
 import sys, os, argparse
 
-DEBUG = True
+DEBUG = False
 if DEBUG: print 'DEBUG MODE: ON'
 
-VERSION = 0.2
+VERSION = 0.3
 
 # indecies for the read set
 HEADER = 'header'
@@ -66,6 +66,10 @@ DEFAULT_PERCENT_IDENTITY = .9
 DEFAULT_SIZE_KMER = 7
 DEFAULT_TOTAL_IDENTITY = 16
 DEFAULT_WINDOWS_NUMBER = 6
+
+# used by removePolyAT()
+POLY_A = 'AAAAAAAAAA'
+POLY_T = 'TTTTTTTTTT'
 
 argParser = argparse.ArgumentParser(version=str(VERSION), 
                                     description='Trim NGS reads.',
@@ -101,14 +105,14 @@ argParser.add_argument( '-p', '--padPaired', dest='padPaired', action='store_tru
                         help='Pad paired reads so that they are the same length after trimming all trimming has occured. N\'s will be added to the 3\' end with \'#\' added to the quality score for each N that is added. This will not do anything for single-end reads. (default: no)' )
 argParser.add_argument( '-m', '--minLen', dest='minLen', action='store', default=0, type=int,
                         help='Minimum size of trimmed read. If trimmed beyond minLen, then read is discarded. If read is paired then read is replaced with N\'s, unless both reads in pair are smaller than minLen in which case the pair is discarded. (default: no minimum length)' )
-argParser.add_argument( '-c3', '--cut3', dest='num_cut_3', action='store', default='0', type=int, 
-                        help='number of bases to remove from 3\' end of read. Truncating reads does not count toward trimming totals. (default: 0)' )
-argParser.add_argument( '-c5', '--cut5', dest='num_cut_5', action='store', default='0', type=int, 
-                        help='number of bases to remove from 5\' end of read. Truncating reads does not count toward trimming totals. (default: 0)' )
+argParser.add_argument( '-c3', '--cut3', dest='num_cut_3', action='store', default=0, type=int, 
+                        help='number of bases to remove from 3\' end of read. Truncating reads does not count toward trimming totals. This happens prior to the removing of N\'s and hence prior to contaminant trimming. (default: 0)' )
+argParser.add_argument( '-c5', '--cut5', dest='num_cut_5', action='store', default=0, type=int, 
+                        help='number of bases to remove from 5\' end of read. Truncating reads does not count toward trimming totals. This happens prior to the removing of N\'s and hence prior to contaminant trimming. (default: 0)' )
 argParser.add_argument( '-rN', '--removeNs', dest='removeN', action='store_true', default=False,
-                        help='remove N\'s from both ends of the read. (default: no)' )
-argParser.add_argument( '-pAT', '--removePolyAT', dest='removeAT', action='store_true', default=False,
-                        help='remove poly-A\'s from 3\' end of the read and poly-T\'s from the 5\' end of the read. (default: no)' )
+                        help='remove N\'s from both ends of the read. This trimming happens before contaminant trimming. (default: no)' )
+argParser.add_argument( '-rAT', '--removePolyAT', dest='removeAT', action='store', default=-1, type=int,
+                        help='length of 3\' poly-A and 5\' poly-T to remove from the respective ends of the read. If all poly A/T is to be removed then the value should be equal to or greater than the length of the read. A minimum of ten A\'s or ten T\'s must exist in order for this trimming to happen, regardless of the trimming length; that is, poly-A and poly-T fragments are defined as being at least 10 nt in length. A sequences of A\'s or T\'s are ignored. This trimming happens after contaminant trimming. (default: no trimming)' )
 argParser.add_argument( '-c', dest='contaminants_fa', action='store', default=None, 
                         help='fasta-like file containing list of contaminants to trim from the 3\' end of the read' )
 argParser.add_argument( '-f', dest='forward_fq', action='store', required=True,
@@ -254,6 +258,12 @@ def removeNs(read):
     quals = read[QUALS]
     length = read[LENGTH]
 
+    # local flag for trimming having occurred. This is unnecessary
+    # since removeNs() is first trimming to happen. However this
+    # prevents possible problem in future if we add another trimming
+    # option prior to removeNs()
+    wasTrimmed = False 
+
     # trim N from beginning of read (5' end)
     if seq.startswith('N'):
         # trim sequence
@@ -263,7 +273,7 @@ def removeNs(read):
         quals = quals[len(quals) - len(seq):]
 
         # flag read as having been trimmed
-        read[TRIMMED] = True
+        wasTrimmed = True
 
     # trim N from end of read (3' end)
     if seq.endswith('N'):
@@ -274,14 +284,15 @@ def removeNs(read):
         quals = quals[:len(seq)]
 
         # flag read as having been trimmed
-        read[TRIMMED] = True
+        wasTrimmed = True
 
-    if read[TRIMMED]:
+    if wasTrimmed:
         if DEBUG: debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'removeNs', '')
 
         read[SEQUENCE] = seq
         read[QUALS] = quals
         read[LENGTH] = len(seq)
+        read[TRIMMED] = True
     return read
 
 # trim contaminant removing entire contaminant based on single k-mer
@@ -318,8 +329,10 @@ def fullContaminantTrimming(read, contaminant):
     pos = -1
     for kmer, offset in kmers:
         # look for k-mer in read sequence. Index is the 5' position in
-        # the read where the k-mer mapped
-        index = seq.find(kmer)
+        # the read where the k-mer mapped. If the k-mer maps multiple
+        # times in the read, then the mapping closest to the 3' end is
+        # used.
+        index = seq.rfind(kmer)
         if index > -1: 
             # the read sequence may not contain the entire contaminant
             # so change the order of the k-mer search based on the end
@@ -392,8 +405,9 @@ def mappedContaminantTrimming(read, contaminant):
         # to map to the 3' end of the read so we search the k-mers
         # that are located near the 5' end of the contaminant before
         # searching for the k-mers located near the 3' end of the
-        # contaminant.
-        index = seq.find(kmer)
+        # contaminant.  If the k-mer maps multiple times in the read,
+        # then the mapping closest to the 3' end is used.
+        index = seq.rfind(kmer)
         if index > -1: 
             # found mapping so now extend mapping toward 5' end
 
@@ -450,7 +464,6 @@ def identityTrimming(read, contaminant):
     'AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC', [('AGATCGGAAG', 0),
     ('CGGAAGAGCA', 4), ('AGAGCACACG', 8), ('CACACGTCTG', 12),
     ('CGTCTGAACT', 16), ('TGAACTCCAG', 20), ('CTCCAGTCAC', 24)]]
-
     """
     seq = read[SEQUENCE]
     quals = read[QUALS]
@@ -480,7 +493,9 @@ def identityTrimming(read, contaminant):
     for kmer, offset in kmers:
         # look for k-mer in read sequence. Index is the position from
         # the 5' end of the read where the k-mer mapped to the read.
-        index = seq.find(kmer)
+        # If the k-mer maps multiple times in the read, then the
+        # mapping closest to the 3' end is used.
+        index = seq.rfind(kmer)
         if index > -1: 
             # Pos is the position where the 5' end of contaminant
             # overlaps the read, based in k-mer mapping. Offset is
@@ -490,8 +505,20 @@ def identityTrimming(read, contaminant):
 
             # cPos is the position in the contaminant
             cPos = 0
+
+            # if the contaminant hangs off the 5' end of the read then
+            # we need to adjust the search to begin from the 5' end of
+            # the read
+            if pos < 0:
+                # shift where we begin in the contaminant based on how
+                # many bases are hanging off the 5' end of the read
+                cPos = pos * -1
+                # start at 5' end of read
+                pos = 0
+
             # rPos is the position in the read
             rPos = pos
+
             totIdentity = 0
             count = 0
             while cPos < cLength and rPos < length:
@@ -505,11 +532,6 @@ def identityTrimming(read, contaminant):
                 # count the number of bases checked
                 count += 1
 
-            # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-            # what about if the contaminant hangs off the 5' end
-            # of the read? Will need to adjust cPos.
-            # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-
             # we've now checked all overlapping bases, so we can
             # compute the percent identity.
             percIdentity = float(totIdentity) / float(count)
@@ -517,22 +539,18 @@ def identityTrimming(read, contaminant):
             # break out of loop since we found a match
             break
 
+    # if k-mers not found, then no trimming
+    if index == -1: return read
+
     # if the k-mers were not found or the contaminant didn't map
     # sufficiently to the read then we don't trim.
     if (percIdentity < percIdentityThreshold) or (totIdentity < totIdentityThreshold): return read
-
-    # if k-mers not found, then no trimming
-    if pos == -1: return read
-
-    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-    # WE SHOULD BE TRIMMING FROM BEGINNING ON CONTAMINANT, NOT THE
-    # BEGINNING OF MAPPED POSITION
-    # XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
     seq = seq[:pos]
     quals = quals[:pos]
 
     if DEBUG: 
+        #print name, cSeq, read[SEQUENCE], seq
         misc = cSeq + "\t" + str(percIdentity) + "\t" + str(totIdentity)
         debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'identityTrimming', misc)
 
@@ -540,6 +558,62 @@ def identityTrimming(read, contaminant):
     read[QUALS] = quals
     read[LENGTH] = len(seq)
     read[TRIMMED] = True
+    return read
+
+# remove poly A from 3' end and poly T from 5' end
+def removePolyAT(read, trimLength):
+    """
+    Removes trimLength number of A's from the 3' end and T's from the
+    5' end of a sequence. First look to see if there are at least 10
+    A's or 10 T's. If so then trim all A's or all T's.
+    """
+    seq = read[SEQUENCE]
+    quals = read[QUALS]
+    length = read[LENGTH]
+
+    wasTrimmed = False # local flag for trimming
+
+    # trim poly-T from 5' of read
+    if seq.startswith(POLY_T):
+        # only remove up to trimLength number of bases from poly-T.
+        # Get copy of trimLength number of bases in sequence.
+        n_mer = seq[:trimLength]
+        # remove poly-T from 5' end of n-mer
+        n_mer = n_mer.lstrip('T')
+        # append remaining bases, if any, back onto 5' end of read
+        seq = n_mer + seq[trimLength:]
+
+        # need to trim quals to same degree that we trimmed sequence
+        quals = quals[len(quals) - len(seq):]
+
+        # flag read as having been trimmed
+        wasTrimmed = True
+
+    # trim poly-A from 3' end of read
+    if seq.endswith(POLY_A):
+        # only remove up to trimLength number of bases from poly-A.
+        # Get copy of last trimLength number of bases in sequence.
+        idx = len(seq) - trimLength
+        n_mer = seq[idx:]
+        # remove poly-A from 3' end of n-mer
+        n_mer = n_mer.rstrip('A')
+        # append remaining bases back onto 3' end of read
+        seq = seq[:idx] + n_mer
+
+        # need to trim quals in same way we trimmed sequence
+        quals = quals[:len(seq)]
+
+        # flag read as having been trimmed
+        wasTrimmed = True
+
+    if wasTrimmed:
+        print 'Poly-AT', read[SEQUENCE], seq
+        if DEBUG: debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'removePolyAT', '')
+
+        read[SEQUENCE] = seq
+        read[QUALS] = quals
+        read[LENGTH] = len(seq)
+        read[TRIMMED] = True
     return read
 
 #------------------------------------------------------------------------------------------
@@ -755,6 +829,12 @@ while 1:
                 if PAIRED: revRead = identityTrimming(revRead, contaminant)
 
     #--------------------------------------------------------------------------------------
+    # remove poly A/T
+    if clArgs.removeAT > 0:
+        forRead = removePolyAT(forRead, clArgs.removeAT)
+        if PAIRED: revRead = removePolyAT(revRead, clArgs.removeAT)
+
+    #--------------------------------------------------------------------------------------
     # compute trimming stats
     trimFlag = False
     if forRead[TRIMMED]: 
@@ -779,15 +859,20 @@ while 1:
             if revRead[LENGTH] < clArgs.minLen:
                 nRevDiscarded += 1
                 discardRev = True
-        if discardFor or discardRev: nPairsDiscarded += 1
 
-        # XXX could output them to an error file here
-        if discardFor and discardRev:
+        if discardFor and discardRev:  
+            # count pair
+            nPairsDiscarded += 1
+
             # both reads in read pair are discarded so don't write them to output file
+            # XXX should output discarded pair to an error file here
             continue
+
         if discardFor and not PAIRED:
-            # single-end read being discarded, so don't write to output file
+            # single-end read being discarded, so don't write to output file.
+            # XXX should output read to an error file here.
             continue
+
         # if we got this far then paired reads with only one being too
         # small, so replace that one read with N's
         if discardFor:
