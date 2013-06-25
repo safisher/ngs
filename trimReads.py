@@ -18,7 +18,7 @@
 """
 by: S. Fisher, 2013
 
-usage: trimReads.py [-h] [-v] [-p] [-m MINLEN] [-c3 NUM_CUT_3] [-c5 NUM_CUT_5] [-rN] [-c CONTAMINANTS_FA] -f
+usage: trimReads.py [-h] [-v] [-p] [-m MIN_LEN] [-c3 NUM_CUT_3] [-c5 NUM_CUT_5] [-rN] [-rAT REMOVE_AT] [-c CONTAMINANTS_FA] -f
                     FORWARD_FQ [-r REVERSE_FQ] -o OUTPUT_PREFIX
 
 Contaminants file:
@@ -103,7 +103,7 @@ argParser = argparse.ArgumentParser(version=str(VERSION),
                                     )
 argParser.add_argument( '-p', '--padPaired', dest='padPaired', action='store_true', default=False,
                         help='Pad paired reads so that they are the same length after trimming all trimming has occured. N\'s will be added to the 3\' end with \'#\' added to the quality score for each N that is added. This will not do anything for single-end reads. (default: no)' )
-argParser.add_argument( '-m', '--minLen', dest='minLen', action='store', default=0, type=int,
+argParser.add_argument( '-m', '--minLen', dest='min_len', action='store', default=0, type=int,
                         help='Minimum size of trimmed read. If trimmed beyond minLen, then read is discarded. If read is paired then read is replaced with N\'s, unless both reads in pair are smaller than minLen in which case the pair is discarded. (default: no minimum length)' )
 argParser.add_argument( '-c3', '--cut3', dest='num_cut_3', action='store', default=0, type=int, 
                         help='number of bases to remove from 3\' end of read. Truncating reads does not count toward trimming totals. This happens prior to the removing of N\'s and hence prior to contaminant trimming. (default: 0)' )
@@ -111,7 +111,7 @@ argParser.add_argument( '-c5', '--cut5', dest='num_cut_5', action='store', defau
                         help='number of bases to remove from 5\' end of read. Truncating reads does not count toward trimming totals. This happens prior to the removing of N\'s and hence prior to contaminant trimming. (default: 0)' )
 argParser.add_argument( '-rN', '--removeNs', dest='removeN', action='store_true', default=False,
                         help='remove N\'s from both ends of the read. This trimming happens before contaminant trimming. (default: no)' )
-argParser.add_argument( '-rAT', '--removePolyAT', dest='removeAT', action='store', default=-1, type=int,
+argParser.add_argument( '-rAT', '--removePolyAT', dest='remove_AT', action='store', default=-1, type=int,
                         help='length of 3\' poly-A and 5\' poly-T to remove from the respective ends of the read. If all poly A/T is to be removed then the value should be equal to or greater than the length of the read. A minimum of ten A\'s or ten T\'s must exist in order for this trimming to happen, regardless of the trimming length; that is, poly-A and poly-T fragments are defined as being at least 10 nt in length. A sequences of A\'s or T\'s are ignored. This trimming happens after contaminant trimming. (default: no trimming)' )
 argParser.add_argument( '-c', dest='contaminants_fa', action='store', default=None, 
                         help='fasta-like file containing list of contaminants to trim from the 3\' end of the read' )
@@ -550,7 +550,6 @@ def identityTrimming(read, contaminant):
     quals = quals[:pos]
 
     if DEBUG: 
-        #print name, cSeq, read[SEQUENCE], seq
         misc = cSeq + "\t" + str(percIdentity) + "\t" + str(totIdentity)
         debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'identityTrimming', misc)
 
@@ -607,7 +606,6 @@ def removePolyAT(read, trimLength):
         wasTrimmed = True
 
     if wasTrimmed:
-        print 'Poly-AT', read[SEQUENCE], seq
         if DEBUG: debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'removePolyAT', '')
 
         read[SEQUENCE] = seq
@@ -830,9 +828,9 @@ while 1:
 
     #--------------------------------------------------------------------------------------
     # remove poly A/T
-    if clArgs.removeAT > 0:
-        forRead = removePolyAT(forRead, clArgs.removeAT)
-        if PAIRED: revRead = removePolyAT(revRead, clArgs.removeAT)
+    if clArgs.remove_AT > 0:
+        forRead = removePolyAT(forRead, clArgs.remove_AT)
+        if PAIRED: revRead = removePolyAT(revRead, clArgs.remove_AT)
 
     #--------------------------------------------------------------------------------------
     # compute trimming stats
@@ -849,14 +847,14 @@ while 1:
 
     #--------------------------------------------------------------------------------------
     # discard reads that are too short
-    if clArgs.minLen > 0:
+    if clArgs.min_len > 0:
         discardFor = False
         discardRev = False
-        if forRead[LENGTH] < clArgs.minLen:
+        if forRead[LENGTH] < clArgs.min_len:
             nForDiscarded += 1
             discardFor = True
         if PAIRED:
-            if revRead[LENGTH] < clArgs.minLen:
+            if revRead[LENGTH] < clArgs.min_len:
                 nRevDiscarded += 1
                 discardRev = True
 
