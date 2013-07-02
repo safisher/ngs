@@ -1,5 +1,4 @@
 #!/usr/bin/python
-#!/home/fisher/local/bin/python2.7
 
 # Copyright (c) 2013, Stephen Fisher and Junhyong Kim, University of
 # Pennsylvania.  All Rights Reserved.
@@ -131,10 +130,10 @@ if clArgs.reverse_fq:
     PAIRED = True
 
 # track trimming stats
-nPairsTrimmed = 0 # total number of trimmed read pairs (equal to numForTrimmed if single-end)
+nBothTrimmed = 0 # total number of read pairs in which both reads were trimmed (equal to nForTrimmed if single-end)
 nForTrimmed = 0 # num forward reads trimmed
 nRevTrimmed = 0 # num reverse reads trimmed
-nPairsDiscarded = 0 # num read pairs discarded (equal to nForDiscarded if single-end)
+nBothDiscarded = 0 # num read pairs discarded (equal to nForDiscarded if single-end)
 nForDiscarded = 0 # num of forward reads replaced with N's
 nRevDiscarded = 0 # num of reverse reads replaced with N's
 nTotalReads = 0 # total number of reads
@@ -149,6 +148,7 @@ def quitOnError(msg):
 if DEBUG:
     try: 
         debugFile = open("debug.tsv", 'w')
+        debugFile.write('Orig Seq\tLen\tTrimmed Seq\tLen\tTrim Type\tMisc\n')
     except: 
         quitOnError('Unable to open output file debug.tsv')
 
@@ -834,16 +834,21 @@ while 1:
 
     #--------------------------------------------------------------------------------------
     # compute trimming stats
-    trimFlag = False
+    trimFor = False
+    trimRev = False
     if forRead[TRIMMED]: 
         nForTrimmed += 1
-        trimFlag = True
+        trimFor = True
     if PAIRED: 
         if revRead[TRIMMED]: 
             nRevTrimmed += 1
-            trimFlag = True
-    # count paired reads as a single read in nPairsTrimmed
-    if trimFlag: nPairsTrimmed += 1
+            trimRev = True
+        if trimFor and trimRev:
+            # count trimmed pair
+            nBothTrimmed += 1
+    elif trimFor:
+        # not paired, so count single read as pair
+        nBothTrimmed += 1
 
     #--------------------------------------------------------------------------------------
     # discard reads that are too short
@@ -857,16 +862,17 @@ while 1:
             if revRead[LENGTH] < clArgs.min_len:
                 nRevDiscarded += 1
                 discardRev = True
+            if discardFor and discardRev:  
+                # count pair
+                nBothDiscarded += 1
 
-        if discardFor and discardRev:  
-            # count pair
-            nPairsDiscarded += 1
+                # both reads in read pair are discarded so don't write them to output file
+                # XXX should output discarded pair to an error file here
+                continue
+        elif discardFor:
+            # not paired so count single read as pair
+            nBothDiscarded += 1
 
-            # both reads in read pair are discarded so don't write them to output file
-            # XXX should output discarded pair to an error file here
-            continue
-
-        if discardFor and not PAIRED:
             # single-end read being discarded, so don't write to output file.
             # XXX should output read to an error file here.
             continue
@@ -911,7 +917,7 @@ while 1:
 print 'Reads processed:', nTotalReads
 print 'Forward reads trimmed:', nForTrimmed
 print 'Reverse reads trimmed:', nRevTrimmed
-print 'Reads pairs trimmed:', nPairsTrimmed
+print 'Both forward and reverse reads trimmed:', nBothTrimmed
 print 'Forward reads discarded:', nForDiscarded
 print 'Reverse reads discarded:', nRevDiscarded
-print 'Read pairs discarded:', nPairsDiscarded
+print 'Both forward and reverse reads discarded:', nBothDiscarded
