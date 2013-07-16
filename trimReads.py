@@ -43,7 +43,7 @@ import sys, os, argparse
 DEBUG = False
 if DEBUG: print 'DEBUG MODE: ON'
 
-VERSION = 0.4
+VERSION = 0.4.1
 
 # indecies for the read set
 HEADER = 'header'
@@ -741,9 +741,10 @@ if clArgs.contaminants_fa:
 
     contFile.close()
     
-    print 'Loaded contaminants: ' + str(count)
     if DEBUG: 
         for c in contaminantList: print c
+        print
+    print 'Loaded contaminants: ' + str(count)
 
 #------------------------------------------------------------------------------------------
 # OPEN READ INPUT AND OUTPUT FILES
@@ -955,9 +956,21 @@ print 'Both forward and reverse reads discarded:', nBothDiscarded
 print '\tForward reads discarded:', nForDiscarded
 print '\tReverse reads discarded:', nRevDiscarded
 print 
-for name, count in nForContaminantsTrim.iteritems() :
+for name in sorted(nForContaminantsTrim.iterkeys()):
     print 'Contaminant: ', name
-    print '\tForward reads trimmed', count
+    print '\tForward reads trimmed', nForContaminantsTrim[name]
     nRev = 0
     if PAIRED: nRev = nRevContaminantsTrim[name]
     print '\tReverse reads trimmed', nRev
+
+# tab delimited output to facilitate adding stats to compilation file
+fields = '\nnTotalReadPairs\tnBothTrimmed\tnForTrimmed\tnRevTrimmed\tnBothDiscarded\tnForDiscarded\tnRevDiscarded'
+counts = '%d\t%d\t%d\t%d\t%d\t%d\t%d' % (nTotalReadPairs, nBothTrimmed, nForTrimmed, nRevTrimmed, nBothDiscarded, nForDiscarded, nRevDiscarded)
+for name in sorted(nForContaminantsTrim.iterkeys()):
+    fields += '\t' + name
+    counts += '\t' + str(nForContaminantsTrim[name])
+    if PAIRED: 
+        fields += '\t' + name
+        counts += '\t' + str(nRevContaminantsTrim[name])
+print fields
+print counts
