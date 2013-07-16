@@ -113,7 +113,7 @@ argParser.add_argument( '-f', dest='forward_fq', action='store', required=True,
 argParser.add_argument( '-r', dest='reverse_fq', 
                         help='second read with paired-end reads. This file is not present for single-end reads.' )
 argParser.add_argument( '-o', dest='output_prefix', action='store', required=True,
-                        help='prefix for output file(s). A \'_1\' will be appended to the forward reads output file and if paired reads then a \'_2\' will be appended to the reverse reads file. Output files similarly named and with the suffix \'.disc.fq\' will be created to store all reads shorter than the minimum length threshold after trimming.' )
+                        help='prefix for output file(s). A \'_1\' will be appended to the forward reads output file and if paired reads then a \'_2\' will be appended to the reverse reads file. Output files similarly named and with the suffix \'.disc.txt\' will be created to store the fastq headers for reads shorter than the minimum length threshold after trimming.' )
 
 clArgs = argParser.parse_args()
 if DEBUG: print clArgs
@@ -768,9 +768,9 @@ except:
 # open file that will store discarded reads
 forReadDiscardedOut = ''
 try: 
-    forReadDiscardedOut = open(clArgs.output_prefix + "_1.disc.fq", 'w')
+    forReadDiscardedOut = open(clArgs.output_prefix + "_1.disc.txt", 'w')
 except: 
-    msg = 'Unable to open output file ' + clArgs.output_prefix + "_1.disc.fq"
+    msg = 'Unable to open output file ' + clArgs.output_prefix + "_1.disc.txt"
     quitOnError(msg)
 
 if PAIRED:
@@ -790,9 +790,9 @@ if PAIRED:
 
     revReadDiscardedOut = ''
     try: 
-        revReadDiscardedOut = open(clArgs.output_prefix + "_2.disc.fq", 'w')
+        revReadDiscardedOut = open(clArgs.output_prefix + "_2.disc.txt", 'w')
     except: 
-        msg = 'Unable to open output file ' + clArgs.output_prefix + "_2.disc.fq"
+        msg = 'Unable to open output file ' + clArgs.output_prefix + "_2.disc.txt"
         quitOnError(msg)
 
 #------------------------------------------------------------------------------------------
@@ -891,16 +891,23 @@ while 1:
                 # count pair
                 nBothDiscarded += 1
 
-                # both reads in read pair are discarded so don't write them to output file
-                writeRead(forRead, forReadDiscardedOut)
-                writeRead(revRead, revReadDiscardedOut)
+                # both reads in read pair are discarded so don't write
+                # them to output file. Instead write the read headers
+                # to the discard file. We only store the headers in
+                # the file since, in some cases, the entire sequence
+                # will have been trimmed and hence this would be an
+                # invalid fastq file.
+                forReadDiscardedOut.write(forRead[HEADER] + '\n') # header
+                revReadDiscardedOut.write(revRead[HEADER] + '\n') # header
                 continue
         elif discardFor:
             # not paired so count single read as pair
             nBothDiscarded += 1
 
-            # single-end read being discarded, so don't write to output file.
-            writeRead(forRead, forReadDiscardedOut)
+            # single-end read being discarded, so don't write to
+            # output file. Instead write the read headers to the
+            # discard file.
+            forReadDiscardedOut.write(forRead[HEADER] + '\n') # header
             continue
 
         # if we got this far then paired reads with only one being too
