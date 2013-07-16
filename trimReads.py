@@ -43,7 +43,7 @@ import sys, os, argparse
 DEBUG = False
 if DEBUG: print 'DEBUG MODE: ON'
 
-VERSION = 0.4.1
+VERSION = '0.4.2'
 
 # indecies for the read set
 HEADER = 'header'
@@ -64,7 +64,7 @@ DEFAULT_WINDOWS_NUMBER = 6
 POLY_A = 'AAAAAAAAAA'
 POLY_T = 'TTTTTTTTTT'
 
-argParser = argparse.ArgumentParser(version=str(VERSION), 
+argParser = argparse.ArgumentParser(version=VERSION, 
                                     description='Trim NGS reads.',
                                     formatter_class=argparse.RawDescriptionHelpFormatter,
                                     epilog='' +
