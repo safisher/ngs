@@ -43,7 +43,7 @@ import sys, os, argparse
 DEBUG = False
 if DEBUG: print 'DEBUG MODE: ON'
 
-VERSION = '0.4.2'
+VERSION = '0.4.3'
 
 # indecies for the read set
 HEADER = 'header'
@@ -565,7 +565,7 @@ def identityTrimming(read, contaminant, isForRead):
     return read
 
 # remove poly A from 3' end and poly T from 5' end
-def removePolyAT(read, trimLength):
+def removePolyAT(read, trimLength, isForRead):
     """
     Removes trimLength number of A's from the 3' end and T's from the
     5' end of a sequence. First look to see if there are at least 10
@@ -593,6 +593,9 @@ def removePolyAT(read, trimLength):
         # flag read as having been trimmed
         wasTrimmed = True
 
+        if isForRead: nForContaminantsTrim['polyT'] += 1
+        else: nRevContaminantsTrim['polyT'] += 1
+
     # trim poly-A from 3' end of read
     if seq.endswith(POLY_A):
         # only remove up to trimLength number of bases from poly-A.
@@ -609,6 +612,9 @@ def removePolyAT(read, trimLength):
 
         # flag read as having been trimmed
         wasTrimmed = True
+
+        if isForRead: nForContaminantsTrim['polyA'] += 1
+        else: nRevContaminantsTrim['polyA'] += 1
 
     if wasTrimmed:
         if DEBUG: debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'removePolyAT', '')
@@ -723,7 +729,12 @@ if clArgs.contaminants_fa:
 
             # use name to initialize contaminant trimming counts
             nForContaminantsTrim[options['name']] = 0
-            if PAIRED: nRevContaminantsTrim[options['name']] = 0
+            nForContaminantsTrim['polyA'] = 0
+            nForContaminantsTrim['polyT'] = 0
+            if PAIRED: 
+                nRevContaminantsTrim[options['name']] = 0
+                nRevContaminantsTrim['polyA'] = 0
+                nRevContaminantsTrim['polyT'] = 0
         else:
             seq = line.strip().upper()
 
@@ -855,8 +866,8 @@ while 1:
     #--------------------------------------------------------------------------------------
     # remove poly A/T
     if clArgs.remove_AT > 0:
-        forRead = removePolyAT(forRead, clArgs.remove_AT)
-        if PAIRED: revRead = removePolyAT(revRead, clArgs.remove_AT)
+        forRead = removePolyAT(forRead, clArgs.remove_AT, True)
+        if PAIRED: revRead = removePolyAT(revRead, clArgs.remove_AT, False)
 
     #--------------------------------------------------------------------------------------
     # compute trimming stats
