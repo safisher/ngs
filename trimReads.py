@@ -78,10 +78,10 @@ argParser = argparse.ArgumentParser(version=VERSION,
 '\t6. Pad paired reads with N\'s so that they are both the same length. For every N that is added, also add a # to the quality score.\n' + 
 '\t7. Add "L:X" to the read header with X being the new length of the sequence (including any N\'s that were added to the sequence).\n\n' + 
 
-'Contaminants file:\n' + 
+'Contaminants file (fasta-like file):\n' + 
 '\t1. Sequences must be on a single line (ie can\'t contain line breaks).\n' +
 '\t2. No blank lines in file.\n' +
-'\t3. Sequence header is space delimited list of options. Option names and values should be separated by a colon. \n' +
+'\t3. Sequence header is space delimited list of options that begins with a \'>\' (similar to fasta files). Option names and values should be separated by a colon. \n' +
 '\t\t Example header "> name:oligo end:3 size:10 windows:5"\n' +
 '\t4. Options:\n' +
 '\t\t * name: this option is required for every sequence\n' +
