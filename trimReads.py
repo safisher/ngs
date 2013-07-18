@@ -43,7 +43,7 @@ import sys, os, argparse
 DEBUG = False
 if DEBUG: print 'DEBUG MODE: ON'
 
-VERSION = '0.4.3'
+VERSION = '0.4.4'
 
 # indecies for the read set
 HEADER = 'header'
@@ -246,7 +246,7 @@ def cut5(read, nCut):
     return read
 
 # remove N's on either end of the read
-def removeNs(read):
+def removeNs(read, isForRead):
     """
     Removes any N's from the 3' and 5' ends of a sequence.
     """
@@ -271,6 +271,9 @@ def removeNs(read):
         # flag read as having been trimmed
         wasTrimmed = True
 
+        if isForRead: nForContaminantsTrim['remove5N'] += 1
+        else: nRevContaminantsTrim['remove5N'] += 1
+
     # trim N from end of read (3' end)
     if seq.endswith('N'):
         # trim sequence
@@ -281,6 +284,9 @@ def removeNs(read):
 
         # flag read as having been trimmed
         wasTrimmed = True
+
+        if isForRead: nForContaminantsTrim['remove3N'] += 1
+        else: nRevContaminantsTrim['remove3N'] += 1
 
     if wasTrimmed:
         if DEBUG: debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'removeNs', '')
@@ -729,10 +735,14 @@ if clArgs.contaminants_fa:
 
             # use name to initialize contaminant trimming counts
             nForContaminantsTrim[options['name']] = 0
+            nForContaminantsTrim['remove5N'] = 0
+            nForContaminantsTrim['remove3N'] = 0
             nForContaminantsTrim['polyA'] = 0
             nForContaminantsTrim['polyT'] = 0
             if PAIRED: 
                 nRevContaminantsTrim[options['name']] = 0
+                nRevContaminantsTrim['remove5N'] = 0
+                nRevContaminantsTrim['remove3N'] = 0
                 nRevContaminantsTrim['polyA'] = 0
                 nRevContaminantsTrim['polyT'] = 0
         else:
@@ -845,8 +855,8 @@ while 1:
     #--------------------------------------------------------------------------------------
     # remove N's
     if clArgs.removeN:
-        forRead = removeNs(forRead)
-        if PAIRED: revRead = removeNs(revRead)
+        forRead = removeNs(forRead, True)
+        if PAIRED: revRead = removeNs(revRead, False)
 
     #--------------------------------------------------------------------------------------
     # trim contaminants
