@@ -36,7 +36,7 @@
 #    section: ADD MODULE COMMAND FUNCTIONS HERE
 ##########################################################################################
 
-VERSION=1.0
+VERSION=1.1
 
 # all commands will be output to this file as a report of what was done
 JOURNAL="analysis.log"

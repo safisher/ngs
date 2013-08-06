@@ -16,14 +16,14 @@
 
 ##########################################################################################
 # SINGLE-END READS
-# INPUT: $SAMPLE/trimAT/unaligned_1.fq
-# OUTPUT: $SAMPLE/star/star.sam
+# INPUT: $SAMPLE/trim/unaligned_1.fq
+# OUTPUT: $SAMPLE/star/Aligned.out.sam
 #
 # PAIRED-END READS
-# INPUT: $SAMPLE/trimAT/unaligned_1.fq and $SAMPLE/trimAT/unaligned_2.fq
-# OUTPUT: $SAMPLE/star/star.sam
+# INPUT: $SAMPLE/trim/unaligned_1.fq and $SAMPLE/trim/unaligned_2.fq
+# OUTPUT: $SAMPLE/star/Aligned.out.sam
 #
-# REQUIRES: STAR version 2.3 (STAR does not have a versions option so
+# REQUIRES: STAR version 2.3.0.1 (STAR does not have a versions option so
 # the version is hardcoded in this file.
 ##########################################################################################
 
@@ -37,16 +37,16 @@ ngsUsage_STAR="Usage: `basename $0` star OPTIONS sampleID    --   run STAR on tr
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_STAR="Usage:\n\t`basename $0` star -i inputDir -p numProc -s species [-se] sampleID\n"
+ngsHelp_STAR="Usage:\n\t`basename $0` star [-i inputDir] -p numProc -s species [-se] sampleID\n"
 ngsHelp_STAR+="Input:\n\tsampleID/INPUTDIR/unaligned_1.fq\n\tsampleID/INPUTDIR/unaligned_2.fq (paired-end reads)\n"
-ngsHelp_STAR+="Output:\n\tsampleID/star/STAR.sam\n"
+ngsHelp_STAR+="Output:\n\tsampleID/star/Aligned.out.sam\n"
 ngsHelp_STAR+="Requires:\n\tSTAR ( http://code.google.com/p/rna-star )\n"
 ngsHelp_STAR+="Options:\n"
-ngsHelp_STAR+="\t-i inputDir - location of source files (default: trimAT).\n"
+ngsHelp_STAR+="\t-i inputDir - location of source files (default: trim).\n"
 ngsHelp_STAR+="\t-p numProc - number of cpu to use.\n"
 ngsHelp_STAR+="\t-s species - species from repository: $STAR_REPO.\n"
 ngsHelp_STAR+="\t-se - single-end reads (default: paired-end)\n\n"
-ngsHelp_STAR+="Runs STAR using the trimmed files from sampleID/trimAT. Output is stored in sampleID/star directory."
+ngsHelp_STAR+="Runs STAR using the trimmed files from sampleID/trim. Output is stored in sampleID/star."
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -60,7 +60,7 @@ ngsArgs_STAR() {
 	fi
 	
     # default value
-	INPDIR="trimAT" 
+	INPDIR="trim"
 
 	# getopts doesn't allow for optional arguments so handle them manually
 	while true; do
@@ -105,21 +105,21 @@ ngsCmd_STAR() {
 	fi
 	
 	# print version info in journal file
-	prnCmd "# assumed to be STAR v2.3.0"
+	prnCmd "# assumed to be STAR v2.3.0.1"
 	
 	if $SE; then
 		# single-end
-		prnCmd "rum_runner align --output $SAMPLE/star --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$INPDIR/unaligned_1.fq"
+		prnCmd "STAR --genomeDir $RUM_REPO/$SPECIES --readFilesIn $INPDIR/unaligned_1.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx"
 		if ! $DEBUG; then 
-			rum_runner align --output $SAMPLE/star --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$INPDIR/unaligned_1.fq
+			STAR --genomeDir $RUM_REPO/$SPECIES --readFilesIn $INPDIR/unaligned_1.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx
 		fi
 		
 		prnCmd "# FINISHED: STAR SINGLE-END ALIGNMENT"
 	else
 		# paired-end
-		prnCmd "rum_runner align --output $SAMPLE/star --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$INPDIR/unaligned_1.fq $SAMPLE/$INPDIR/unaligned_2.fq"
+		prnCmd "STAR --genomeDir $RUM_REPO/$SPECIES --readFilesIn $INPDIR/unaligned_1.fq $INPDIR/unaligned_2.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx"
 		if ! $DEBUG; then 
-			rum_runner align --output $SAMPLE/star --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$INPDIR/unaligned_1.fq $SAMPLE/$INPDIR/unaligned_2.fq
+			STAR --genomeDir $RUM_REPO/$SPECIES --readFilesIn $INPDIR/unaligned_1.fq $INPDIR/unaligned_2.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx
 		fi
 		
 		prnCmd "# FINISHED: STAR PAIRED-END ALIGNMENT"
