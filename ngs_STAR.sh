@@ -17,14 +17,14 @@
 ##########################################################################################
 # SINGLE-END READS
 # INPUT: $SAMPLE/trim/unaligned_1.fq
-# OUTPUT: $SAMPLE/star/Aligned.out.sam
+# OUTPUT: $SAMPLE/star/STAR.bam and $SAMPLE/star/STAR_Unique.bam
 #
 # PAIRED-END READS
 # INPUT: $SAMPLE/trim/unaligned_1.fq and $SAMPLE/trim/unaligned_2.fq
-# OUTPUT: $SAMPLE/star/Aligned.out.sam
+# OUTPUT: $SAMPLE/star/STAR.bam and $SAMPLE/star/STAR_Unique.bam
 #
-# REQUIRES: STAR version 2.3.0.1 (STAR does not have a versions option so
-# the version is hardcoded in this file.
+# REQUIRES: samtools, STAR version 2.3.0.1 (STAR does not have a versions option so
+# the version is hardcoded in this file)
 ##########################################################################################
 
 ##########################################################################################
@@ -39,7 +39,7 @@ ngsUsage_STAR="Usage: `basename $0` star OPTIONS sampleID    --   run STAR on tr
 
 ngsHelp_STAR="Usage:\n\t`basename $0` star [-i inputDir] -p numProc -s species [-se] sampleID\n"
 ngsHelp_STAR+="Input:\n\tsampleID/INPUTDIR/unaligned_1.fq\n\tsampleID/INPUTDIR/unaligned_2.fq (paired-end reads)\n"
-ngsHelp_STAR+="Output:\n\tsampleID/star/Aligned.out.sam\n"
+ngsHelp_STAR+="Output:\n\tsampleID/star/STAR.bam (all alignments)\n\tsampleID/star/STAR_Unique.bam (uniquely aligned reads)\n"
 ngsHelp_STAR+="Requires:\n\tSTAR ( http://code.google.com/p/rna-star )\n"
 ngsHelp_STAR+="Options:\n"
 ngsHelp_STAR+="\t-i inputDir - location of source files (default: trim).\n"
@@ -109,19 +109,95 @@ ngsCmd_STAR() {
 	
 	if $SE; then
 		# single-end
-		prnCmd "STAR --genomeDir $RUM_REPO/$SPECIES --readFilesIn $INPDIR/unaligned_1.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx"
+		prnCmd "STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $INPDIR/unaligned_1.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx"
 		if ! $DEBUG; then 
-			STAR --genomeDir $RUM_REPO/$SPECIES --readFilesIn $INPDIR/unaligned_1.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx
+			echo "hi"
+			STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $INPDIR/unaligned_1.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx
 		fi
 		
 		prnCmd "# FINISHED: STAR SINGLE-END ALIGNMENT"
 	else
 		# paired-end
-		prnCmd "STAR --genomeDir $RUM_REPO/$SPECIES --readFilesIn $INPDIR/unaligned_1.fq $INPDIR/unaligned_2.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx"
+		prnCmd "STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $INPDIR/unaligned_1.fq $INPDIR/unaligned_2.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx"
 		if ! $DEBUG; then 
-			STAR --genomeDir $RUM_REPO/$SPECIES --readFilesIn $INPDIR/unaligned_1.fq $INPDIR/unaligned_2.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx
+			echo "hi"
+			STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $INPDIR/unaligned_1.fq $INPDIR/unaligned_2.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx
 		fi
 		
+		# run post processing to generate necessary alignment files
+		starPostProcessing $@
+
 		prnCmd "# FINISHED: STAR PAIRED-END ALIGNMENT"
+	fi
+}
+
+starPostProcessing() {
+	prnCmd "# STAR POST PROCESSING"
+	
+	# need to save current directory so we can return here. We also
+	# need to adjust $JOURNAL so prnCmd() still works when we change
+	# directories
+	prnCmd "CUR_DIR=`pwd`"
+	CUR_DIR=`pwd`
+	
+	prnCmd "JOURNAL_SAV=$JOURNAL"
+	JOURNAL_SAV=$JOURNAL
+	
+	prnCmd "cd $SAMPLE/star"
+	if ! $DEBUG; then 
+		cd $SAMPLE/star
+		
+		JOURNAL=../../$JOURNAL
+		prnCmd "JOURNAL=../../$JOURNAL"
+	fi
+	
+	prnCmd "samtools view -h -b -S -o STAR.bam Aligned.out.sam"
+	if ! $DEBUG; then 
+		samtools view -h -b -S -o STAR.bam Aligned.out.sam
+	fi
+	
+	prnCmd "samtools sort STAR.bam STAR.sorted"
+	if ! $DEBUG; then 
+		samtools sort STAR.bam STAR.sorted
+	fi
+	
+	prnCmd "samtools index STAR.sorted.bam"
+	if ! $DEBUG; then 
+		samtools index STAR.sorted.bam
+	fi
+	
+	# generate BAM file containing all uniquely mapped reads. This variant will
+	# remove mitochondrial genes:
+	#   samtools view -H -S Aligned.out.sam > header.sam; grep -Pv 'chrM\t' Aligned.out.sam | grep -P 'IH:i:1\t' | cat header.sam - | samtools view -bS - > STAR_Unique.bam
+	prnCmd "# generating STAR_Unique.bam file"
+	prnCmd "samtools view -H -S Aligned.out.sam > header.sam"
+	# (1) extract all mapped reads from SAM file, (2) filter by number of mappings, (3) add header, (4) convert to BAM
+	prnCmd "samtools view -S -F 0x4 Aligned.out.sam | grep -P 'IH:i:1\t' | cat header.sam - | samtools view -bS - > STAR_Unique.bam"
+	#prnCmd "samtools sort STAR_Unique.bam STAR_Unique.sorted"
+	#prnCmd "samtools index STAR_Unique.sorted.bam"
+	#prnCmd "rm header.sam STAR_Unique.bam"
+	prnCmd "rm header.sam"
+	if ! $DEBUG; then 
+		samtools view -H -S Aligned.out.sam > header.sam
+		samtools view -S -F 0x4 Aligned.out.sam | grep -P 'IH:i:1\t' | cat header.sam - | samtools view -bS - > STAR_Unique.bam
+		#samtools sort STAR_Unique.bam STAR_Unique.sorted
+		#samtools index STAR_Unique.sorted.bam
+		#rm header.sam STAR_Unique.bam
+		rm header.sam
+	fi
+	
+	# this might be problematic if the sorting doesn't work.
+	prnCmd "rm STAR.bam Aligned.out.sam"
+	if ! $DEBUG; then 
+		rm STAR.bam Aligned.out.sam
+	fi
+	
+	# return to proper directory and restore $JOURNAL
+	prnCmd "cd $CUR_DIR"
+	if ! $DEBUG; then 
+		cd $CUR_DIR
+		
+		JOURNAL=$JOURNAL_SAV
+		prnCmd "JOURNAL=$JOURNAL_SAV"
 	fi
 }

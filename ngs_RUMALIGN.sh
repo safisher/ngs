@@ -16,14 +16,14 @@
 
 ##########################################################################################
 # SINGLE-END READS
-# INPUT: $SAMPLE/trimAT/unaligned_1.fq
-# OUTPUT: $SAMPLE/rum.trim/RUM.sam
+# INPUT: $SAMPLE/trim/unaligned_1.fq
+# OUTPUT: $SAMPLE/rum.trim/RUM.bam and $SAMPLE/rum.trim/RUM_Unique.bam
 #
 # PAIRED-END READS
-# INPUT: $SAMPLE/trimAT/unaligned_1.fq and $SAMPLE/trimAT/unaligned_2.fq
-# OUTPUT: $SAMPLE/rum.trim/RUM.sam
+# INPUT: $SAMPLE/trim/unaligned_1.fq and $SAMPLE/trim/unaligned_2.fq
+# OUTPUT: $SAMPLE/rum.trim/RUM.bam and $SAMPLE/rum.trim/RUM_Unique.bam
 #
-# REQUIRES: RUM version 2
+# REQUIRES: samtools, RUM version 2
 ##########################################################################################
 
 ##########################################################################################
@@ -38,18 +38,18 @@ ngsUsage_RUMALIGN="Usage: `basename $0` rumalign OPTIONS sampleID    --   run RU
 
 ngsHelp_RUMALIGN="Usage:\n\t`basename $0` rumalign [-i inputDir] -p numProc -s species [-se] sampleID\n"
 ngsHelp_RUMALIGN+="Input:\n\tsampleID/INPUTDIR/unaligned_1.fq\n\tsampleID/INPUTDIR/unaligned_2.fq (paired-end reads)\n"
-ngsHelp_RUMALIGN+="Output:\n\tsampleID/rum.trim/RUM.sam\n"
+ngsHelp_RUMALIGN+="Output:\n\tsampleID/rum.trim/RUM.bam (all aligned reads)\n\tsampleID/rum.trim/RUM_Unique.bam (uniquely aligned reads)\n"
 ngsHelp_RUMALIGN+="Requires:\n\tRUM ( http://cbil.upenn.edu/RUM )\n"
 ngsHelp_RUMALIGN+="Options:\n"
 ngsHelp_RUMALIGN+="\t-i inputDir - location of source files (default: trim).\n"
 ngsHelp_RUMALIGN+="\t-p numProc - number of cpu to use.\n"
 ngsHelp_RUMALIGN+="\t-s species - species from repository: $RUM_REPO.\n"
 ngsHelp_RUMALIGN+="\t-se - single-end reads (default: paired-end)\n\n"
-ngsHelp_RUMALIGN+="Runs RUM using the trimmed files from sampleID/trimAT. Output is stored in sampleID/rum.trim directory."
+ngsHelp_RUMALIGN+="Runs RUM using the trimmed files from sampleID/trim. Output is stored in sampleID/rum.trim directory."
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
-# RUMALIGN args: -p value, -s value, -se (optional), sampleID
+# RUMALIGN args: -i value (optional), -p value, -s value, -se (optional), sampleID
 ##########################################################################################
 
 ngsArgs_RUMALIGN() {
@@ -121,6 +121,92 @@ ngsCmd_RUMALIGN() {
 			rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$INPDIR/unaligned_1.fq $SAMPLE/$INPDIR/unaligned_2.fq
 		fi
 		
+		# run post processing to generate necessary alignment files
+		rumPostProcessing $@
+
 		prnCmd "# FINISHED: RUM PAIRED-END ALIGNMENT"
 	fi
 }
+
+rumPostProcessing() {
+	prnCmd "# RUM POST PROCESSING"
+	
+	# need to save current directory so we can return here. We also
+	# need to adjust $JOURNAL so prnCmd() still works when we change
+	# directories
+	prnCmd "CUR_DIR=`pwd`"
+	CUR_DIR=`pwd`
+	
+	prnCmd "JOURNAL_SAV=$JOURNAL"
+	JOURNAL_SAV=$JOURNAL
+	
+	prnCmd "cd $SAMPLE/rum.trim"
+	if ! $DEBUG; then 
+		cd $SAMPLE/rum.trim
+		
+		JOURNAL=../../$JOURNAL
+		prnCmd "JOURNAL=../../$JOURNAL"
+	fi
+	
+	prnCmd "rm quals.fa reads.fa"
+	if ! $DEBUG; then 
+		rm quals.fa reads.fa
+	fi
+	
+	# RUM version 1 generated sorted NU and Unique files. RUM version 2 does not.
+	prnCmd "gzip RUM_NU RUM_Unique"
+	if ! $DEBUG; then 
+		gzip RUM_NU RUM_Unique
+	fi
+	
+	prnCmd "samtools view -h -b -S -o RUM.bam RUM.sam"
+	if ! $DEBUG; then 
+		samtools view -h -b -S -o RUM.bam RUM.sam
+	fi
+	
+	prnCmd "samtools sort RUM.bam RUM.sorted"
+	if ! $DEBUG; then 
+		samtools sort RUM.bam RUM.sorted
+	fi
+	
+	prnCmd "samtools index RUM.sorted.bam"
+	if ! $DEBUG; then 
+		samtools index RUM.sorted.bam
+	fi
+	
+	# generate BAM file containing all uniquely mapped reads. This variant will
+	# remove mitochondrial genes:
+	#   samtools view -H -S RUM.sam > header.sam; grep -Pv 'chrM\t' RUM.sam | grep -P 'IH:i:1\t' | cat header.sam - | samtools view -bS - > RUM_Unique.bam
+	prnCmd "# generating RUM_Unique.bam file"
+	prnCmd "samtools view -H -S RUM.sam > header.sam"
+	# (1) extract all mapped reads from SAM file, (2) filter by number of mappings, (3) add header, (4) convert to BAM
+	prnCmd "samtools view -S -F 0x4 RUM.sam | grep -P 'IH:i:1\t' | cat header.sam - | samtools view -bS - > RUM_Unique.bam"
+	#prnCmd "samtools sort RUM_Unique.bam RUM_Unique.sorted"
+	#prnCmd "samtools index RUM_Unique.sorted.bam"
+	#prnCmd "rm header.sam RUM_Unique.bam"
+	prnCmd "rm header.sam"
+	if ! $DEBUG; then 
+		samtools view -H -S RUM.sam > header.sam
+		samtools view -S -F 0x4 RUM.sam | grep -P 'IH:i:1\t' | cat header.sam - | samtools view -bS - > RUM_Unique.bam
+		#samtools sort RUM_Unique.bam RUM_Unique.sorted
+		#samtools index RUM_Unique.sorted.bam
+		#rm header.sam RUM_Unique.bam
+		rm header.sam
+	fi
+	
+	# this might be problematic if the sorting doesn't work.
+	prnCmd "rm RUM.bam RUM.sam"
+	if ! $DEBUG; then 
+		rm RUM.bam RUM.sam
+	fi
+	
+	# return to proper directory and restore $JOURNAL
+	prnCmd "cd $CUR_DIR"
+	if ! $DEBUG; then 
+		cd $CUR_DIR
+		
+		JOURNAL=$JOURNAL_SAV
+		prnCmd "JOURNAL=$JOURNAL_SAV"
+	fi
+}
+

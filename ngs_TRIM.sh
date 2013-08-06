@@ -25,7 +25,7 @@
 # INPUT: $SAMPLE/raw/unaligned_1.fq and $SAMPLE/raw/unaligned_2.fq
 # OUTPUT: $SAMPLE/trimAT/unaligned_1.fq and $SAMPLE/trimAT/unaligned_2.fq, $SAMPLE/trimAdapters.stats.txt, $SAMPLE/trimPolyAT.stats.txt
 #         intermediate files $SAMPLE/trimAD/unaligned_1.fq and $SAMPLE/trimAD/unaligned_2.fq
-# REQUIRES: trimAdapters.py, trimPolyAT.py, FastQC (if fastqc command previously run)
+# REQUIRES: trimReads.py, FastQC (if fastqc command previously run)
 ##########################################################################################
 
 ##########################################################################################
@@ -39,14 +39,14 @@ ngsUsage_TRIM="Usage: `basename $0` trim OPTIONS sampleID    --  trim adapter an
 ##########################################################################################
 
 ngsHelp_TRIM="Usage: `basename $0` trim [-i inputDir] [-m minLen] [-se] sampleID\n"
-ngsHelp_TRIM+="Input:\n\t$REPO_LOCATION/trim/contaminants.fa (contaminants file)\n\tsampleID/orig/unaligned_1.fq\n\tsampleID/orig/unaligned_2.fq (paired-end reads)\n"
-ngsHelp_TRIM+="Output:\n\tsampleID/trim/unaligned_1.fq\n\tsampleID/trim/unaligned_2.fq (paired-end reads)\n\tsampleID/trim/stats.txt\n\tsampleID/trim/contaminants.fa (contaminants file)\n"
+ngsHelp_TRIM+="Input:\n\t$REPO_LOCATION/INPUTDIR/contaminants.fa (contaminants file)\n\tsampleID/orig/unaligned_1.fq\n\tsampleID/orig/unaligned_2.fq (paired-end reads)\n"
+ngsHelp_TRIM+="Output:\n\tsampleID/INPUTDIR/unaligned_1.fq\n\tsampleID/INPUTDIR/unaligned_2.fq (paired-end reads)\n\tsampleID/INPUTDIR/stats.txt\n\tsampleID/INPUTDIR/contaminants.fa (contaminants file)\n"
 ngsHelp_TRIM+="Requires:\n\ttrimReads.py\n\tFastQC (if fastqc command previously run)\n"
 ngsHelp_TRIM+="Options:\n"
 ngsHelp_TRIM+="\t-i inputDir - location of source files (default: orig).\n"
 ngsHelp_TRIM+="\t-m minLen - Minimum size of trimmed read. If trimmed beyond minLen, then read is discarded. If read is paired then read is replaced with N's, unless both reads in pair are smaller than minLen in which case the pair is discarded. (default: 20).\n"
 ngsHelp_TRIM+="\t-se - single-end reads (default: paired-end)\n\n"
-ngsHelp_TRIM+="Runs trimReads.py to trim data. Trimmed data is placed in 'sampleID/trim'."
+ngsHelp_TRIM+="Runs trimReads.py to trim data. Trimmed data is placed in 'sampleID/INPUTDIR'."
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
