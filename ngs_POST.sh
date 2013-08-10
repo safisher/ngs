@@ -40,6 +40,13 @@ ngsHelp_POST+="Output:\n\tsampleID/INPUTDIR/unaligned_1.fq.gz\n\tsampleID/INPUTD
 ngsHelp_POST+="Compresses trim files."
 
 ##########################################################################################
+# LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
+# make sure these variables don't collide with the other modules.
+##########################################################################################
+
+ngsLocal_POST_INP_DIR="trim"
+
+##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
 # POST args: sampleID
 ##########################################################################################
@@ -50,13 +57,10 @@ ngsArgs_POST() {
 		exit 0
 	fi
 
-    # default value
-	INPDIR="trim"
-
 	# getopts doesn't allow for optional arguments so handle them manually
 	while true; do
 		case $1 in
-			-i) INPDIR=$2
+			-i) ngsLocal_POST_INP_DIR=$2
 				shift; shift;
 				;;
 			-*) printf "Illegal option: '%s'\n" "$1"
@@ -78,9 +82,9 @@ ngsArgs_POST() {
 ngsCmd_POST() {
 	prnCmd "# BEGIN: POST PROCESSING"
 	
-	prnCmd "gzip $SAMPLE/$INPDIR/*fq"
+	prnCmd "gzip $SAMPLE/$ngsLocal_POST_INP_DIR/*fq"
 	if ! $DEBUG; then 
-		gzip $SAMPLE/$INPDIR/*fq
+		gzip $SAMPLE/$ngsLocal_POST_INP_DIR/*fq
 	fi
 	
 	prnCmd "# FINISHED: POST PROCESSING"

@@ -49,6 +49,13 @@ ngsHelp_STAR+="\t-se - single-end reads (default: paired-end)\n\n"
 ngsHelp_STAR+="Runs STAR using the trimmed files from sampleID/trim. Output is stored in sampleID/star."
 
 ##########################################################################################
+# LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
+# make sure these variables don't collide with the other modules.
+##########################################################################################
+
+ngsLocal_STAR_INP_DIR="trim"
+
+##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
 # STAR args: -p value, -s value, -se (optional), sampleID
 ##########################################################################################
@@ -59,13 +66,10 @@ ngsArgs_STAR() {
 		exit 0
 	fi
 	
-    # default value
-	INP_DIR="trim"
-
 	# getopts doesn't allow for optional arguments so handle them manually
 	while true; do
 		case $1 in
-			-i) INP_DIR=$2
+			-i) ngsLocal_STAR_INP_DIR=$2
 				shift; shift;
 				;;
 			-p) NUMCPU=$2
@@ -109,17 +113,17 @@ ngsCmd_STAR() {
 	
 	if $SE; then
 		# single-end
-		prnCmd "STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $INP_DIR/unaligned_1.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx"
+		prnCmd "STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $ngsLocal_STAR_INP_DIR/unaligned_1.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx"
 		if ! $DEBUG; then 
-			STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $INP_DIR/unaligned_1.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx
+			STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $ngsLocal_STAR_INP_DIR/unaligned_1.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx
 		fi
 		
 		prnCmd "# FINISHED: STAR SINGLE-END ALIGNMENT"
 	else
 		# paired-end
-		prnCmd "STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $INP_DIR/unaligned_1.fq $INP_DIR/unaligned_2.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx"
+		prnCmd "STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $ngsLocal_STAR_INP_DIR/unaligned_1.fq $ngsLocal_STAR_INP_DIR/unaligned_2.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx"
 		if ! $DEBUG; then 
-			STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $INP_DIR/unaligned_1.fq $INP_DIR /unaligned_2.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx
+			STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $ngsLocal_STAR_INP_DIR/unaligned_1.fq $ngsLocal_STAR_INP_DIR /unaligned_2.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx
 		fi
 		
 		# run post processing to generate necessary alignment files

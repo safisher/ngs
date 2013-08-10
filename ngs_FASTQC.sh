@@ -65,7 +65,8 @@ ngsCmd_FASTQC() {
 	fi
 	
     # output version of fastqc to journal
-	prnCmd "# `fastqc -v`"
+	prnCmd "# fastqc version"
+	if ! $DEBUG; then prnCmd "# `fastqc -v`"; fi
 	
     # run fastqc on the untrimmed data
 	prnCmd "fastqc --OUTDIR=$SAMPLE/fastqc $SAMPLE/orig/unaligned_1.fq"

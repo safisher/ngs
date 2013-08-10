@@ -42,6 +42,13 @@ ngsHelp_HTSEQ+="Run HTSeq using runHTSeq.py script. This requires a BAM file con
 ngsHelp_HTSEQ+="The following HTSeq parameter values are used: --mode=intersection-nonempty --stranded=no --type=exon --idattr=gene_id\n"
 ngsHelp_HTSEQ+="For a description of the HTSeq parameters see http://www-huber.embl.de/users/anders/HTSeq/doc/count.html#count"
 
+##########################################################################################
+# LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
+# make sure these variables don't collide with the other modules.
+##########################################################################################
+
+ngsLocal_HTSEQ_INP_DIR="star"
+ngsLocal_HTSEQ_INP_FILE="STAR_Unique.bam"
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -54,17 +61,13 @@ ngsArgs_HTSEQ() {
 		exit 0
 	fi
 	
-    # default value
-	INP_DIR="star"
-	INP_FILE="STAR_Unique.bam"
-
 	# getopts doesn't allow for optional arguments so handle them manually
 	while true; do
 		case $1 in
-			-i) INP_DIR=$2
+			-i) ngsLocal_HTSEQ_INP_DIR=$2
 				shift; shift;
 				;;
-			-f) INP_FILE=$2
+			-f) ngsLocal_HTSEQ_INP_FILE=$2
 				shift; shift;
 				;;
 			-s) SPECIES=$2
@@ -96,9 +99,9 @@ ngsCmd_HTSEQ() {
 	fi
 	
 	# We assume that the alignment file exists
-	prnCmd "runHTSeq.py $SAMPLE/$INP_DIR/$INP_FILE $SAMPLE/htseq/$SAMPLE $HTSEQ_REPO/$SPECIES.gz"
+	prnCmd "runHTSeq.py $SAMPLE/$ngsLocal_HTSEQ_INP_DIR/$ngsLocal_HTSEQ_INP_FILE $SAMPLE/htseq/$SAMPLE $HTSEQ_REPO/$SPECIES.gz"
 	if ! $DEBUG; then 
-		runHTSeq.py $SAMPLE/$INP_DIR/$INP_FILE $SAMPLE/htseq/$SAMPLE $HTSEQ_REPO/$SPECIES.gz
+		runHTSeq.py $SAMPLE/$ngsLocal_HTSEQ_INP_DIR/$ngsLocal_HTSEQ_INP_FILE $SAMPLE/htseq/$SAMPLE $HTSEQ_REPO/$SPECIES.gz
 	fi
 	
 	# parse output into three files: gene counts ($SAMPLE.htseq.cnts.txt), 

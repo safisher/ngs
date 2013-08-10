@@ -38,6 +38,13 @@ ngsHelp_TEMPLATE="put usage here\n\n"
 ngsHelp_TEMPLATE+="descriptive help here"
 
 ##########################################################################################
+# LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
+# make sure these variables don't collide with the other modules.
+##########################################################################################
+
+# put local variables here using module naming convention: ngsLocal_TEMPLATE_VARIABLENAME
+
+##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
 # TEMPLATE args
 ##########################################################################################

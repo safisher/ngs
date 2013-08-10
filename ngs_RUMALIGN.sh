@@ -48,6 +48,13 @@ ngsHelp_RUMALIGN+="\t-se - single-end reads (default: paired-end)\n\n"
 ngsHelp_RUMALIGN+="Runs RUM using the trimmed files from sampleID/trim. Output is stored in sampleID/rum.trim directory."
 
 ##########################################################################################
+# LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
+# make sure these variables don't collide with the other modules.
+##########################################################################################
+
+ngsLocal_RUMALIGN_INP_DIR="trim"
+
+##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
 # RUMALIGN args: -i value (optional), -p value, -s value, -se (optional), sampleID
 ##########################################################################################
@@ -58,13 +65,10 @@ ngsArgs_RUMALIGN() {
 		exit 0
 	fi
 	
-    # default value
-	INP_DIR="trim"
-
 	# getopts doesn't allow for optional arguments so handle them manually
 	while true; do
 		case $1 in
-			-i) INP_DIR=$2
+			-i) ngsLocal_RUMALIGN_INP_DIR=$2
 				shift; shift;
 				;;
 			-p) NUMCPU=$2
@@ -109,17 +113,17 @@ ngsCmd_RUMALIGN() {
 	
 	if $SE; then
 		# single-end
-		prnCmd "rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$INP_DIR/unaligned_1.fq"
+		prnCmd "rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$ngsLocal_RUMALIGN_INP_DIR/unaligned_1.fq"
 		if ! $DEBUG; then 
-			rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$INP_DIR/unaligned_1.fq
+			rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$ngsLocal_RUMALIGN_INP_DIR/unaligned_1.fq
 		fi
 		
 		prnCmd "# FINISHED: RUM SINGLE-END ALIGNMENT"
 	else
 		# paired-end
-		prnCmd "rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$INP_DIR/unaligned_1.fq $SAMPLE/$INP_DIR/unaligned_2.fq"
+		prnCmd "rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$ngsLocal_RUMALIGN_INP_DIR/unaligned_1.fq $SAMPLE/$ngsLocal_RUMALIGN_INP_DIR/unaligned_2.fq"
 		if ! $DEBUG; then 
-			rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$INP_DIR/unaligned_1.fq $SAMPLE/$INP_DIR/unaligned_2.fq
+			rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$ngsLocal_RUMALIGN_INP_DIR/unaligned_1.fq $SAMPLE/$ngsLocal_RUMALIGN_INP_DIR/unaligned_2.fq
 		fi
 		
 		# run post processing to generate necessary alignment files
