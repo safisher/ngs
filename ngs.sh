@@ -14,10 +14,6 @@
 # for the specific language governing permissions and limitations
 # under the License.
 
-# TEST:
-# - handle printing version of trimming scripts
-# - add htseq to pipeline
-
 ##########################################################################################
 # Adding new processing step:
 # 1. create a shell script containing the following elements ("COMMAND" should be a unique command name")
@@ -36,12 +32,12 @@
 #    section: ADD MODULE COMMAND FUNCTIONS HERE
 ##########################################################################################
 
-VERSION=1.1
+VERSION=1.2
 
 # all commands will be output to this file as a report of what was done
 JOURNAL="analysis.log"
 
-DEBUG=false   # disable commands when true
+DEBUG=False   # disable commands when true, use to see what commands would be run.
 
 # this is the location of the demultiplexed files, with each sample in a separate subdirectory named with the sample ID.
 SRC=raw
@@ -58,7 +54,6 @@ HTSEQ_REPO=$REPO_LOCATION/htseq
 
 # make comparisons case insensitive
 shopt -s nocasematch
-
 
 ###############################################################################################
 # PROCESS COMMAND ARGUMENTS
@@ -170,7 +165,7 @@ if [ "$COMMAND" = "rumstatus" ]; then ngsArgs_RUMSTATUS $@; fi
 if [ "$COMMAND" = "post" ]; then ngsArgs_POST $@; fi
 if [ "$COMMAND" = "blastdb" ]; then ngsArgs_BLASTDB $@; fi
 if [ "$COMMAND" = "htseq" ]; then ngsArgs_HTSEQ $@; fi
-if [ "$COMMAND" = "rsync" ]; then ngsArgs_RSYNC $@; fi
+if [ "$COMMAND" = "rsync" ]; then ngsArgs_RSYNC $@ $JOURNAL; fi
 if [ "$COMMAND" = "stats" ]; then ngsArgs_STATS $@; fi
 if [ "$COMMAND" = "pipeline" ]; then ngsArgs_PIPELINE $@; fi
 
@@ -237,10 +232,10 @@ if [ ! -d $SAMPLE ]; then
 fi
 
 # log version and run-time information
-if $DEBUG; then prnCmd "DEBUG FLAG SET"; fi
-prnCmd "# program\tversion\tcommand\tsample\tnumCpu\tspecies\tgeneID\tSE"
-prnCmd "# `basename $0`\t$VERSION\t$COMMAND\t$SAMPLE\t$NUMCPU\t$SPECIES\t$GENEID\t$SE"
-
+if $DEBUG; then prnCmd "# DEBUG MODE"; fi
+_cmd=`basename $0`
+_args=`echo $@`
+prnCmd "# COMMAND: $_cmd $COMMAND $_args"
 
 ###############################################################################################
 # RUN COMMANDS
@@ -276,9 +271,9 @@ if [ "$COMMAND" = "pipeline" ]; then
 	ngsCmd_FASTQC
 	ngsCmd_BLAST
 	ngsCmd_TRIM
-	ngsCmd_RUMALIGN
+	ngsCmd_STAR
 	ngsCmd_POST
 	ngsCmd_BLASTDB
-	#ngsCmd_HTSEQ
+	ngsCmd_HTSEQ
 	ngsCmd_RSYNC
 fi

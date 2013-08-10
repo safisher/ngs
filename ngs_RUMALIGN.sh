@@ -59,12 +59,12 @@ ngsArgs_RUMALIGN() {
 	fi
 	
     # default value
-	INPDIR="trim"
+	INP_DIR="trim"
 
 	# getopts doesn't allow for optional arguments so handle them manually
 	while true; do
 		case $1 in
-			-i) INPDIR=$2
+			-i) INP_DIR=$2
 				shift; shift;
 				;;
 			-p) NUMCPU=$2
@@ -104,21 +104,22 @@ ngsCmd_RUMALIGN() {
 	fi
 	
 	# print version info in journal file
-	prnCmd "# `rum_runner version`"
+	prnCmd "# rum_runner version"
+	if ! $DEBUG; then prnCmd "# `rum_runner version`"; fi
 	
 	if $SE; then
 		# single-end
-		prnCmd "rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$INPDIR/unaligned_1.fq"
+		prnCmd "rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$INP_DIR/unaligned_1.fq"
 		if ! $DEBUG; then 
-			rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$INPDIR/unaligned_1.fq
+			rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$INP_DIR/unaligned_1.fq
 		fi
 		
 		prnCmd "# FINISHED: RUM SINGLE-END ALIGNMENT"
 	else
 		# paired-end
-		prnCmd "rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$INPDIR/unaligned_1.fq $SAMPLE/$INPDIR/unaligned_2.fq"
+		prnCmd "rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$INP_DIR/unaligned_1.fq $SAMPLE/$INP_DIR/unaligned_2.fq"
 		if ! $DEBUG; then 
-			rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$INPDIR/unaligned_1.fq $SAMPLE/$INPDIR/unaligned_2.fq
+			rum_runner align --output $SAMPLE/rum.trim --name $SAMPLE --index $RUM_REPO/$SPECIES --chunks $NUMCPU $SAMPLE/$INP_DIR/unaligned_1.fq $SAMPLE/$INP_DIR/unaligned_2.fq
 		fi
 		
 		# run post processing to generate necessary alignment files
@@ -159,6 +160,7 @@ rumPostProcessing() {
 		gzip RUM_NU RUM_Unique
 	fi
 	
+	prnCmd "# converting SAM output to sorted BAM file"
 	prnCmd "samtools view -h -b -S -o RUM.bam RUM.sam"
 	if ! $DEBUG; then 
 		samtools view -h -b -S -o RUM.bam RUM.sam

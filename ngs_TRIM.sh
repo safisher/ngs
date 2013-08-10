@@ -16,15 +16,13 @@
 
 ##########################################################################################
 # SINGLE-END READS:
-# INPUT: $SAMPLE/raw/unaligned_1.fq
-# OUTPUT: $SAMPLE/trimAT/unaligned_1.fq, $SAMPLE/trimAdapters.stats.txt, $SAMPLE/trimPolyAT.stats.txt
-#         intermediate file $SAMPLE/trimAD/unaligned_1.fq
-# REQUIRES: trimAdaptersSingle.py, trimPolyATSingle.py, FastQC (if fastqc command previously run)
+# INPUT: $SAMPLE/orig/unaligned_1.fq
+# OUTPUT: $SAMPLE/trim/unaligned_1.fq, $SAMPLE/trim/stats.txt
+# REQUIRES: trimReads.py, FastQC (if fastqc command previously run)
 #
 # PAIRED-END READS:
-# INPUT: $SAMPLE/raw/unaligned_1.fq and $SAMPLE/raw/unaligned_2.fq
-# OUTPUT: $SAMPLE/trimAT/unaligned_1.fq and $SAMPLE/trimAT/unaligned_2.fq, $SAMPLE/trimAdapters.stats.txt, $SAMPLE/trimPolyAT.stats.txt
-#         intermediate files $SAMPLE/trimAD/unaligned_1.fq and $SAMPLE/trimAD/unaligned_2.fq
+# INPUT: $SAMPLE/orig/unaligned_1.fq and $SAMPLE/orig/unaligned_2.fq
+# OUTPUT: $SAMPLE/trim/unaligned_1.fq and $SAMPLE/trim/unaligned_2.fq, $SAMPLE/trim/stats.txt
 # REQUIRES: trimReads.py, FastQC (if fastqc command previously run)
 ##########################################################################################
 
@@ -38,15 +36,16 @@ ngsUsage_TRIM="Usage: `basename $0` trim OPTIONS sampleID    --  trim adapter an
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_TRIM="Usage: `basename $0` trim [-i inputDir] [-m minLen] [-se] sampleID\n"
-ngsHelp_TRIM+="Input:\n\t$REPO_LOCATION/INPUTDIR/contaminants.fa (contaminants file)\n\tsampleID/orig/unaligned_1.fq\n\tsampleID/orig/unaligned_2.fq (paired-end reads)\n"
-ngsHelp_TRIM+="Output:\n\tsampleID/INPUTDIR/unaligned_1.fq\n\tsampleID/INPUTDIR/unaligned_2.fq (paired-end reads)\n\tsampleID/INPUTDIR/stats.txt\n\tsampleID/INPUTDIR/contaminants.fa (contaminants file)\n"
+ngsHelp_TRIM="Usage: `basename $0` trim [-i inputDir] [-c contaminantsFile] [-m minLen] [-se] sampleID\n"
+ngsHelp_TRIM+="Input:\n\t$REPO_LOCATION/trim/contaminants.fa (file containing contaminants)\n\tsampleID/inputDir/unaligned_1.fq\n\tsampleID/inputDir/unaligned_2.fq (paired-end reads)\n"
+ngsHelp_TRIM+="Output:\n\tsampleID/trim/unaligned_1.fq\n\tsampleID/trim/unaligned_2.fq (paired-end reads)\n\tsampleID/trim/stats.txt\n\tsampleID/trim/contaminants.fa (contaminants file)\n"
 ngsHelp_TRIM+="Requires:\n\ttrimReads.py\n\tFastQC (if fastqc command previously run)\n"
 ngsHelp_TRIM+="Options:\n"
 ngsHelp_TRIM+="\t-i inputDir - location of source files (default: orig).\n"
+ngsHelp_TRIM+="\t-c contaminantsFile - file containing contaminants to be trimmed (default: $REPO_LOCATION/trim/contaminants.fa).\n"
 ngsHelp_TRIM+="\t-m minLen - Minimum size of trimmed read. If trimmed beyond minLen, then read is discarded. If read is paired then read is replaced with N's, unless both reads in pair are smaller than minLen in which case the pair is discarded. (default: 20).\n"
 ngsHelp_TRIM+="\t-se - single-end reads (default: paired-end)\n\n"
-ngsHelp_TRIM+="Runs trimReads.py to trim data. Trimmed data is placed in 'sampleID/INPUTDIR'."
+ngsHelp_TRIM+="Runs trimReads.py to trim data. Trimmed data is placed in 'sampleID/trim'. The contaminants file that was used is copied into the trim directory for future reference."
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -59,14 +58,18 @@ ngsArgs_TRIM() {
 		exit 0
 	fi
 
-	# default value
+	# default values
 	INPDIR="orig"
+	CONTAMINANTS_FILE="$REPO_LOCATION/trim/contaminants.fa"
 	MINLEN="20"
 
 	# getopts doesn't allow for optional arguments so handle them manually
 	while true; do
 		case $1 in
 			-i) INPDIR=$2
+				shift; shift;
+				;;
+			-c) CONTAMINANTS_FILE=$2
 				shift; shift;
 				;;
 			-p) MINLEN=$2
@@ -101,18 +104,21 @@ ngsCmd_TRIM() {
 		if [ ! -d $SAMPLE/trim ]; then mkdir $SAMPLE/trim; fi
 	fi
 	
+	# print version info in journal file
+	prnCmd "# `trimReads.py -v`"
+	
 	if $SE; then
 		# single-end
-		prnCmd "trimReads.py -m $MINLEN -rN -rAT 26 -c $REPO_LOCATION/trim/contaminants.fa -f $SAMPLE/$INPDIR/unaligned_1.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/stats.txt"
+		prnCmd "trimReads.py -m $MINLEN -rN -rAT 26 -c $CONTAMINANTS_FILE -f $SAMPLE/$INPDIR/unaligned_1.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/stats.txt"
 		if ! $DEBUG; then 
-			trimReads.py -m $MINLEN -rN -rAT 26 -c $REPO_LOCATION/trim/contaminants.fa -f $SAMPLE/$INPDIR/unaligned_1.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/stats.txt
+			trimReads.py -m $MINLEN -rN -rAT 26 -c $CONTAMINANTS_FILE -f $SAMPLE/$INPDIR/unaligned_1.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/stats.txt
 		fi
 		
 	else
 		# paired-end
-		prnCmd "trimReads.py -p -m $MINLEN -rN -rAT 26 -c $REPO_LOCATION/trim/contaminants.fa -f $SAMPLE/$INPDIR/unaligned_1.fq -r $SAMPLE/$INPDIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/stats.txt"
+		prnCmd "trimReads.py -p -m $MINLEN -rN -rAT 26 -c $CONTAMINANTS_FILE -f $SAMPLE/$INPDIR/unaligned_1.fq -r $SAMPLE/$INPDIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/stats.txt"
 		if ! $DEBUG; then 
-			trimReads.py -p -m $MINLEN -rN -rAT 26 -c $REPO_LOCATION/trim/contaminants.fa -f $SAMPLE/$INPDIR/unaligned_1.fq -r $SAMPLE/orig/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/stats.txt
+			trimReads.py -p -m $MINLEN -rN -rAT 26 -c $CONTAMINANTS_FILE -f $SAMPLE/$INPDIR/unaligned_1.fq -r $SAMPLE/orig/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/stats.txt
 		fi
 	fi
 	

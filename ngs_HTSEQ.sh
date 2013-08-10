@@ -31,7 +31,7 @@ ngsUsage_HTSEQ="Usage: `basename $0` htseq OPTIONS sampleID    --  run HTSeq on 
 ##########################################################################################
 
 ngsHelp_HTSEQ="Usage:\n\t`basename $0` htseq [-i inputDir] [-f inputFile] -s species sampleID\n"
-ngsHelp_HTSEQ+="Input:\n\tsampleID/INPUTDIR/INPUTFILE\n"
+ngsHelp_HTSEQ+="Input:\n\tsampleID/inputDir/inputFile\n"
 ngsHelp_HTSEQ+="Output:\n\tsampleID/htseq/sampleID.htseq.cnts.txt\n\tsampleID/htseq/sampleID.htseq.log.txt\n\tsampleID/htseq/sampleID.htseq.err.txt\n"
 ngsHelp_HTSEQ+="Requires:\n\tHTSeq ( http://www-huber.embl.de/users/anders/HTSeq/ )\n\trunHTSeq.py ( https://github.com/safisher/ngs )\n"
 ngsHelp_HTSEQ+="Options:\n"
@@ -55,16 +55,16 @@ ngsArgs_HTSEQ() {
 	fi
 	
     # default value
-	INPDIR="star"
-	INPFILE="STAR_Unique.bam"
+	INP_DIR="star"
+	INP_FILE="STAR_Unique.bam"
 
 	# getopts doesn't allow for optional arguments so handle them manually
 	while true; do
 		case $1 in
-			-p) INPDIR=$2
+			-i) INP_DIR=$2
 				shift; shift;
 				;;
-			-p) INPFILE=$2
+			-f) INP_FILE=$2
 				shift; shift;
 				;;
 			-s) SPECIES=$2
@@ -87,7 +87,7 @@ ngsArgs_HTSEQ() {
 ##########################################################################################
 
 ngsCmd_HTSEQ() {
-	prnCmd "# BEGIN: RUNNING HTSEQ"
+	prnCmd "# BEGIN: HTSEQ"
 	
 	# make relevant directory
 	if [ ! -d $SAMPLE/htseq ]; then 
@@ -96,13 +96,14 @@ ngsCmd_HTSEQ() {
 	fi
 	
 	# We assume that the alignment file exists
-	prnCmd "runHTSeq.py $SAMPLE/$INPDIR/$INPFILE $SAMPLE/htseq/$SAMPLE $HTSEQ_REPO/$SPECIES.gz"
+	prnCmd "runHTSeq.py $SAMPLE/$INP_DIR/$INP_FILE $SAMPLE/htseq/$SAMPLE $HTSEQ_REPO/$SPECIES.gz"
 	if ! $DEBUG; then 
-		runHTSeq.py $SAMPLE/$INPDIR/$INPFILE $SAMPLE/htseq/$SAMPLE $HTSEQ_REPO/$SPECIES.gz
+		runHTSeq.py $SAMPLE/$INP_DIR/$INP_FILE $SAMPLE/htseq/$SAMPLE $HTSEQ_REPO/$SPECIES.gz
 	fi
 	
 	# parse output into three files: gene counts ($SAMPLE.htseq.cnts.txt), 
 	# warnings ($SAMPLE.htseq.err.txt), log ($SAMPLE.htseq.log.txt)
+	prnCmd "# splitting output file into counts, log, and error files"
 	prnCmd "grep 'Warning' $SAMPLE/htseq/$SAMPLE.htseq.out > $SAMPLE/htseq/$SAMPLE.htseq.err.txt"
 	prnCmd "grep -v 'Warning' $SAMPLE/htseq/$SAMPLE.htseq.out > $SAMPLE/htseq/tmp.txt"
 	prnCmd "echo -e 'gene\tcount' > $SAMPLE/htseq/$SAMPLE.htseq.cnts.txt"
@@ -121,5 +122,5 @@ ngsCmd_HTSEQ() {
 		rm $SAMPLE/htseq/$SAMPLE.htseq.out $SAMPLE/htseq/tmp.txt
 	fi
 	
-	prnCmd "# FINISHED: RUNNING HTSEQ"
+	prnCmd "# FINISHED: HTSEQ"
 }

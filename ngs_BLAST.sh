@@ -83,7 +83,8 @@ ngsCmd_BLAST() {
 	fi
 		
     # print version info in journal file
-	prnCmd "# `blastn -version | tail -1`"
+	prnCmd "# blastn version"
+	if ! $DEBUG; then prnCmd "# `blastn -version | tail -1`"; fi
 	
     # Get 5,000 randomly sampled reads
     # Usage: randomSample.py <num lines> <lines grouped> <input> <output>

@@ -35,15 +35,14 @@ ngsHelp_PIPELINE+="Input:\n\tsee individual commands\n"
 ngsHelp_PIPELINE+="Output:\n\tsee individual commands\n"
 ngsHelp_PIPELINE+="Requires:\n\tsee individual commands\n"
 ngsHelp_PIPELINE+="OPTIONS:\n"
-ngsHelp_RUMALIGN+="\t-i inputDir - location of source files for RUM (default: trimAT).\n"
 ngsHelp_PIPELINE+="\t-p numProc - number of cpu to use.\n"
 ngsHelp_PIPELINE+="\t-s species - species from repository: $REPO_LOCATION.\n"
 ngsHelp_PIPELINE+="\t-se - single-end reads (default: paired-end)\n\n"
-ngsHelp_PIPELINE+="This will run init, fastqc, blast, trim, rumalign, post, htseq, blastdb, and rsync."
+ngsHelp_PIPELINE+="This will run init, fastqc, blast, trim, star, post, htseq, blastdb, and rsync."
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
-# PIPELINE args: -p value, -s value, -g value, -se (optional), sampleID
+# PIPELINE args: -p value, -s value, -se (optional), sampleID
 ##########################################################################################
 
 ngsArgs_PIPELINE() {
@@ -79,6 +78,6 @@ ngsArgs_PIPELINE() {
 # RUNNING COMMAND ACTION
 # PIPELINE does not have its own command function. Rather includes the
 # command functions from the following commands: init, fastqc, blast,
-# trim. rumalign, post. blastdb, htseq, rsync. See the individual
+# trim, star, post. blastdb, htseq, rsync. See the individual
 # config files.
 ##########################################################################################

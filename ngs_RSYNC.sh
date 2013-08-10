@@ -16,7 +16,7 @@
 
 ##########################################################################################
 # INPUT: n/a
-# OUTPUT: all subdirectories in $SAMPLE except 'orig' are copied to $ANALYZED\$SAMPLE
+# OUTPUT: all subdirectories and files in $SAMPLE except 'orig' are copied to $ANALYZED\$SAMPLE
 ##########################################################################################
 
 ##########################################################################################
@@ -55,18 +55,28 @@ ngsArgs_RSYNC() {
 ngsCmd_RSYNC() {
 	prnCmd "# BEGIN: COPYING TO REPO"
 	
-    # we exclude orig since that's the unaligned data which is already in the repo
-	prnCmd "rsync -avh --stats --exclude orig $SAMPLE analyzed/."
+    # we exclude orig since that's the unaligned data which is already in the repo. Note that $JOURNAL contains the name of the log file as well as the sample directory
+	prnCmd "rsync -avh --stats --exclude orig --exclude $JOURNAL $SAMPLE analyzed/."
 	if ! $DEBUG; then 
-		rsync -avh --stats --exclude orig $SAMPLE analyzed/.
+		rsync -avh --stats --exclude orig --exclude $JOURNAL $SAMPLE analyzed/.
 	fi
 	
+	# the prnCmd is here for proper annotation in the log file. The
+	# command is at the end of the function so that we capture all of
+	# the prnCmd output.
+	prnCmd "cat $JOURNAL >> analyzed/$JOURNAL"
+
 	prnCmd "# FINISHED: COPYING TO REPO"
 	
-	# we run rsync again here to make sure everything copied and to
-	# have the full transfer since we just changed $JOURNAL with the
-	# prnCmd above.
+	# we run rsync again here to make sure everything copied
 	if ! $DEBUG; then 
-		rsync -avh --stats --exclude orig $SAMPLE analyzed/.
+		rsync -avh --stats --exclude orig --exclude $JOURNAL $SAMPLE analyzed/.
+	fi
+
+	# don't squash existing journal file, so cat onto existing file
+	# rather than rsync. This command is at the end of the file since
+	# any prnCmd commands would not be captured.
+	if ! $DEBUG; then 
+		cat $JOURNAL >> analyzed/$JOURNAL
 	fi
 }
