@@ -113,17 +113,17 @@ ngsCmd_STAR() {
 	
 	if $SE; then
 		# single-end
-		prnCmd "STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $ngsLocal_STAR_INP_DIR/unaligned_1.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx"
+		prnCmd "STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx"
 		if ! $DEBUG; then 
-			STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $ngsLocal_STAR_INP_DIR/unaligned_1.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx
+			STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx
 		fi
 		
 		prnCmd "# FINISHED: STAR SINGLE-END ALIGNMENT"
 	else
 		# paired-end
-		prnCmd "STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $ngsLocal_STAR_INP_DIR/unaligned_1.fq $ngsLocal_STAR_INP_DIR/unaligned_2.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx"
+		prnCmd "STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_2.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx"
 		if ! $DEBUG; then 
-			STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $ngsLocal_STAR_INP_DIR/unaligned_1.fq $ngsLocal_STAR_INP_DIR /unaligned_2.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx
+			STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq $SAMPLE/$ngsLocal_STAR_INP_DIR /unaligned_2.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx
 		fi
 		
 		# run post processing to generate necessary alignment files
