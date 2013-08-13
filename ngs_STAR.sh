@@ -123,7 +123,7 @@ ngsCmd_STAR() {
 		# paired-end
 		prnCmd "STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_2.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx"
 		if ! $DEBUG; then 
-			STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq $SAMPLE/$ngsLocal_STAR_INP_DIR /unaligned_2.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx
+			STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_2.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx
 		fi
 		
 		# run post processing to generate necessary alignment files
