@@ -153,6 +153,12 @@ starPostProcessing() {
 		prnCmd "JOURNAL=../../$JOURNAL"
 	fi
 
+	prnCmd "# compress unmapped reads files that SAM created"
+	prnCmd "gzip Unmapped.out.*"
+	if ! $DEBUG; then 
+		gzip Unmapped.out.*
+	fi
+	
 	prnCmd "# converting SAM output to sorted BAM file"
 	prnCmd "samtools view -h -b -S -o STAR.bam Aligned.out.sam"
 	if ! $DEBUG; then 

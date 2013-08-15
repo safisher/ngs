@@ -32,6 +32,8 @@ Contaminants file:
   windows: how many k-mers to seek. can not be larger than (contaminant length - k-mer). (default 6)
   percentIdentity: percent identity threshold for trimming method 2 (0.0 < percentIdentity <= 1.0). (default 0.9)
   totalIdentity: total identity threshold for trimming method 2. If this is less than the k-mer size then it will have no impact on trimming. (default 16)
+
+REQUIRES Python 2.7 or later
 """
 
 #------------------------------------------------------------------------------------------
@@ -65,7 +67,7 @@ POLY_A = 'AAAAAAAAAA'
 POLY_T = 'TTTTTTTTTT'
 
 argParser = argparse.ArgumentParser(version=VERSION, 
-                                    description='Trim NGS reads.',
+                                    description='Trim NGS reads (requires Python 2.7 or later).',
                                     formatter_class=argparse.RawDescriptionHelpFormatter,
                                     epilog='' +
 'Trimming will happen in the following order depending on which options are selected:\n' + 
