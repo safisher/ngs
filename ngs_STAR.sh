@@ -181,14 +181,14 @@ starPostProcessing() {
 	prnCmd "# generating STAR_Unique.bam file"
 	prnCmd "samtools view -H -S Aligned.out.sam > header.sam"
 	# (1) extract all mapped reads from SAM file, (2) filter by number of mappings, (3) add header, (4) convert to BAM
-	prnCmd "samtools view -S -F 0x4 Aligned.out.sam | grep -P 'IH:i:1\t' | cat header.sam - | samtools view -bS - > STAR_Unique.bam"
+	prnCmd "samtools view -S -F 0x4 Aligned.out.sam | grep -P 'NH:i:1\t' | cat header.sam - | samtools view -bS - > STAR_Unique.bam"
 	#prnCmd "samtools sort STAR_Unique.bam STAR_Unique.sorted"
 	#prnCmd "samtools index STAR_Unique.sorted.bam"
 	#prnCmd "rm header.sam STAR_Unique.bam"
 	prnCmd "rm header.sam"
 	if ! $DEBUG; then 
 		samtools view -H -S Aligned.out.sam > header.sam
-		samtools view -S -F 0x4 Aligned.out.sam | grep -P 'IH:i:1\t' | cat header.sam - | samtools view -bS - > STAR_Unique.bam
+		samtools view -S -F 0x4 Aligned.out.sam | grep -P 'NH:i:1\t' | cat header.sam - | samtools view -bS - > STAR_Unique.bam
 		#samtools sort STAR_Unique.bam STAR_Unique.sorted
 		#samtools index STAR_Unique.sorted.bam
 		#rm header.sam STAR_Unique.bam
