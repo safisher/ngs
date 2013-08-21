@@ -42,9 +42,9 @@ ngsArgs_RSYNC() {
 	if [ $# -lt 1 ]; then
 		printHelp $COMMAND
 		exit 0
-	else
-		SAMPLE=$1
 	fi
+
+	SAMPLE=$1
 }
 
 ##########################################################################################
