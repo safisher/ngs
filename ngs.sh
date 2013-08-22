@@ -32,7 +32,7 @@
 #    section: ADD MODULE COMMAND FUNCTIONS HERE
 ##########################################################################################
 
-VERSION=1.4
+VERSION=1.4.1
 
 # all commands will be output to this file as a report of what was done
 JOURNAL="analysis.log"
@@ -245,6 +245,8 @@ prnCmd "# COMMAND: $_cmd $COMMAND $_args"
 # @@@ 5. ADD MODULE COMMAND FUNCTIONS HERE @@@
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
+# HELP and VERSION do not have command functions.
+
 if [ "$COMMAND" = "init" ]; then ngsCmd_INIT; fi
 if [ "$COMMAND" = "fastqc" ]; then ngsCmd_FASTQC; fi
 if [ "$COMMAND" = "blast" ]; then ngsCmd_BLAST; fi
@@ -258,26 +260,4 @@ if [ "$COMMAND" = "blastdb" ]; then ngsCmd_BLASTDB; fi
 if [ "$COMMAND" = "htseq" ]; then ngsCmd_HTSEQ; fi
 if [ "$COMMAND" = "rsync" ]; then ngsCmd_RSYNC; fi
 if [ "$COMMAND" = "stats" ]; then ngsCmd_STATS; fi
-
-# HELP and VERSION do not have command functions.
-
-# PIPELINE runs the command functions from the following commands. THE
-# PIPELINE COMMAND IS SENSITIVE TO THE ORDER OF THE COMMAND FUNCTIONS
-# BELOW. For example, INIT needs to prepare the files prior to FASTQC
-# running.
-
-if [ "$COMMAND" = "pipeline" ]; then 
-	ngsCmd_INIT
-	ngsCmd_FASTQC
-	ngsCmd_BLAST
-	ngsCmd_TRIM
-	# need different args to run FastQC on the trimmed data, so adjust
-	# args by calling ngsArgs_FASTQC() prior to running ngsCmd_FASTQC().
-	ngsArgs_FASTQC -i trim -o trim.fastqc
-	ngsCmd_FASTQC
-	ngsCmd_STAR
-	ngsCmd_POST
-	ngsCmd_BLASTDB
-	ngsCmd_HTSEQ
-	ngsCmd_RSYNC
-fi
+if [ "$COMMAND" = "pipeline" ]; then ngsCmd_PIPELINE; fi

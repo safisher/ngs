@@ -81,3 +81,30 @@ ngsArgs_PIPELINE() {
 # trim, star, post. blastdb, htseq, rsync. See the individual
 # config files.
 ##########################################################################################
+
+ngsCmd_PIPELINE() {
+	if $SE; then prnCmd "# BEGIN: SINGLE-END PIPELINE"
+	else prnCmd "# BEGIN: PAIRED-END PIPELINE"; fi
+		
+	# PIPELINE runs the command functions from the following commands. THE
+	# PIPELINE COMMAND IS SENSITIVE TO THE ORDER OF THE COMMAND FUNCTIONS
+	# BELOW. For example, INIT needs to prepare the files prior to FASTQC
+	# running.
+
+	ngsCmd_INIT
+	ngsCmd_FASTQC
+	ngsCmd_BLAST
+	ngsCmd_TRIM
+	# need different args to run FastQC on the trimmed data, so adjust
+	# args by calling ngsArgs_FASTQC() prior to running ngsCmd_FASTQC().
+	ngsArgs_FASTQC -i trim -o trim.fastqc
+	ngsCmd_FASTQC
+	ngsCmd_STAR
+	ngsCmd_POST
+	ngsCmd_BLASTDB
+	ngsCmd_HTSEQ
+	ngsCmd_RSYNC
+
+	if $SE; then prnCmd "# FINISHED: SINGLE-END PIPELINE"
+	else prnCmd "# FINISHED: PAIRED-END PIPELINE"; fi
+}

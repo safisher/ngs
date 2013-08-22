@@ -30,7 +30,7 @@ ngsUsage_STATS="Usage: `basename $0` stats sampleID    --  print stats from blas
 ##########################################################################################
 
 ngsHelp_STATS="Usage:\n\t`basename $0` stats sampleID\n\n"
-ngsHelp_STATS+="Prints out blast, trim, and RUM stats."
+ngsHelp_STATS+="Prints out BLAST, TRIM, and RUM stats. The stats will be tab delimited so they can be copy-pasted into an Excel table."
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
