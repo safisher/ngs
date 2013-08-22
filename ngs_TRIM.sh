@@ -39,7 +39,7 @@ ngsUsage_TRIM="Usage: `basename $0` trim OPTIONS sampleID    --  trim adapter an
 ngsHelp_TRIM="Usage: `basename $0` trim [-i inputDir] [-c contaminantsFile] [-m minLen] [-se] sampleID\n"
 ngsHelp_TRIM+="Input:\n\t$REPO_LOCATION/trim/contaminants.fa (file containing contaminants)\n\tsampleID/inputDir/unaligned_1.fq\n\tsampleID/inputDir/unaligned_2.fq (paired-end reads)\n"
 ngsHelp_TRIM+="Output:\n\tsampleID/trim/unaligned_1.fq\n\tsampleID/trim/unaligned_2.fq (paired-end reads)\n\tsampleID/trim/stats.txt\n\tsampleID/trim/contaminants.fa (contaminants file)\n"
-ngsHelp_TRIM+="Requires:\n\ttrimReads.py\n\tFastQC (if fastqc command previously run)\n"
+ngsHelp_TRIM+="Requires:\n\ttrimReads.py ( https://github.com/safisher/ngs )\n"
 ngsHelp_TRIM+="Options:\n"
 ngsHelp_TRIM+="\t-i inputDir - location of source files (default: orig).\n"
 ngsHelp_TRIM+="\t-c contaminantsFile - file containing contaminants to be trimmed (default: $REPO_LOCATION/trim/contaminants.fa).\n"
@@ -124,27 +124,6 @@ ngsCmd_TRIM() {
 		prnCmd "trimReads.py -p -m $ngsLocal_TRIM_MINLEN -rN -rAT 26 -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/stats.txt"
 		if ! $DEBUG; then 
 			trimReads.py -p -m $ngsLocal_TRIM_MINLEN -rN -rAT 26 -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/orig/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/stats.txt
-		fi
-	fi
-	
-	# if we ran fastqc on orig data (ie $SAMPLE/fastqc exists), then
-	# also run on trimmed data. Put this fastqc output in separate
-	# directory so it doesn't squash the output from orig
-	if [ -d $SAMPLE/fastqc ]; then 
-		if [ ! -d $SAMPLE/fastqc.trim ]; then 
-			prnCmd "mkdir $SAMPLE/fastqc.trim"
-			if ! $DEBUG; then mkdir $SAMPLE/fastqc.trim; fi
-		fi
-		prnCmd "fastqc --OUTDIR=$SAMPLE/fastqc.trim $SAMPLE/trim/unaligned_1.fq"
-		if ! $DEBUG; then 
-			fastqc --OUTDIR=$SAMPLE/fastqc.trim $SAMPLE/trim/unaligned_1.fq
-			
-			# do some cleanup of the output files
-			prnCmd "mv $SAMPLE/fastqc.trim/unaligned_1.fq_fastqc/* $SAMPLE/fastqc.trim/."
-			mv $SAMPLE/fastqc.trim/unaligned_1.fq_fastqc/* $SAMPLE/fastqc.trim/.
-			
-			prnCmd "rmdir $SAMPLE/fastqc.trim/unaligned_1.fq_fastqc"
-			rmdir $SAMPLE/fastqc.trim/unaligned_1.fq_fastqc
 		fi
 	fi
 	
