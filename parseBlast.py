@@ -17,12 +17,7 @@
 """
 by: S. Fisher, 2011
 
-usage: parseBlast.py <reads fasta file> <blast prefix>
-assumes the input file
-  <blast prefix>.txt
-and will generate 
-  <blast prefix>.csv - list of each hit per read and count of total number of hits per read
-  <blast prefix>.hits - the alignments, when there is more than one alignment for a read
+Usage: parseBlast.py targetSpecies readsFastaFile blastFile
 """
 
 #------------------------------------------------------------------------------------------
