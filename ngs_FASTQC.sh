@@ -33,10 +33,10 @@ ngsUsage_FASTQC="Usage: `basename $0` fastqc OPTIONS sampleID    --  run FastQC\
 ngsHelp_FASTQC="Usage:\n\t`basename $0` fastqc [-i inputDir] [-o outputDir] sampleID\n"
 ngsHelp_FASTQC+="Input:\n\tsampleID/inputDir/unaligned_1.fq\n"
 ngsHelp_FASTQC+="Output:\n\tsampleID/outputDir/*\n"
-ngsHelp_FASTQC+="Requires:\n\tFastQC ( http://www.bioinformatics.babraham.ac.uk/projects/fastqc/ )\n\n"
+ngsHelp_FASTQC+="Requires:\n\tFastQC ( http://www.bioinformatics.babraham.ac.uk/projects/fastqc/ )\n"
 ngsHelp_FASTQC+="Options:\n"
 ngsHelp_FASTQC+="\t-i inputDir - location of source file (default: orig).\n"
-ngsHelp_FASTQC+="\t-i outputDir - location of output files (default: orig.fastqc).\n"
+ngsHelp_FASTQC+="\t-i outputDir - location of output files (default: orig.fastqc).\n\n"
 ngsHelp_FASTQC+="Run FastQC on sampleID/inputDir/unaligned_1.fq file. FastQC only uses one input file so the unaligned_1.fq file is used whether the data is single- or pair-end."
 
 ##########################################################################################

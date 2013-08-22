@@ -37,7 +37,7 @@ VERSION=1.4
 # all commands will be output to this file as a report of what was done
 JOURNAL="analysis.log"
 
-DEBUG=true   # disable commands when true, use to see what commands would be run.
+DEBUG=false   # disable commands when true, use to see what commands would be run.
 
 # this is the location of the demultiplexed files, with each sample in a separate subdirectory named with the sample ID.
 SRC=raw
