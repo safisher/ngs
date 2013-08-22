@@ -39,8 +39,8 @@ ngsHelp_INIT+="Input:\n\t$SRC/sampleID/*R1*.gz\n\t$SRC/sampleID/*R2*.gz (paired-
 ngsHelp_INIT+="Output:\n\tsampleID/orig/unaligned_1.fq\n\tsampleID/orig/unaligned_2.fq (paired-end reads)\n"
 ngsHelp_INIT+="Options:\n"
 ngsHelp_INIT+="\t-se - single-end reads (default: paired-end)\n\n"
-ngsHelp_INIT+="Expects a directory called 'raw' that contains a subdirectory with demultiplexed reads. The subdirectory's name should be the sample ID. The demultiplexed reads need to be gzipped. The files with the first reads need to include 'R1' in their filenames and the second read files need to contain 'R2' in the filenames.\n\n"
-ngsHelp_INIT+="This will uncompress the raw files and place them in a subdirectory called 'orig'. Output files are named 'unaligned_1.fq' and 'unaligned_2.fq'. Only unaligned_1.fq will be generated in the case of single-end reads."
+ngsHelp_INIT+="Expects a directory called 'raw' that contains a subdirectory with demultiplexed reads. The subdirectory's name should be the sample ID. The demultiplexed reads need to be gzipped. The files containing the first reads need to include 'R1' in their filenames and the second read files need to contain 'R2' in the filenames.\n\n"
+ngsHelp_INIT+="This will uncompress the raw files and place them in a subdirectory called 'orig'. Output files are named 'unaligned_1.fq' (first reads) and 'unaligned_2.fq' (second reads). Only unaligned_1.fq will be generated in the case of single-end reads."
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS

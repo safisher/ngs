@@ -32,12 +32,12 @@
 #    section: ADD MODULE COMMAND FUNCTIONS HERE
 ##########################################################################################
 
-VERSION=1.3.2
+VERSION=1.4
 
 # all commands will be output to this file as a report of what was done
 JOURNAL="analysis.log"
 
-DEBUG=false   # disable commands when true, use to see what commands would be run.
+DEBUG=true   # disable commands when true, use to see what commands would be run.
 
 # this is the location of the demultiplexed files, with each sample in a separate subdirectory named with the sample ID.
 SRC=raw
@@ -173,7 +173,7 @@ if [ "$COMMAND" = "pipeline" ]; then ngsArgs_PIPELINE $@; fi
 # if we've gotten to this point and $SAMPLE is not set, then something went wrong and abort
 if [ -z "$SAMPLE" ]; then
 	echo "Argument processing error."
-	usage
+	echo -e $usage
 	exit 0
 fi
 
@@ -271,6 +271,10 @@ if [ "$COMMAND" = "pipeline" ]; then
 	ngsCmd_FASTQC
 	ngsCmd_BLAST
 	ngsCmd_TRIM
+	# need different args to run FastQC on the trimmed data, so adjust
+	# args by calling ngsArgs_FASTQC() prior to running ngsCmd_FASTQC().
+	ngsArgs_FASTQC -i trim -o trim.fastqc
+	ngsCmd_FASTQC
 	ngsCmd_STAR
 	ngsCmd_POST
 	ngsCmd_BLASTDB

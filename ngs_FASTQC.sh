@@ -15,8 +15,8 @@
 # under the License.
 
 ##########################################################################################
-# INPUT: $SAMPLE/orig/unaligned_1.fq and $SAMPLE/trimAT/unaligned_1.fq (if present)
-# OUTPUT: $SAMPLE/fastqc/* and $SAMPLE/fastqc.trim (if $SAMPLE/trimAT exists)
+# INPUT: $SAMPLE/orig/unaligned_1.fq
+# OUTPUT: $SAMPLE/fastqc.orig/*
 # REQUIRES: FastQC
 ##########################################################################################
 
@@ -24,17 +24,28 @@
 # USAGE
 ##########################################################################################
 
-ngsUsage_FASTQC="Usage: `basename $0` fastqc sampleID    --  run FastQC\n"
+ngsUsage_FASTQC="Usage: `basename $0` fastqc OPTIONS sampleID    --  run FastQC\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_FASTQC="Usage:\n\t`basename $0` fastqc sampleID\n"
-ngsHelp_FASTQC+="Input:\n\tsampleID/orig/unaligned_1.fq\n\tsampleID/trimAT/unaligned_1.fq (if sampleID/trimAT exists)\n"
-ngsHelp_FASTQC+="Output:\n\tsampleID/fastqc/*\n\tsampleID/fastqc.trim (if sampleID/trimAT exists)\n"
+ngsHelp_FASTQC="Usage:\n\t`basename $0` fastqc [-i inputDir] [-o outputDir] sampleID\n"
+ngsHelp_FASTQC+="Input:\n\tsampleID/inputDir/unaligned_1.fq\n"
+ngsHelp_FASTQC+="Output:\n\tsampleID/outputDir/*\n"
 ngsHelp_FASTQC+="Requires:\n\tFastQC ( http://www.bioinformatics.babraham.ac.uk/projects/fastqc/ )\n\n"
-ngsHelp_FASTQC+="Run FastQC on sampleID/orig/unaligned_1.fq file. If the subdirectory 'trimAT' exists (ie data has already been trimmed) then FastQC will also run on trimAT/unaligned_1.fq. When data is trimmed FastQC will automatically be run on the trimmed data, assuming the subdirectory 'fastqc' exists (ie FastQC was previously run on the untrimmed data). The FastQC output from orig will be placed in 'fastqc' while the output from trimAT will be placed in 'fastqc.trim'."
+ngsHelp_FASTQC+="Options:\n"
+ngsHelp_FASTQC+="\t-i inputDir - location of source file (default: orig).\n"
+ngsHelp_FASTQC+="\t-i outputDir - location of output files (default: orig.fastqc).\n"
+ngsHelp_FASTQC+="Run FastQC on sampleID/inputDir/unaligned_1.fq file. FastQC only uses one input file so the unaligned_1.fq file is used whether the data is single- or pair-end."
+
+##########################################################################################
+# LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
+# make sure these variables don't collide with the other modules.
+##########################################################################################
+
+ngsLocal_FASTQC_INP_DIR="orig"
+ngsLocal_FASTQC_OUT_DIR="orig.fastqc"
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -45,9 +56,26 @@ ngsArgs_FASTQC() {
 	if [ $# -lt 1 ]; then
 		printHelp $COMMAND
 		exit 0
-	else
-		SAMPLE=$1
 	fi
+
+	# getopts doesn't allow for optional arguments so handle them manually
+	while true; do
+		case $1 in
+			-i) ngsLocal_FASTQC_INP_DIR=$2
+				shift; shift;
+				;;
+			-o) ngsLocal_FASTQC_OUT_DIR=$2
+				shift; shift;
+				;;
+			-*) printf "Illegal option: '%s'\n" "$1"
+				printHelp $COMMAND
+				exit 0
+				;;
+ 			*) break ;;
+		esac
+	done
+	
+	SAMPLE=$1
 }
 
 ##########################################################################################
@@ -59,54 +87,31 @@ ngsCmd_FASTQC() {
 	prnCmd "# BEGIN: FASTQC"
 	
     # make relevant directory
-	if [ ! -d $SAMPLE/fastqc ]; then 
-		prnCmd "mkdir $SAMPLE/fastqc"
-		if ! $DEBUG; then mkdir $SAMPLE/fastqc; fi
+	if [ ! -d $SAMPLE/$ngsLocal_FASTQC_OUT_DIR ]; then 
+		prnCmd "mkdir $SAMPLE/$ngsLocal_FASTQC_OUT_DIR"
+		if ! $DEBUG; then mkdir $SAMPLE/$ngsLocal_FASTQC_OUT_DIR; fi
 	fi
 	
     # output version of fastqc to journal
 	prnCmd "# fastqc version"
 	if ! $DEBUG; then prnCmd "# `fastqc -v`"; fi
 	
-    # run fastqc on the untrimmed data
-	prnCmd "fastqc --OUTDIR=$SAMPLE/fastqc $SAMPLE/orig/unaligned_1.fq"
+    # run fastqc
+	prnCmd "fastqc --OUTDIR=$SAMPLE/$ngsLocal_FASTQC_OUT_DIR $SAMPLE/$ngsLocal_FASTQC_INP_DIR/unaligned_1.fq"
 	if ! $DEBUG; then
 	    # fastqc hangs when extracting the zip file, so we do the
 	    # extraction manually
-		fastqc --OUTDIR=$SAMPLE/fastqc $SAMPLE/orig/unaligned_1.fq
+		fastqc --OUTDIR=$SAMPLE/$ngsLocal_FASTQC_OUT_DIR $SAMPLE/$ngsLocal_FASTQC_INP_DIR/unaligned_1.fq
 		
 	    # do some cleanup of the output files
-		prnCmd "rm $SAMPLE/fastqc/unaligned_1.fq_fastqc.zip"
-		rm $SAMPLE/fastqc/unaligned_1.fq_fastqc.zip
+		prnCmd "rm $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc.zip"
+		rm $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc.zip
 		
-		prnCmd "mv $SAMPLE/fastqc/unaligned_1.fq_fastqc/* $SAMPLE/fastqc/."
-		mv $SAMPLE/fastqc/unaligned_1.fq_fastqc/* $SAMPLE/fastqc/.
+		prnCmd "mv $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc/* $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/."
+		mv $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc/* $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/.
 		
-		prnCmd "rmdir $SAMPLE/fastqc/unaligned_1.fq_fastqc"
-		rmdir $SAMPLE/fastqc/unaligned_1.fq_fastqc
-	fi
-	
-    # if data has already been trimmed, then run fastqc on the
-    # trimmed data
-	if [ -d $SAMPLE/trimAT ]; then 
-		if [ ! -d $SAMPLE/fastqc.trim ]; then 
-			prnCmd "mkdir $SAMPLE/fastqc.trim"
-			if ! $DEBUG; then mkdir $SAMPLE/fastqc.trim; fi
-		fi
-		prnCmd "fastqc --OUTDIR=$SAMPLE/fastqc.trim $SAMPLE/trimAT/unaligned_1.fq"
-		if ! $DEBUG; then 
-			fastqc --OUTDIR=$SAMPLE/fastqc.trim $SAMPLE/trimAT/unaligned_1.fq
-			
-	        # do some cleanup of the output files
-			prnCmd "rm $SAMPLE/fastqc.trim/unaligned_1.fq_fastqc.zip"
-			rm $SAMPLE/fastqc.trim/unaligned_1.fq_fastqc.zip
-			
-			prnCmd "mv $SAMPLE/fastqc.trim/unaligned_1.fq_fastqc/* $SAMPLE/fastqc.trim/."
-			mv $SAMPLE/fastqc.trim/unaligned_1.fq_fastqc/* $SAMPLE/fastqc.trim/.
-			
-			prnCmd "rmdir $SAMPLE/fastqc.trim/unaligned_1.fq_fastqc"
-			rmdir $SAMPLE/fastqc.trim/unaligned_1.fq_fastqc
-		fi
+		prnCmd "rmdir $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc"
+		rmdir $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc
 	fi
 	
 	prnCmd "# FINISHED: FASTQC"

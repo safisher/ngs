@@ -117,12 +117,10 @@ ngsCmd_BLASTDB() {
 	fi
 	
 	prnCmd "makeblastdb -in raw.fa -dbtype nucl -out $SAMPLE -title \"$SAMPLE\""
-	if ! $DEBUG; then 
-		makeblastdb -in raw.fa -dbtype nucl -out $SAMPLE -title "$SAMPLE"
-	fi
+	if ! $DEBUG; then makeblastdb -in raw.fa -dbtype nucl -out $SAMPLE -title "$SAMPLE"; fi
 	
 	prnCmd "rm raw.fa"
-	rm raw.fa
+	if ! $DEBUG; then rm raw.fa; fi
 	
 	# return to proper directory and restore $JOURNAL
 	prnCmd "cd $CUR_DIR"

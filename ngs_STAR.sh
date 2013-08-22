@@ -38,7 +38,7 @@ ngsUsage_STAR="Usage: `basename $0` star OPTIONS sampleID    --   run STAR on tr
 ##########################################################################################
 
 ngsHelp_STAR="Usage:\n\t`basename $0` star [-i inputDir] -p numProc -s species [-se] sampleID\n"
-ngsHelp_STAR+="Input:\n\tsampleID/INPUTDIR/unaligned_1.fq\n\tsampleID/INPUTDIR/unaligned_2.fq (paired-end reads)\n"
+ngsHelp_STAR+="Input:\n\tsampleID/inputDir/unaligned_1.fq\n\tsampleID/inputDir/unaligned_2.fq (paired-end reads)\n"
 ngsHelp_STAR+="Output:\n\tsampleID/star/STAR.bam (all alignments)\n\tsampleID/star/STAR_Unique.bam (uniquely aligned reads)\n"
 ngsHelp_STAR+="Requires:\n\tSTAR ( http://code.google.com/p/rna-star )\n"
 ngsHelp_STAR+="Options:\n"

@@ -103,16 +103,14 @@ ngsCmd_TRIM() {
 	else prnCmd "# BEGIN: TRIMMING PAIRED-END"; fi
 		
 	# make relevant directory
+	prnCmd "mkdir $SAMPLE/trim"
 	if ! $DEBUG; then 
-		prnCmd "mkdir $SAMPLE/trim"
 		if [ ! -d $SAMPLE/trim ]; then mkdir $SAMPLE/trim; fi
 	fi
 	
 	# print version info in journal file
 	prnCmd "# trimReads.py version"
 	if ! $DEBUG; then prnCmd "# `trimReads.py -v`"; fi
-
-	echo $INP_DIR
 
 	if $SE; then
 		# single-end
