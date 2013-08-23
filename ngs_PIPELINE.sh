@@ -30,15 +30,17 @@ ngsUsage_PIPELINE="Usage: `basename $0` pipeline OPTIONS sampleID    --  run ful
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_PIPELINE="Usage:\n\t`basename $0` pipeline -p numProc -s species [-se] sampleID\n"
+ngsHelp_PIPELINE="Usage:\n\t`basename $0` pipeline [-i inputDir] [-o outputDir] -p numProc -s species [-se] sampleID\n"
 ngsHelp_PIPELINE+="Input:\n\tsee individual commands\n"
 ngsHelp_PIPELINE+="Output:\n\tsee individual commands\n"
 ngsHelp_PIPELINE+="Requires:\n\tsee individual commands\n"
 ngsHelp_PIPELINE+="OPTIONS:\n"
+ngsHelp_PIPELINE+="\t-i - parent directory containing subdirectory with compressed fastq files (default: ./raw). This is the parent directory of the sample-specific directory. The sampleID will be used to complete the directory path (ie inputDir/sampleID).\n"
+ngsHelp_PIPELINE+="\t-o - directory containing subdirectory with analysis files (default: ./analyzed). This is the parent directory of the sample-specific directory. The sampleID will be used to complete the directory path (ie outputDir/sampleID).\n"
 ngsHelp_PIPELINE+="\t-p numProc - number of cpu to use.\n"
 ngsHelp_PIPELINE+="\t-s species - species from repository: $REPO_LOCATION.\n"
 ngsHelp_PIPELINE+="\t-se - single-end reads (default: paired-end)\n\n"
-ngsHelp_PIPELINE+="This will run init, fastqc, blast, trim, star, post, htseq, blastdb, and rsync."
+ngsHelp_PIPELINE+="This will run init, fastqc, blast, trim, star, post, htseq, blastdb, and rsync. See individual modules for documentation."
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -54,6 +56,12 @@ ngsArgs_PIPELINE() {
 	# getopts doesn't allow for optional arguments so handle them manually
 	while true; do
 		case $1 in
+			-i) RAW=$2
+				shift; shift;
+				;;
+			-o) ANALYZED=$2
+				shift; shift;
+				;;
 			-p) NUMCPU=$2
 				shift; shift;
 				;;

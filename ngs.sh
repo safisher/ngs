@@ -40,7 +40,7 @@ JOURNAL="analysis.log"
 DEBUG=false   # disable commands when true, use to see what commands would be run.
 
 # this is the location of the demultiplexed files, with each sample in a separate subdirectory named with the sample ID.
-SRC=raw
+RAW=raw
 
 # this is the place where analyzed data will be stored. Each sample will be put into a separate subdirectory
 ANALYZED=analyzed
