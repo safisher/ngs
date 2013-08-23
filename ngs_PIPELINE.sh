@@ -97,7 +97,7 @@ ngsCmd_PIPELINE() {
 	ngsCmd_TRIM
 	# need different args to run FastQC on the trimmed data, so adjust
 	# args by calling ngsArgs_FASTQC() prior to running ngsCmd_FASTQC().
-	ngsArgs_FASTQC -i trim -o trim.fastqc
+	ngsArgs_FASTQC -i trim -o trim.fastqc $SAMPLE
 	ngsCmd_FASTQC
 	ngsCmd_STAR
 	ngsCmd_POST
