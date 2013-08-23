@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 # Copyright (c) 2011,2012,2013, Stephen Fisher and Junhyong Kim, University of
 # Pennsylvania.  All Rights Reserved.
 #
@@ -17,7 +15,7 @@
 """
 by: S. Fisher, 2011
 
-Usage: parseBlast.py targetSpecies readsFastaFile blastFile
+Usage: python parseBlast.py targetSpecies readsFastaFile blastFile
 """
 
 #------------------------------------------------------------------------------------------
@@ -31,7 +29,7 @@ if DEBUG: print 'DEBUG MODE: ON'
 
 # expect 3 args
 if len(sys.argv) < 4:
-    print 'Usage: parseBlast.py targetSpecies readsFastaFile blastFile'
+    print 'Usage: python parseBlast.py targetSpecies readsFastaFile blastFile'
     print '\ttargetSpecies - reads mapped to this species will not be counted for other species. Target species must be one of the following species: bact, fish, fly, human, mouse, rat, yeast'
     print '\tblast.csv - list of each hit per read and count of total number of hits per read'
     print '\tblast.hits - the alignments, when there is more than one alignment for a read'

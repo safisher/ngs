@@ -1,5 +1,3 @@
-#!/usr/local/bin/python
-
 # Copyright (c) 2013, Hannah Dueck, Stephen Fisher and Junhyong Kim,
 # University of Pennsylvania.  All Rights Reserved.
 #
@@ -17,7 +15,7 @@
 """
 by: H. Dueck, S. Fisher, 2013
 
-usage: runHTSeq.py <SOURCE BAM> <OUTPUT FILE PREFIX> <GENE MODEL GTF>
+usage: python runHTSeq.py <SOURCE BAM> <OUTPUT FILE PREFIX> <GENE MODEL GTF>
 
 HTSeq requires a SAM file that is sorted by read names and had reads fixed with samtools 'fixmate'. This script handles the conversion from an unsorted BAM file.
 
@@ -45,7 +43,7 @@ if DEBUG: print 'DEBUG MODE: ON'
 
 # expect 3 args
 if len(sys.argv) < 4:
-    print 'Usage: runHTSeq.py <SOURCE BAM> <OUTPUT FILE PREFIX> <GENE MODEL GTF>\n'
+    print 'Usage: python runHTSeq.py <SOURCE BAM> <OUTPUT FILE PREFIX> <GENE MODEL GTF>\n'
     sys.exit()
 
 SOURCE_BAM = sys.argv[1]

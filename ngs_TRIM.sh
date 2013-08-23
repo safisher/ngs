@@ -109,21 +109,21 @@ ngsCmd_TRIM() {
 	fi
 	
 	# print version info in journal file
-	prnCmd "# trimReads.py version"
-	if ! $DEBUG; then prnCmd "# `trimReads.py -v`"; fi
+	prnCmd "# python trimReads.py version"
+	if ! $DEBUG; then prnCmd "# `python trimReads.py -v`"; fi
 
 	if $SE; then
 		# single-end
-		prnCmd "trimReads.py -m $ngsLocal_TRIM_MINLEN -rN -rAT 26 -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/stats.txt"
+		prnCmd "python trimReads.py -m $ngsLocal_TRIM_MINLEN -rN -rAT 26 -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/stats.txt"
 		if ! $DEBUG; then 
-			trimReads.py -m $ngsLocal_TRIM_MINLEN -rN -rAT 26 -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/stats.txt
+			python trimReads.py -m $ngsLocal_TRIM_MINLEN -rN -rAT 26 -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/stats.txt
 		fi
 		
 	else
 		# paired-end
-		prnCmd "trimReads.py -p -m $ngsLocal_TRIM_MINLEN -rN -rAT 26 -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/stats.txt"
+		prnCmd "python trimReads.py -p -m $ngsLocal_TRIM_MINLEN -rN -rAT 26 -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/stats.txt"
 		if ! $DEBUG; then 
-			trimReads.py -p -m $ngsLocal_TRIM_MINLEN -rN -rAT 26 -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/orig/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/stats.txt
+			python trimReads.py -p -m $ngsLocal_TRIM_MINLEN -rN -rAT 26 -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/orig/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/stats.txt
 		fi
 	fi
 	

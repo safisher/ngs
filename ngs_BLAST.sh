@@ -88,9 +88,9 @@ ngsCmd_BLAST() {
 	
     # Get 5,000 randomly sampled reads
     # Usage: randomSample.py <num lines> <lines grouped> <input> <output>
-	prnCmd "randomSample.py 5000 4 $SAMPLE/orig/unaligned_1.fq $SAMPLE/blast/raw.fq > $SAMPLE/blast/sampling.out.txt"
+	prnCmd "python randomSample.py 5000 4 $SAMPLE/orig/unaligned_1.fq $SAMPLE/blast/raw.fq > $SAMPLE/blast/sampling.out.txt"
 	if ! $DEBUG; then 
-		randomSample.py 5000 4 $SAMPLE/orig/unaligned_1.fq $SAMPLE/blast/raw.fq > $SAMPLE/blast/sampling.out.txt
+		python randomSample.py 5000 4 $SAMPLE/orig/unaligned_1.fq $SAMPLE/blast/raw.fq > $SAMPLE/blast/sampling.out.txt
 	fi
 	
     # Convert fastq file to fasta file
@@ -106,10 +106,10 @@ ngsCmd_BLAST() {
 	fi
 	
     # Parse BLAST output. Will generate *.cvs and *.hits files.
-    # Usage: parseBlast.py targetSpecies readsFastaFile blastFile
-	prnCmd "parseBlast.py $SPECIES $SAMPLE/blast/raw.fa $SAMPLE/blast/blast.txt"
+    # Usage: python parseBlast.py targetSpecies readsFastaFile blastFile
+	prnCmd "python parseBlast.py $SPECIES $SAMPLE/blast/raw.fa $SAMPLE/blast/blast.txt"
 	if ! $DEBUG; then 
-		parseBlast.py $SPECIES $SAMPLE/blast/raw.fa $SAMPLE/blast/blast.txt
+		python parseBlast.py $SPECIES $SAMPLE/blast/raw.fa $SAMPLE/blast/blast.txt
 	fi
 	
 	prnCmd "# FINISHED: BLAST"

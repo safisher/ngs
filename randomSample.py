@@ -1,5 +1,3 @@
-#!/usr/bin/python
-
 # Copyright (c) 2012,2013, Stephen Fisher and Junhyong Kim, University of
 # Pennsylvania.  All Rights Reserved.
 #
@@ -17,7 +15,7 @@
 """
 by: S. Fisher, 2012
 
-usage: randomSample.py <num lines> <lines grouped> <input> <output>
+usage: python randomSample.py <num lines> <lines grouped> <input> <output>
 
 This will return a file that contains the specified number of randomly
 sampled lines from the original file. If 'lines grouped' is greater
@@ -39,7 +37,7 @@ if DEBUG: print 'DEBUG MODE: ON'
 
 # expect 2 args
 if len(sys.argv) < 3:
-    print 'Usage: randomSample.py <num lines> <lines grouped> <input> <output>'
+    print 'Usage: python randomSample.py <num lines> <lines grouped> <input> <output>'
     sys.exit()
 
 
