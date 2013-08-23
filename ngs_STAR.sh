@@ -40,13 +40,15 @@ ngsUsage_STAR="Usage: `basename $0` star OPTIONS sampleID    --   run STAR on tr
 ngsHelp_STAR="Usage:\n\t`basename $0` star [-i inputDir] -p numProc -s species [-se] sampleID\n"
 ngsHelp_STAR+="Input:\n\tsampleID/inputDir/unaligned_1.fq\n\tsampleID/inputDir/unaligned_2.fq (paired-end reads)\n"
 ngsHelp_STAR+="Output:\n\tsampleID/star/STAR.bam (all alignments)\n\tsampleID/star/STAR_Unique.bam (uniquely aligned reads)\n"
-ngsHelp_STAR+="Requires:\n\tSTAR ( http://code.google.com/p/rna-star )\n"
+ngsHelp_STAR+="Requires:\n\tSTAR ( http://code.google.com/p/rna-star )\n\tsamtools ( http://samtools.sourceforge.net/ )\n"
 ngsHelp_STAR+="Options:\n"
 ngsHelp_STAR+="\t-i inputDir - location of source files (default: trim).\n"
 ngsHelp_STAR+="\t-p numProc - number of cpu to use.\n"
 ngsHelp_STAR+="\t-s species - species from repository: $STAR_REPO.\n"
 ngsHelp_STAR+="\t-se - single-end reads (default: paired-end)\n\n"
-ngsHelp_STAR+="Runs STAR using the trimmed files from sampleID/trim. Output is stored in sampleID/star."
+ngsHelp_STAR+="Runs STAR using the trimmed files from sampleID/trim. Output is stored in sampleID/star.\n\n"
+ngsHelp_STAR+="STAR options used: --genomeLoad LoadAndRemove --outReadsUnmapped Fastx"
+
 
 ##########################################################################################
 # LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to

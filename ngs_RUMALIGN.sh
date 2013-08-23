@@ -39,13 +39,13 @@ ngsUsage_RUMALIGN="Usage: `basename $0` rumalign OPTIONS sampleID    --   run RU
 ngsHelp_RUMALIGN="Usage:\n\t`basename $0` rumalign [-i inputDir] -p numProc -s species [-se] sampleID\n"
 ngsHelp_RUMALIGN+="Input:\n\tsampleID/INPUTDIR/unaligned_1.fq\n\tsampleID/INPUTDIR/unaligned_2.fq (paired-end reads)\n"
 ngsHelp_RUMALIGN+="Output:\n\tsampleID/rum.trim/RUM.bam (all aligned reads)\n\tsampleID/rum.trim/RUM_Unique.bam (uniquely aligned reads)\n"
-ngsHelp_RUMALIGN+="Requires:\n\tRUM ( http://cbil.upenn.edu/RUM )\n"
+ngsHelp_RUMALIGN+="Requires:\n\tRUM ( http://cbil.upenn.edu/RUM )\n\tsamtools ( http://samtools.sourceforge.net/ )\n"
 ngsHelp_RUMALIGN+="Options:\n"
 ngsHelp_RUMALIGN+="\t-i inputDir - location of source files (default: trim).\n"
 ngsHelp_RUMALIGN+="\t-p numProc - number of cpu to use.\n"
 ngsHelp_RUMALIGN+="\t-s species - species from repository: $RUM_REPO.\n"
 ngsHelp_RUMALIGN+="\t-se - single-end reads (default: paired-end)\n\n"
-ngsHelp_RUMALIGN+="Runs RUM using the trimmed files from sampleID/trim. Output is stored in sampleID/rum.trim directory."
+ngsHelp_RUMALIGN+="Runs RUM using the trimmed files from sampleID/trim. Output is stored in sampleID/rum.trim directory. No non-default options are specified for RUM."
 
 ##########################################################################################
 # LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
