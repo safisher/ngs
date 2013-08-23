@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 # Copyright (c) 2013, Hannah Dueck, Stephen Fisher and Junhyong Kim,
 # University of Pennsylvania.  All Rights Reserved.
 #

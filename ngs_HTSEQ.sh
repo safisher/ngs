@@ -99,9 +99,9 @@ ngsCmd_HTSEQ() {
 	fi
 	
 	# We assume that the alignment file exists
-	prnCmd "python runHTSeq.py $SAMPLE/$ngsLocal_HTSEQ_INP_DIR/$ngsLocal_HTSEQ_INP_FILE $SAMPLE/htseq/$SAMPLE $HTSEQ_REPO/$SPECIES.gz"
+	prnCmd "runHTSeq.py $SAMPLE/$ngsLocal_HTSEQ_INP_DIR/$ngsLocal_HTSEQ_INP_FILE $SAMPLE/htseq/$SAMPLE $HTSEQ_REPO/$SPECIES.gz"
 	if ! $DEBUG; then 
-		python runHTSeq.py $SAMPLE/$ngsLocal_HTSEQ_INP_DIR/$ngsLocal_HTSEQ_INP_FILE $SAMPLE/htseq/$SAMPLE $HTSEQ_REPO/$SPECIES.gz
+		runHTSeq.py $SAMPLE/$ngsLocal_HTSEQ_INP_DIR/$ngsLocal_HTSEQ_INP_FILE $SAMPLE/htseq/$SAMPLE $HTSEQ_REPO/$SPECIES.gz
 	fi
 	
 	# parse output into three files: gene counts ($SAMPLE.htseq.cnts.txt), 
