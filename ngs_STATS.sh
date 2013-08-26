@@ -30,11 +30,11 @@ ngsUsage_STATS="Usage: `basename $0` stats OPTIONS sampleID    --  print stats f
 ##########################################################################################
 
 ngsHelp_STATS="Usage:\n\t`basename $0` stats [-a aligner] sampleID\n\n"
-ngsHelp_STATS+="Input:\n\tsampleID/blast/speciesCounts.txt\n\tsampleID/trim/stats.txt\n\tsampleID/star/Log.final.out\n"
+ngsHelp_STATS+="Input:\n\tsampleID/blast/speciesCounts.txt\n\tsampleID/trim/stats.txt\n\tsampleID/star/Log.final.out (if STAR specified)\n\tsampleID/rum/mapping_stats.txt (if RUM specied)\n"
 ngsHelp_STATS+="Output:\n\tprinting to console\n"
 ngsHelp_STATS+="Options:\n"
 ngsHelp_STATS+="\t-a aligner - which aligner log file to parse for stats (default: star). Choices are 'star' or 'rum'.\n"
-ngsHelp_STATS+="Prints out BLAST, TRIM, and STAR/RUM stats. The stats will be tab delimited so they can be copy-pasted into an Excel table. This will not write to the analysis.log file."
+ngsHelp_STATS+="Prints out BLAST, TRIM, and STAR (or RUM) stats. The stats will be tab delimited so they can be copy-pasted into an Excel table. This will not write to the analysis.log file."
 
 ##########################################################################################
 # LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
