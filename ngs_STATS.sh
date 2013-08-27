@@ -146,12 +146,12 @@ ngsCmd_STATS() {
 	echo -e "\n-- $SAMPLE --"
 
 	if [ "$ngsLocal_STATS_ALIGNER" = "rum" ]; then
-		echo -e "$BLAST_HEADER\t$TRIM_HEADER\t$RUM_HEADER"
-		echo -e "$BLAST_VALUES\t$TRIM_VALUES\t$RUM_VALUES"
+		echo -e "$RUM_HEADER\t$BLAST_HEADER\t$TRIM_HEADER"
+		echo -e "$RUM_VALUES\t$BLAST_VALUES\t$TRIM_VALUES"
 
 	elif [ "$ngsLocal_STATS_ALIGNER" = "star" ]; then
-		echo -e "$BLAST_HEADER\t$TRIM_HEADER\t$STAR_HEADER"
-		echo -e "$BLAST_VALUES\t$TRIM_VALUES\t$STAR_VALUES"
+		echo -e "$STAR_HEADER\t$BLAST_HEADER\t$TRIM_HEADER"
+		echo -e "$STAR_VALUES\t$BLAST_VALUES\t$TRIM_VALUES"
 
 	else
 		echo -e "$BLAST_HEADER\t$TRIM_HEADER"
