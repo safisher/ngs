@@ -17,8 +17,7 @@
 """
 by: S. Fisher, 2013
 
-usage: trimReads.py [-h] [-v] [-p] [-m MIN_LEN] [-c3 NUM_CUT_3] [-c5 NUM_CUT_5] [-rN] [-rAT REMOVE_AT] [-c CONTAMINANTS_FA] -f
-                    FORWARD_FQ [-r REVERSE_FQ] -o OUTPUT_PREFIX
+usage: trimReads.py [-h] [-v] [-p] [-m MIN_LEN] [-c3 NUM_CUT_3] [-c5 NUM_CUT_5] [-rN] [-rAT REMOVE_AT] [-c CONTAMINANTS_FA] -f FIRST_FQ [-r SECOND_FQ] -o OUTPUT_PREFIX
 
 Contaminants file:
 1. Sequences must be on a single line (ie can't contain line breaks)
@@ -45,7 +44,7 @@ import sys, os, argparse
 DEBUG = False
 if DEBUG: print 'DEBUG MODE: ON'
 
-VERSION = '0.4.4'
+VERSION = '0.5'
 
 # indecies for the read set
 HEADER = 'header'
@@ -110,38 +109,38 @@ argParser.add_argument( '-rAT', '--removePolyAT', dest='remove_AT', action='stor
                         help='length of 3\' poly-A and 5\' poly-T to remove from the respective ends of the read. If all poly A/T is to be removed then the value should be equal to or greater than the length of the read. A minimum of ten A\'s or ten T\'s must exist in order for this trimming to happen, regardless of the trimming length; that is, poly-A and poly-T fragments are defined as being at least 10 nt in length. A sequences of A\'s or T\'s are ignored. This trimming happens after contaminant trimming. (default: no trimming)' )
 argParser.add_argument( '-c', dest='contaminants_fa', action='store', default=None, 
                         help='fasta-like file containing list of contaminants to trim from the 3\' end of the read' )
-argParser.add_argument( '-f', dest='forward_fq', action='store', required=True,
+argParser.add_argument( '-f', dest='first_fq', action='store', required=True,
                         help='fastq file with reads to be trimmed' )
-argParser.add_argument( '-r', dest='reverse_fq', 
+argParser.add_argument( '-r', dest='second_fq', 
                         help='second read with paired-end reads. This file is not present for single-end reads.' )
 argParser.add_argument( '-o', dest='output_prefix', action='store', required=True,
-                        help='prefix for output file(s). A \'_1\' will be appended to the forward reads output file and if paired reads then a \'_2\' will be appended to the reverse reads file. Output files similarly named and with the suffix \'.disc.txt\' will be created to store the fastq headers for reads shorter than the minimum length threshold after trimming.' )
+                        help='prefix for output file(s). A \'_1\' will be appended to the first reads output file and if paired reads then a \'_2\' will be appended to the second reads file. Output files similarly named and with the suffix \'.disc.txt\' will be created to store the fastq headers for reads shorter than the minimum length threshold after trimming.' )
 
 clArgs = argParser.parse_args()
 if DEBUG: print clArgs
 
 # flag if paired-end reads
 PAIRED = False
-if clArgs.reverse_fq:
+if clArgs.second_fq:
     PAIRED = True
 
 # track trimming stats
-nBothTrimmed = 0 # total number of read pairs in which both reads were trimmed (equal to nForTrimmed if single-end)
-nForTrimmed = 0 # num forward reads trimmed
-nRevTrimmed = 0 # num reverse reads trimmed
-nBothDiscarded = 0 # num read pairs discarded (equal to nForDiscarded if single-end)
-nForDiscarded = 0 # num of forward reads replaced with N's
-nRevDiscarded = 0 # num of reverse reads replaced with N's
+nBothTrimmed = 0 # total number of read pairs in which both reads were trimmed (equal to nFirstTrimmed if single-end)
+nFirstTrimmed = 0 # num first reads trimmed
+nSecondTrimmed = 0 # num second reads trimmed
+nBothDiscarded = 0 # num read pairs discarded (equal to nFirstDiscarded if single-end)
+nFirstDiscarded = 0 # num of first reads replaced with N's
+nSecondDiscarded = 0 # num of second reads replaced with N's
 nTotalReadPairs = 0 # total number of read pairs processed
-nForContaminantsTrim = {} # number of each contaminant trimmed from forward read
-nRevContaminantsTrim = {} # number of each contaminant trimmed from reverse read
+nFirstContaminantsTrim = {} # number of each contaminant trimmed from first read
+nSecondContaminantsTrim = {} # number of each contaminant trimmed from second read
 
 # print error and quit
 def quitOnError(msg):
     print 'ERROR:', msg
     sys.exit(0)
 
-# generate output file with every trim event. Forward and reverse
+# generate output file with every trim event. First and second
 # reads will be combined in this output file.
 if DEBUG:
     try: 
@@ -248,7 +247,7 @@ def cut5(read, nCut):
     return read
 
 # remove N's on either end of the read
-def removeNs(read, isForRead):
+def removeNs(read, isFirstRead):
     """
     Removes any N's from the 3' and 5' ends of a sequence.
     """
@@ -273,8 +272,8 @@ def removeNs(read, isForRead):
         # flag read as having been trimmed
         wasTrimmed = True
 
-        if isForRead: nForContaminantsTrim['remove5N'] += 1
-        else: nRevContaminantsTrim['remove5N'] += 1
+        if isFirstRead: nFirstContaminantsTrim['remove5N'] += 1
+        else: nSecondContaminantsTrim['remove5N'] += 1
 
     # trim N from end of read (3' end)
     if seq.endswith('N'):
@@ -287,8 +286,8 @@ def removeNs(read, isForRead):
         # flag read as having been trimmed
         wasTrimmed = True
 
-        if isForRead: nForContaminantsTrim['remove3N'] += 1
-        else: nRevContaminantsTrim['remove3N'] += 1
+        if isFirstRead: nFirstContaminantsTrim['remove3N'] += 1
+        else: nSecondContaminantsTrim['remove3N'] += 1
 
     if wasTrimmed:
         if DEBUG: debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'removeNs', '')
@@ -302,7 +301,7 @@ def removeNs(read, isForRead):
 # trim contaminant removing entire contaminant based on single k-mer
 # mapping, from the 5' end of the contaminant to the 3' end of the
 # read.
-def fullContaminantTrimming(read, contaminant, isForRead):
+def fullContaminantTrimming(read, contaminant, isFirstRead):
     """
     Trim read based on contaminant. Contaminant is expected to be a
     tuple containing a set of trimming options and the contaminant
@@ -356,8 +355,8 @@ def fullContaminantTrimming(read, contaminant, isForRead):
 
     if DEBUG: debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'fullContaminantTrimming', name)
 
-    if isForRead: nForContaminantsTrim[name] += 1
-    else: nRevContaminantsTrim[name] += 1
+    if isFirstRead: nFirstContaminantsTrim[name] += 1
+    else: nSecondContaminantsTrim[name] += 1
 
     read[SEQUENCE] = seq
     read[QUALS] = quals
@@ -367,7 +366,7 @@ def fullContaminantTrimming(read, contaminant, isForRead):
 
 # trim contaminant removing the portion of the contaminant that maps
 # from the k-mer region to the end of the sequence.
-def mappedContaminantTrimming(read, contaminant, isForRead):
+def mappedContaminantTrimming(read, contaminant, isFirstRead):
     """Trim read based on contaminant. Contaminant is expected to be a
     tuple containing a set of trimming options and the contaminant
     sequence. For trimming first map a k-mer then extend the mapping
@@ -440,8 +439,8 @@ def mappedContaminantTrimming(read, contaminant, isForRead):
 
     if DEBUG: debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'mappedContaminantTrimming', name)
 
-    if isForRead: nForContaminantsTrim[name] += 1
-    else: nRevContaminantsTrim[name] += 1
+    if isFirstRead: nFirstContaminantsTrim[name] += 1
+    else: nSecondContaminantsTrim[name] += 1
 
     read[SEQUENCE] = seq
     read[QUALS] = quals
@@ -452,7 +451,7 @@ def mappedContaminantTrimming(read, contaminant, isForRead):
 # trim contaminant removing entire contaminant based on single k-mer
 # mapping and whether or not the percent identity between the
 # contaminant and the read is above the specified thresholds
-def identityTrimming(read, contaminant, isForRead):
+def identityTrimming(read, contaminant, isFirstRead):
     """
     Trim read based on contaminant. Contaminant is expected to be a
     tuple containing a set of trimming options and the contaminant
@@ -563,8 +562,8 @@ def identityTrimming(read, contaminant, isForRead):
         misc = name + "\t" + str(percIdentity) + "\t" + str(totIdentity)
         debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'identityTrimming', misc)
 
-    if isForRead: nForContaminantsTrim[name] += 1
-    else: nRevContaminantsTrim[name] += 1
+    if isFirstRead: nFirstContaminantsTrim[name] += 1
+    else: nSecondContaminantsTrim[name] += 1
 
     read[SEQUENCE] = seq
     read[QUALS] = quals
@@ -573,7 +572,7 @@ def identityTrimming(read, contaminant, isForRead):
     return read
 
 # remove poly A from 3' end and poly T from 5' end
-def removePolyAT(read, trimLength, isForRead):
+def removePolyAT(read, trimLength, isFirstRead):
     """
     Removes trimLength number of A's from the 3' end and T's from the
     5' end of a sequence. First look to see if there are at least 10
@@ -601,8 +600,8 @@ def removePolyAT(read, trimLength, isForRead):
         # flag read as having been trimmed
         wasTrimmed = True
 
-        if isForRead: nForContaminantsTrim['polyT'] += 1
-        else: nRevContaminantsTrim['polyT'] += 1
+        if isFirstRead: nFirstContaminantsTrim['polyT'] += 1
+        else: nSecondContaminantsTrim['polyT'] += 1
 
     # trim poly-A from 3' end of read
     if seq.endswith(POLY_A):
@@ -621,8 +620,8 @@ def removePolyAT(read, trimLength, isForRead):
         # flag read as having been trimmed
         wasTrimmed = True
 
-        if isForRead: nForContaminantsTrim['polyA'] += 1
-        else: nRevContaminantsTrim['polyA'] += 1
+        if isFirstRead: nFirstContaminantsTrim['polyA'] += 1
+        else: nSecondContaminantsTrim['polyA'] += 1
 
     if wasTrimmed:
         if DEBUG: debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'removePolyAT', '')
@@ -736,17 +735,17 @@ if clArgs.contaminants_fa:
                 quitOnError('Contaminant does not have a name.')
 
             # use name to initialize contaminant trimming counts
-            nForContaminantsTrim[options['name']] = 0
-            nForContaminantsTrim['remove5N'] = 0
-            nForContaminantsTrim['remove3N'] = 0
-            nForContaminantsTrim['polyA'] = 0
-            nForContaminantsTrim['polyT'] = 0
+            nFirstContaminantsTrim[options['name']] = 0
+            nFirstContaminantsTrim['remove5N'] = 0
+            nFirstContaminantsTrim['remove3N'] = 0
+            nFirstContaminantsTrim['polyA'] = 0
+            nFirstContaminantsTrim['polyT'] = 0
             if PAIRED: 
-                nRevContaminantsTrim[options['name']] = 0
-                nRevContaminantsTrim['remove5N'] = 0
-                nRevContaminantsTrim['remove3N'] = 0
-                nRevContaminantsTrim['polyA'] = 0
-                nRevContaminantsTrim['polyT'] = 0
+                nSecondContaminantsTrim[options['name']] = 0
+                nSecondContaminantsTrim['remove5N'] = 0
+                nSecondContaminantsTrim['remove3N'] = 0
+                nSecondContaminantsTrim['polyA'] = 0
+                nSecondContaminantsTrim['polyT'] = 0
         else:
             seq = line.strip().upper()
 
@@ -774,47 +773,47 @@ if clArgs.contaminants_fa:
 #------------------------------------------------------------------------------------------
 
 # open input file
-forReadIn = ''
+firstReadIn = ''
 try: 
-    forReadIn = open(clArgs.forward_fq, 'r')
+    firstReadIn = open(clArgs.first_fq, 'r')
 except: 
-    msg = 'Unable to load reads file ' + clArgs.forward_fq
+    msg = 'Unable to load reads file ' + clArgs.first_fq
     quitOnError(msg)
 
 # open file that will store non-discarded reads
-forReadOut = ''
+firstReadOut = ''
 try: 
-    forReadOut = open(clArgs.output_prefix + "_1.fq", 'w')
+    firstReadOut = open(clArgs.output_prefix + "_1.fq", 'w')
 except: 
     msg = 'Unable to open output file ' + clArgs.output_prefix + "_1.fq"
     quitOnError(msg)
 
 # open file that will store discarded reads
-forReadDiscardedOut = ''
+firstReadDiscardedOut = ''
 try: 
-    forReadDiscardedOut = open(clArgs.output_prefix + "_1.disc.txt", 'w')
+    firstReadDiscardedOut = open(clArgs.output_prefix + "_1.disc.txt", 'w')
 except: 
     msg = 'Unable to open output file ' + clArgs.output_prefix + "_1.disc.txt"
     quitOnError(msg)
 
 if PAIRED:
-    revReadIn = ''
+    secondReadIn = ''
     try: 
-        revReadIn = open(clArgs.reverse_fq, 'r')
+        secondReadIn = open(clArgs.second_fq, 'r')
     except: 
-        msg = 'Unable to load reads file ' + clArgs.reverse_fq
+        msg = 'Unable to load reads file ' + clArgs.second_fq
         quitOnError(msg)
 
-    revReadOut = ''
+    secondReadOut = ''
     try: 
-        revReadOut = open(clArgs.output_prefix + "_2.fq", 'w')
+        secondReadOut = open(clArgs.output_prefix + "_2.fq", 'w')
     except: 
         msg = 'Unable to open output file ' + clArgs.output_prefix + "_2.fq"
         quitOnError(msg)
 
-    revReadDiscardedOut = ''
+    secondReadDiscardedOut = ''
     try: 
-        revReadDiscardedOut = open(clArgs.output_prefix + "_2.disc.txt", 'w')
+        secondReadDiscardedOut = open(clArgs.output_prefix + "_2.disc.txt", 'w')
     except: 
         msg = 'Unable to open output file ' + clArgs.output_prefix + "_2.disc.txt"
         quitOnError(msg)
@@ -825,40 +824,40 @@ if PAIRED:
 # ------------------------------------------------------------------------------------------
 
 while 1:
-    forRead = nextRead(forReadIn)
-    if PAIRED: revRead = nextRead(revReadIn)
+    firstRead = nextRead(firstReadIn)
+    if PAIRED: secondRead = nextRead(secondReadIn)
 
-    if forRead == {}:
-        forReadIn.close()
-        forReadOut.close()
+    if firstRead == {}:
+        firstReadIn.close()
+        firstReadOut.close()
         if PAIRED: 
-            revReadIn.close()
-            revReadOut.close()
+            secondReadIn.close()
+            secondReadOut.close()
         break
             
     nTotalReadPairs += 1
 
     # use flags since we only want to count once every time a read is trimmed
-    forReadTrimmed = False
-    revReadTrimmed = False
+    firstReadTrimmed = False
+    secondReadTrimmed = False
 
     #--------------------------------------------------------------------------------------
     # cut 3' end
     if clArgs.num_cut_3 > 0:
-        forRead = cut3(forRead, clArgs.num_cut_3)
-        if PAIRED: revRead = cut3(revRead, clArgs.num_cut_3)
+        firstRead = cut3(firstRead, clArgs.num_cut_3)
+        if PAIRED: secondRead = cut3(secondRead, clArgs.num_cut_3)
 
     #--------------------------------------------------------------------------------------
     # cut 5' end
     if clArgs.num_cut_5 > 0:
-        forRead = cut5(forRead, clArgs.num_cut_5)
-        if PAIRED: revRead = cut5(revRead, clArgs.num_cut_5)
+        firstRead = cut5(firstRead, clArgs.num_cut_5)
+        if PAIRED: secondRead = cut5(secondRead, clArgs.num_cut_5)
 
     #--------------------------------------------------------------------------------------
     # remove N's
     if clArgs.removeN:
-        forRead = removeNs(forRead, True)
-        if PAIRED: revRead = removeNs(revRead, False)
+        firstRead = removeNs(firstRead, True)
+        if PAIRED: secondRead = removeNs(secondRead, False)
 
     #--------------------------------------------------------------------------------------
     # trim contaminants
@@ -866,52 +865,52 @@ while 1:
         for contaminant in contaminantList:
             method = contaminant[0]['method']
             if method == 0:
-                forRead = fullContaminantTrimming(forRead, contaminant, True)
-                if PAIRED: revRead = fullContaminantTrimming(revRead, contaminant, False)
+                firstRead = fullContaminantTrimming(firstRead, contaminant, True)
+                if PAIRED: secondRead = fullContaminantTrimming(secondRead, contaminant, False)
             elif method == 1:
-                forRead = mappedContaminantTrimming(forRead, contaminant, True)
-                if PAIRED: revRead = mappedContaminantTrimming(revRead, contaminant, False)
+                firstRead = mappedContaminantTrimming(firstRead, contaminant, True)
+                if PAIRED: secondRead = mappedContaminantTrimming(secondRead, contaminant, False)
             else:
-                forRead = identityTrimming(forRead, contaminant, True)
-                if PAIRED: revRead = identityTrimming(revRead, contaminant, False)
+                firstRead = identityTrimming(firstRead, contaminant, True)
+                if PAIRED: secondRead = identityTrimming(secondRead, contaminant, False)
 
     #--------------------------------------------------------------------------------------
     # remove poly A/T
     if clArgs.remove_AT > 0:
-        forRead = removePolyAT(forRead, clArgs.remove_AT, True)
-        if PAIRED: revRead = removePolyAT(revRead, clArgs.remove_AT, False)
+        firstRead = removePolyAT(firstRead, clArgs.remove_AT, True)
+        if PAIRED: secondRead = removePolyAT(secondRead, clArgs.remove_AT, False)
 
     #--------------------------------------------------------------------------------------
     # compute trimming stats
-    trimFor = False
-    trimRev = False
-    if forRead[TRIMMED]: 
-        nForTrimmed += 1
-        trimFor = True
+    trimFirst = False
+    trimSecond = False
+    if firstRead[TRIMMED]: 
+        nFirstTrimmed += 1
+        trimFirst = True
     if PAIRED: 
-        if revRead[TRIMMED]: 
-            nRevTrimmed += 1
-            trimRev = True
-        if trimFor and trimRev:
+        if secondRead[TRIMMED]: 
+            nSecondTrimmed += 1
+            trimSecond = True
+        if trimFirst and trimSecond:
             # count trimmed pair
             nBothTrimmed += 1
-    elif trimFor:
+    elif trimFirst:
         # not paired, so count single read as pair
         nBothTrimmed += 1
 
     #--------------------------------------------------------------------------------------
     # discard reads that are too short
     if clArgs.min_len > 0:
-        discardFor = False
-        discardRev = False
-        if forRead[LENGTH] < clArgs.min_len:
-            nForDiscarded += 1
-            discardFor = True
+        discardFirst = False
+        discardSecond = False
+        if firstRead[LENGTH] < clArgs.min_len:
+            nFirstDiscarded += 1
+            discardFirst = True
         if PAIRED:
-            if revRead[LENGTH] < clArgs.min_len:
-                nRevDiscarded += 1
-                discardRev = True
-            if discardFor and discardRev:  
+            if secondRead[LENGTH] < clArgs.min_len:
+                nSecondDiscarded += 1
+                discardSecond = True
+            if discardFirst and discardSecond:  
                 # count pair
                 nBothDiscarded += 1
 
@@ -921,79 +920,118 @@ while 1:
                 # the file since, in some cases, the entire sequence
                 # will have been trimmed and hence this would be an
                 # invalid fastq file.
-                forReadDiscardedOut.write(forRead[HEADER] + '\n') # header
-                revReadDiscardedOut.write(revRead[HEADER] + '\n') # header
+                firstReadDiscardedOut.write(firstRead[HEADER] + '\n') # header
+                secondReadDiscardedOut.write(secondRead[HEADER] + '\n') # header
                 continue
-        elif discardFor:
+        elif discardFirst:
             # not paired so count single read as pair
             nBothDiscarded += 1
 
             # single-end read being discarded, so don't write to
             # output file. Instead write the read headers to the
             # discard file.
-            forReadDiscardedOut.write(forRead[HEADER] + '\n') # header
+            firstReadDiscardedOut.write(firstRead[HEADER] + '\n') # header
             continue
 
         # if we got this far then paired reads with only one being too
         # small, so replace that one read with N's
-        if discardFor:
-            forRead[SEQUENCE] = 'N' * revRead[LENGTH]
-            forRead[QUALS] = '#' * revRead[LENGTH]
-            forRead[LENGTH] = revRead[LENGTH]
-        elif discardRev:
-            revRead[SEQUENCE] = 'N' * forRead[LENGTH]
-            revRead[QUALS] = '#' * forRead[LENGTH]
-            revRead[LENGTH] = forRead[LENGTH]
+        if discardFirst:
+            firstRead[SEQUENCE] = 'N' * secondRead[LENGTH]
+            firstRead[QUALS] = '#' * secondRead[LENGTH]
+            firstRead[LENGTH] = secondRead[LENGTH]
+        elif discardSecond:
+            secondRead[SEQUENCE] = 'N' * firstRead[LENGTH]
+            secondRead[QUALS] = '#' * firstRead[LENGTH]
+            secondRead[LENGTH] = firstRead[LENGTH]
 
     #--------------------------------------------------------------------------------------
     # pad paired reads, as needed, so that they are both the same length
     if clArgs.padPaired and PAIRED:
-        if forRead[LENGTH] < revRead[LENGTH]:
-            forRead[SEQUENCE] = forRead[SEQUENCE] + 'N' * (revRead[LENGTH] - forRead[LENGTH])
-            forRead[QUALS] = forRead[QUALS] + '#' * (revRead[LENGTH] - forRead[LENGTH])
-            forRead[LENGTH] = revRead[LENGTH]
-        elif revRead[LENGTH] < forRead[LENGTH]:
-            revRead[SEQUENCE] = revRead[SEQUENCE] + 'N' * (forRead[LENGTH] - revRead[LENGTH])
-            revRead[QUALS] = revRead[QUALS] + '#' * (forRead[LENGTH] - revRead[LENGTH])
-            revRead[LENGTH] = forRead[LENGTH]
+        if firstRead[LENGTH] < secondRead[LENGTH]:
+            firstRead[SEQUENCE] = firstRead[SEQUENCE] + 'N' * (secondRead[LENGTH] - firstRead[LENGTH])
+            firstRead[QUALS] = firstRead[QUALS] + '#' * (secondRead[LENGTH] - firstRead[LENGTH])
+            firstRead[LENGTH] = secondRead[LENGTH]
+        elif secondRead[LENGTH] < firstRead[LENGTH]:
+            secondRead[SEQUENCE] = secondRead[SEQUENCE] + 'N' * (firstRead[LENGTH] - secondRead[LENGTH])
+            secondRead[QUALS] = secondRead[QUALS] + '#' * (firstRead[LENGTH] - secondRead[LENGTH])
+            secondRead[LENGTH] = firstRead[LENGTH]
 
     #--------------------------------------------------------------------------------------
     # add sequence length to read header
-    forRead[HEADER] += ' L:%d' % forRead[LENGTH]
-    if PAIRED: revRead[HEADER] += ' L:%d' % revRead[LENGTH]
+    firstRead[HEADER] += ' L:%d' % firstRead[LENGTH]
+    if PAIRED: secondRead[HEADER] += ' L:%d' % secondRead[LENGTH]
 
     #--------------------------------------------------------------------------------------
     # write read(s) to output file if not over-trimmed
-    writeRead(forRead, forReadOut)
-    if PAIRED: writeRead(revRead, revReadOut)
+    writeRead(firstRead, firstReadOut)
+    if PAIRED: writeRead(secondRead, secondReadOut)
 
 #------------------------------------------------------------------------------------------
 # OUTPUT TRIMMING STATS
 #------------------------------------------------------------------------------------------
 
 print 'Read pairs processed:', nTotalReadPairs
-print 'Both forward and reverse reads trimmed:', nBothTrimmed
-print '\tForward reads trimmed:', nForTrimmed
-print '\tReverse reads trimmed:', nRevTrimmed
-print 'Both forward and reverse reads discarded:', nBothDiscarded
-print '\tForward reads discarded:', nForDiscarded
-print '\tReverse reads discarded:', nRevDiscarded
+print '\nBoth first and second reads trimmed:', nBothTrimmed
+print '\tFirst reads trimmed:', nFirstTrimmed
+print '\tSecond reads trimmed:', nSecondTrimmed
+print 'Both first and second reads discarded:', nBothDiscarded
+print '\tFirst reads discarded:', nFirstDiscarded
+print '\tSecond reads discarded:', nSecondDiscarded
 print 
-for name in sorted(nForContaminantsTrim.iterkeys()):
-    print 'Contaminant: ', name
-    print '\tForward reads trimmed', nForContaminantsTrim[name]
-    nRev = 0
-    if PAIRED: nRev = nRevContaminantsTrim[name]
-    print '\tReverse reads trimmed', nRev
 
 # tab delimited output to facilitate adding stats to compilation file
-fields = '\nnTotalReadPairs\tnBothTrimmed\tnForTrimmed\tnRevTrimmed\tnBothDiscarded\tnForDiscarded\tnRevDiscarded'
-counts = '%d\t%d\t%d\t%d\t%d\t%d\t%d' % (nTotalReadPairs, nBothTrimmed, nForTrimmed, nRevTrimmed, nBothDiscarded, nForDiscarded, nRevDiscarded)
-for name in sorted(nForContaminantsTrim.iterkeys()):
-    fields += '\t' + name
-    counts += '\t' + str(nForContaminantsTrim[name])
+fields = '\nnTotalReadPairs\tnBothTrimmed\tnFirstTrimmed\tnSecondTrimmed\tnBothDiscarded\tnFirstDiscarded\tnSecondDiscarded'
+counts = '%d\t%d\t%d\t%d\t%d\t%d\t%d' % (nTotalReadPairs, nBothTrimmed, nFirstTrimmed, nSecondTrimmed, nBothDiscarded, nFirstDiscarded, nSecondDiscarded)
+
+if clArgs.removeN:
+    print '5\' N Removed'
+    print '\tFirst reads trimmed', nFirstContaminantsTrim['remove5N']
+    fields += '\tremoved5N (first)'
+    counts += '\t' + str(nFirstContaminantsTrim['remove5N'])
     if PAIRED: 
-        fields += '\t' + name
-        counts += '\t' + str(nRevContaminantsTrim[name])
+        print '\tSecond reads trimmed', nSecondContaminantsTrim['remove5N']
+        fields += '\tremoved5N (second)'
+        counts += '\t' + str(nSecondContaminantsTrim['remove5N'])
+    
+    print '3\' N Removed'
+    print '\tFirst reads trimmed', nFirstContaminantsTrim['remove3N']
+    fields += '\tremoved3N (first)'
+    counts += '\t' + str(nFirstContaminantsTrim['remove3N'])
+    if PAIRED: 
+        print '\tSecond reads trimmed', nSecondContaminantsTrim['remove3N']
+        fields += '\tremoved3N (second)'
+        counts += '\t' + str(nSecondContaminantsTrim['remove3N'])
+
+if clArgs.contaminants_fa:
+    for contaminant in contaminantList:
+        name = contaminant[0]['name']
+        print 'Contaminant: ', name
+        print '\tFirst reads trimmed', nFirstContaminantsTrim[name]
+        fields += '\t' + name + ' (first)'
+        counts += '\t' + str(nFirstContaminantsTrim[name])
+        if PAIRED: 
+            print '\tSecond reads trimmed', nSecondContaminantsTrim[name]
+            fields += '\t' + name + ' (second)'
+            counts += '\t' + str(nSecondContaminantsTrim[name])
+
+if clArgs.remove_AT > 0:
+    print '5\' poly-T Removed'
+    print '\tFirst reads trimmed', nFirstContaminantsTrim['polyT']
+    fields += '\t5 polyT (first)'
+    counts += '\t' + str(nFirstContaminantsTrim['polyT'])
+    if PAIRED:
+        print '\tSecond reads trimmed', nSecondContaminantsTrim['polyT']
+        fields += '\t5 polyT (second)'
+        counts += '\t' + str(nSecondContaminantsTrim['polyT'])
+
+    print '3\' poly-A Removed'
+    print '\tFirst reads trimmed', nFirstContaminantsTrim['polyA']
+    fields += '\t3 polyA (first)'
+    counts += '\t' + str(nFirstContaminantsTrim['polyA'])
+    if PAIRED:
+        print '\tSecond reads trimmed', nSecondContaminantsTrim['polyA']
+        fields += '\t3 polyA (second)'
+        counts += '\t' + str(nSecondContaminantsTrim['polyA'])
+    
 print fields
 print counts
