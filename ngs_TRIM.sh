@@ -127,6 +127,11 @@ ngsCmd_TRIM() {
 		fi
 	fi
 	
+	# copy contaminants files into trim directory for future reference
+	prnCmd "cp $ngsLocal_TRIM_CONTAMINANTS_FILE $SAMPLE/trim/."
+	if ! $DEBUG; then
+		cp $ngsLocal_TRIM_CONTAMINANTS_FILE $SAMPLE/trim/.
+
 	if $SE; then prnCmd "# FINISHED: TRIMMING SINGLE-END"
 	else prnCmd "# FINISHED: TRIMMING PAIRED-END"; fi
 }
