@@ -110,7 +110,10 @@ ngsCmd_TRIM() {
 	
 	# print version info in journal file
 	prnCmd "# trimReads.py version"
-	if ! $DEBUG; then prnCmd "# `trimReads.py -v`"; fi
+	if ! $DEBUG; then 
+		version=$((trimReads.py -v) 2>&1)
+		prnCmd "# $version"
+	fi
 
 	if $SE; then
 		# single-end
