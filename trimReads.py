@@ -44,7 +44,7 @@ import sys, os, argparse
 DEBUG = False
 if DEBUG: print 'DEBUG MODE: ON'
 
-VERSION = '0.5'
+VERSION = '0.6'
 
 # indecies for the read set
 HEADER = 'header'
@@ -215,10 +215,10 @@ def cut3(read, nCut):
     length = read[LENGTH]
 
     # trim sequence
-    seq = seq[nCut:]
+    seq = seq[:(length - nCut)]
 
     # need to trim quals in same way we trimmed sequence
-    quals = quals[nCut:]
+    quals = quals[:(length - nCut)]
 
     read[SEQUENCE] = seq
     read[QUALS] = quals
@@ -236,10 +236,10 @@ def cut5(read, nCut):
     length = read[LENGTH]
 
     # trim sequence
-    seq = seq[:(length - nCut)]
+    seq = seq[nCut:]
 
     # need to trim quals in same way we trimmed sequence
-    quals = quals[:(length - nCut)]
+    quals = quals[nCut:]
 
     read[SEQUENCE] = seq
     read[QUALS] = quals
