@@ -32,7 +32,7 @@
 #    section: ADD MODULE COMMAND FUNCTIONS HERE
 ##########################################################################################
 
-VERSION=beta-1.5.1
+VERSION=beta-1.5.2
 
 # all commands will be output to this file as a report of what was done
 JOURNAL="analysis.log"

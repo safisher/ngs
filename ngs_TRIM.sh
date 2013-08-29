@@ -131,6 +131,7 @@ ngsCmd_TRIM() {
 	prnCmd "cp $ngsLocal_TRIM_CONTAMINANTS_FILE $SAMPLE/trim/."
 	if ! $DEBUG; then
 		cp $ngsLocal_TRIM_CONTAMINANTS_FILE $SAMPLE/trim/.
+	fi
 
 	if $SE; then prnCmd "# FINISHED: TRIMMING SINGLE-END"
 	else prnCmd "# FINISHED: TRIMMING PAIRED-END"; fi
