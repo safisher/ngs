@@ -36,12 +36,13 @@ ngsUsage_TRIM="Usage: `basename $0` trim OPTIONS sampleID    --  trim adapter an
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_TRIM="Usage: `basename $0` trim [-i inputDir] [-c contaminantsFile] [-m minLen] [-se] sampleID\n"
+ngsHelp_TRIM="Usage: `basename $0` trim [-i inputDir] [-o outputDir] [-c contaminantsFile] [-m minLen] [-se] sampleID\n"
 ngsHelp_TRIM+="Input:\n\t$REPO_LOCATION/trim/contaminants.fa (file containing contaminants)\n\tsampleID/inputDir/unaligned_1.fq\n\tsampleID/inputDir/unaligned_2.fq (paired-end reads)\n"
-ngsHelp_TRIM+="Output:\n\tsampleID/trim/unaligned_1.fq\n\tsampleID/trim/unaligned_2.fq (paired-end reads)\n\tsampleID/trim/stats.txt\n\tsampleID/trim/contaminants.fa (contaminants file)\n"
+ngsHelp_TRIM+="Output:\n\tsampleID/outputDir/unaligned_1.fq\n\tsampleID/outputDir/unaligned_2.fq (paired-end reads)\n\tsampleID/outputDir/stats.txt\n\tsampleID/outputDir/contaminants.fa (contaminants file)\n"
 ngsHelp_TRIM+="Requires:\n\ttrimReads.py ( https://github.com/safisher/ngs )\n"
 ngsHelp_TRIM+="Options:\n"
 ngsHelp_TRIM+="\t-i inputDir - location of source files (default: orig).\n"
+ngsHelp_TRIM+="\t-i outputDir - location of source files (default: trim).\n"
 ngsHelp_TRIM+="\t-c contaminantsFile - file containing contaminants to be trimmed (default: $REPO_LOCATION/trim/contaminants.fa).\n"
 ngsHelp_TRIM+="\t-m minLen - Minimum size of trimmed read. If trimmed beyond minLen, then read is discarded. If read is paired then read is replaced with N's, unless both reads in pair are smaller than minLen in which case the pair is discarded. (default: 20).\n"
 ngsHelp_TRIM+="\t-se - single-end reads (default: paired-end)\n\n"
@@ -53,6 +54,7 @@ ngsHelp_TRIM+="Runs trimReads.py to trim data. Trimmed data is placed in 'sample
 ##########################################################################################
 
 ngsLocal_TRIM_INP_DIR="orig"
+ngsLocal_TRIM_OUT_DIR="trim"
 ngsLocal_TRIM_CONTAMINANTS_FILE="$REPO_LOCATION/trim/contaminants.fa"
 ngsLocal_TRIM_MINLEN="20"
 
@@ -71,6 +73,9 @@ ngsArgs_TRIM() {
 	while true; do
 		case $1 in
 			-i) ngsLocal_TRIM_INP_DIR=$2
+				shift; shift;
+				;;
+			-o) ngsLocal_TRIM_OUT_DIR=$2
 				shift; shift;
 				;;
 			-c) ngsLocal_TRIM_CONTAMINANTS_FILE=$2
@@ -103,9 +108,9 @@ ngsCmd_TRIM() {
 	else prnCmd "# BEGIN: TRIMMING PAIRED-END"; fi
 		
 	# make relevant directory
-	prnCmd "mkdir $SAMPLE/trim"
-	if ! $DEBUG; then 
-		if [ ! -d $SAMPLE/trim ]; then mkdir $SAMPLE/trim; fi
+	if [ ! -d $SAMPLE/$ngsLocal_TRIM_OUT_DIR ]; then 
+		prnCmd "mkdir $SAMPLE/$ngsLocal_TRIM_OUT_DIR"
+		if ! $DEBUG; then mkdir $SAMPLE/$ngsLocal_TRIM_OUT_DIR; fi
 	fi
 	
 	# print version info in journal file
@@ -117,23 +122,23 @@ ngsCmd_TRIM() {
 
 	if $SE; then
 		# single-end
-		prnCmd "trimReads.py -m $ngsLocal_TRIM_MINLEN -rN -rAT 26 -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/stats.txt"
+		prnCmd "trimReads.py -m $ngsLocal_TRIM_MINLEN -rN -rAT 26 -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/$ngsLocal_TRIM_OUT_DIR/unaligned > $SAMPLE/$ngsLocal_TRIM_OUT_DIR/stats.txt"
 		if ! $DEBUG; then 
-			trimReads.py -m $ngsLocal_TRIM_MINLEN -rN -rAT 26 -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/stats.txt
+			trimReads.py -m $ngsLocal_TRIM_MINLEN -rN -rAT 26 -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/$ngsLocal_TRIM_OUT_DIR/unaligned > $SAMPLE/$ngsLocal_TRIM_OUT_DIR/stats.txt
 		fi
 		
 	else
 		# paired-end
-		prnCmd "trimReads.py -p -m $ngsLocal_TRIM_MINLEN -rN -rAT 26 -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/stats.txt"
+		prnCmd "trimReads.py -p -m $ngsLocal_TRIM_MINLEN -rN -rAT 26 -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/$ngsLocal_TRIM_OUT_DIR/unaligned > $SAMPLE/$ngsLocal_TRIM_OUT_DIR/stats.txt"
 		if ! $DEBUG; then 
-			trimReads.py -p -m $ngsLocal_TRIM_MINLEN -rN -rAT 26 -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/orig/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/stats.txt
+			trimReads.py -p -m $ngsLocal_TRIM_MINLEN -rN -rAT 26 -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/orig/unaligned_2.fq -o $SAMPLE/$ngsLocal_TRIM_OUT_DIR/unaligned > $SAMPLE/$ngsLocal_TRIM_OUT_DIR/stats.txt
 		fi
 	fi
 	
 	# copy contaminants files into trim directory for future reference
-	prnCmd "cp $ngsLocal_TRIM_CONTAMINANTS_FILE $SAMPLE/trim/."
+	prnCmd "cp $ngsLocal_TRIM_CONTAMINANTS_FILE $SAMPLE/$ngsLocal_TRIM_OUT_DIR/."
 	if ! $DEBUG; then
-		cp $ngsLocal_TRIM_CONTAMINANTS_FILE $SAMPLE/trim/.
+		cp $ngsLocal_TRIM_CONTAMINANTS_FILE $SAMPLE/$ngsLocal_TRIM_OUT_DIR/.
 	fi
 
 	if $SE; then prnCmd "# FINISHED: TRIMMING SINGLE-END"
