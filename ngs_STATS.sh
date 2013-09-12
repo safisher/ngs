@@ -107,16 +107,16 @@ ngsCmd_STATS() {
 		numTrim=`head -32 $SAMPLE/rum.trim/mapping_stats.txt | grep "Number of read pairs:" | awk '{print $5}'`
 
 		rumAli=`head -32 $SAMPLE/rum.trim/mapping_stats.txt | tail -10 | grep "At least one" | awk '{print $10}' | tr -d '()'`
-		$RUM_HEADER="RUM Total Aligned"
-		$RUM_VALUES="$rumAli"
+		RUM_HEADER="RUM Total Aligned"
+		RUM_VALUES="$rumAli"
 	
 		# if $NUMTRIM is empty then probably single-end, which has different stats in mapping_stats.txt file
 		if [ ! "$numTrim" ]; then
 			echo -e "\nPROCESSING RUM AS SINGLE-END"
 
 			rumAli=`head -20 $SAMPLE/rum.trim/mapping_stats.txt | grep "TOTAL:" | awk '{print $3}' | tr -d '()'`
-			$RUM_HEADER="RUM Total Aligned"
-			$RUM_VALUES="$rumAli"
+			RUM_HEADER="RUM Total Aligned"
+			RUM_VALUES="$rumAli"
 		fi
 
 	elif [ "$ngsLocal_STATS_ALIGNER" = "star" ]; then
