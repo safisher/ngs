@@ -81,7 +81,7 @@ ngsArgs_TRIM() {
 			-c) ngsLocal_TRIM_CONTAMINANTS_FILE=$2
 				shift; shift;
 				;;
-			-p) ngsLocal_TRIM_MINLEN=$2
+			-m) ngsLocal_TRIM_MINLEN=$2
 				shift; shift;
 				;;
 			-se) SE=true
