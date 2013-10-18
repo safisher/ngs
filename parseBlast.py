@@ -60,12 +60,12 @@ speciesFile = open(BLAST_PATH+'speciesCounts.txt', 'w')
 
 # convert from repo species name to names used here.
 targetSpecies = TARGET.lower()
-if TARGET == 'mm9' or TARGET == 'mm10': targetSpecies = 'mouse'
-if TARGET == 'rn5': targetSpecies = 'rat'
-if TARGET == 'drosophila' or TARGET == 'dmel5.50': targetSpecies = 'fly'
-if TARGET == 'hg19': targetSpecies = 'human'
-if TARGET == 'saccer3': targetSpecies = 'yeast'
-if TARGET == 'zebrafish': targetSpecies = 'fish'
+if 'mm9' in TARGET or 'mm10' in TARGET: targetSpecies = 'mouse'
+if 'rn5' in TARGET: targetSpecies = 'rat'
+if 'drosophila' in TARGET or 'dmel5' == TARGET: targetSpecies = 'fly'
+if 'hg19' in TARGET: targetSpecies = 'human'
+if 'saccer3' in TARGET: targetSpecies = 'yeast'
+if 'zebrafish' in TARGET: targetSpecies = 'fish'
 
 targetFile = open(BLAST_PATH+targetSpecies+'.tsv', 'w')
 targetFileFa = open(BLAST_PATH+targetSpecies+'.fa', 'w')
