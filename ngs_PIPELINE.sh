@@ -99,7 +99,7 @@ ngsCmd_PIPELINE() {
 	# BELOW. For example, INIT needs to prepare the files prior to FASTQC
 	# running.
 
-	ngsCmd_INIT
+	ngsCmd_INIT -i $RAW
 	ngsCmd_FASTQC
 	ngsCmd_BLAST
 	ngsCmd_TRIM
