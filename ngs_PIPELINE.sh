@@ -99,7 +99,10 @@ ngsCmd_PIPELINE() {
 	# BELOW. For example, INIT needs to prepare the files prior to FASTQC
 	# running.
 
-	ngsCmd_INIT -i $RAW
+	# $RAW has a default value that is set when ngs.sh "sources"
+	# ngs_INIT.sh. We can only change this value in ngsArgs_INIT().
+	ngsArgs_INIT -i $RAW
+	ngsCmd_INIT
 	ngsCmd_FASTQC
 	ngsCmd_BLAST
 	ngsCmd_TRIM
