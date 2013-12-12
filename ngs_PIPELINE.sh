@@ -114,6 +114,7 @@ ngsCmd_PIPELINE() {
 	ngsCmd_POST
 	ngsCmd_BLASTDB
 	ngsCmd_HTSEQ
+	ngsArgs_RSYNC -o $ANALYZED $SAMPLE
 	ngsCmd_RSYNC
 
 	if $SE; then prnCmd "# FINISHED: SINGLE-END PIPELINE"
