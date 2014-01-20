@@ -101,7 +101,8 @@ ngsCmd_PIPELINE() {
 
 	# $RAW has a default value that is set when ngs.sh "sources"
 	# ngs_INIT.sh. We can only change this value in ngsArgs_INIT().
-	ngsArgs_INIT -i $RAW $SE $SAMPLE
+	if $SE; then ngsArgs_INIT -i $RAW $SE $SAMPLE
+	else ngsArgs_INIT -i $RAW $SAMPLE; fi
 	ngsCmd_INIT
 	ngsCmd_FASTQC
 	ngsCmd_BLAST
