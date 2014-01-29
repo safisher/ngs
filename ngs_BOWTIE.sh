@@ -47,6 +47,11 @@ ngsHelp_BOWTIE+="\t-se - single-end reads (default: paired-end)\n\n"
 ngsHelp_BOWTIE+="Run bowtie on the original, untrimmed data (ie sampleID/orig). Output is placed in the directory sampleID/bowtie."
 
 ##########################################################################################
+# LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
+# make sure these variables don't collide with the other modules.
+##########################################################################################
+
+##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
 # BOWTIE args: -p value, -s value, -se (optional), sampleID
 ##########################################################################################
@@ -121,7 +126,7 @@ ngsCmd_BOWTIE() {
 	prnCmd "JOURNAL_SAV=$JOURNAL"
 	JOURNAL_SAV=$JOURNAL
 	
-	prnCmd "cd $SAMPLE/blast.db"
+	prnCmd "cd $SAMPLE/bowtie"
 	if ! $DEBUG; then 
 		cd $SAMPLE/bowtie
 		
