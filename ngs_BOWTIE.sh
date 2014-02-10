@@ -36,7 +36,7 @@ ngsUsage_BOWTIE="Usage: `basename $0` bowtie OPTIONS sampleID    --  run bowtie 
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_BOWTIE="Usage:\n\t`basename $0` bowtie [-i inputDir] -v mismatches -m maxMulti -ins insertSize -p numProc -s species [-se] sampleID\n"
+ngsHelp_BOWTIE="Usage:\n\t`basename $0` bowtie [-i inputDir] [-v mismatches] [-m maxMulti] [-ins insertSize] -p numProc -s species [-se] sampleID\n"
 ngsHelp_BOWTIE+="Input:\n\tsampleID/inputDir/unaligned_1.fq\n\tsampleID/inputDir/unaligned_2.fq (paired-end reads)\n"
 ngsHelp_BOWTIE+="Output:\n\tsampleID/bowtie/sampleID.sorted.bam\n\tsampleID/bowtie/sampleID.suppressed.sorted.bam\n\tsampleID/bowtie/sampleID.stats.txt\n"
 ngsHelp_BOWTIE+="Requires:\n\tbowtie ( http://bowtie-bio.sourceforge.net/index.shtml )\n\tsamtools ( http://samtools.sourceforge.net/ )\n"
@@ -132,10 +132,11 @@ ngsCmd_BOWTIE() {
 		fi
 	else 
         # paired-end
-		let "MININST=$ngsLocal_BOWTIE_INSERTSIZE - 100"
-		#MININST="250"
-		let "MAXINST=$ngsLocal_BOWTIE_INSERTSIZE + 100"
-		#MAXINST="450"
+		# The min/max insert size is +-100 
+		#let "MININST=$ngsLocal_BOWTIE_INSERTSIZE - 100"
+		MININST=$(expr $ngsLocal_BOWTIE_INSERTSIZE - 100)
+		#let "MAXINST=$ngsLocal_BOWTIE_INSERTSIZE + 100"
+		MAXINST=$(expr $ngsLocal_BOWTIE_INSERTSIZE + 100)
 		prnCmd "bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES --minins $MININST --maxins $MAXINST -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES -1 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_1.fq -2 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_2.fq $SAMPLE/bowtie/output_p.sam --max $SAMPLE/bowtie/suppressed.sam --un $SAMPLE/bowtie/unmapped.fq > $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1"
 		if ! $DEBUG; then 
 			bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES --minins $MININST --maxins $MAXINST -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES -1 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_1.fq -2 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_2.fq $SAMPLE/bowtie/output_p.sam --max $SAMPLE/bowtie/suppressed.sam --un $SAMPLE/bowtie/unmapped.fq > $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1
