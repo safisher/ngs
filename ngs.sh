@@ -32,7 +32,7 @@
 #    section: ADD MODULE COMMAND FUNCTIONS HERE
 ##########################################################################################
 
-VERSION=beta-1.7.0
+VERSION=2.0.0-alpha
 
 # all commands will be output to this file as a report of what was done
 JOURNAL="analysis.log"
@@ -51,6 +51,7 @@ BOWTIE_REPO=$REPO_LOCATION/bowtie
 RUM_REPO=$REPO_LOCATION/rum2
 STAR_REPO=$REPO_LOCATION/star
 HTSEQ_REPO=$REPO_LOCATION/htseq
+SNP_REPO=$REPO_LOCATION/snp
 
 # make comparisons case insensitive
 shopt -s nocasematch
@@ -75,6 +76,8 @@ source ngs_RUMSTATUS.sh
 source ngs_POST.sh
 source ngs_BLASTDB.sh
 source ngs_HTSEQ.sh
+source ngs_SNP.sh
+source ngs_SPAdes.sh
 source ngs_RSYNC.sh
 source ngs_STATS.sh
 source ngs_PIPELINE.sh
@@ -100,6 +103,8 @@ usage+=$ngsUsage_RUMSTATUS
 usage+=$ngsUsage_POST
 usage+=$ngsUsage_BLASTDB
 usage+=$ngsUsage_HTSEQ
+usage+=$ngsUsage_SNP
+usage+=$ngsUsage_SPAdes
 usage+=$ngsUsage_RSYNC
 usage+=$ngsUsage_STATS
 usage+=$ngsUsage_PIPELINE
@@ -123,6 +128,8 @@ printHelp() {
 		 'post') echo -e $ngsHelp_POST;;
 		 'blastdb') echo -e $ngsHelp_BLASTDB;;
 		 'htseq') echo -e $ngsHelp_HTSEQ;;
+		 'snp') echo -e $ngsHelp_SNP;;
+		 'spades') echo -e $ngsHelp_SPAdes;;
 		 'rsync') echo -e $ngsHelp_RSYNC;;
 		 'stats') echo -e $ngsHelp_STATS;;
 		 'pipeline') echo -e $ngsHelp_PIPELINE;;
@@ -165,6 +172,8 @@ if [ "$COMMAND" = "rumstatus" ]; then ngsArgs_RUMSTATUS $@; fi
 if [ "$COMMAND" = "post" ]; then ngsArgs_POST $@; fi
 if [ "$COMMAND" = "blastdb" ]; then ngsArgs_BLASTDB $@; fi
 if [ "$COMMAND" = "htseq" ]; then ngsArgs_HTSEQ $@; fi
+if [ "$COMMAND" = "snp" ]; then ngsArgs_SNP $@; fi
+if [ "$COMMAND" = "spades" ]; then ngsArgs_SPAdes $@; fi
 if [ "$COMMAND" = "rsync" ]; then ngsArgs_RSYNC $@ $JOURNAL; fi
 if [ "$COMMAND" = "stats" ]; then ngsArgs_STATS $@; fi
 if [ "$COMMAND" = "pipeline" ]; then ngsArgs_PIPELINE $@; fi
@@ -258,6 +267,8 @@ if [ "$COMMAND" = "rumstatus" ]; then ngsCmd_RUMSTATUS; fi
 if [ "$COMMAND" = "post" ]; then ngsCmd_POST; fi
 if [ "$COMMAND" = "blastdb" ]; then ngsCmd_BLASTDB; fi
 if [ "$COMMAND" = "htseq" ]; then ngsCmd_HTSEQ; fi
+if [ "$COMMAND" = "snp" ]; then ngsCmd_SNP; fi
+if [ "$COMMAND" = "spades" ]; then ngsCmd_SPAdes; fi
 if [ "$COMMAND" = "rsync" ]; then ngsCmd_RSYNC; fi
 if [ "$COMMAND" = "stats" ]; then ngsCmd_STATS; fi
 if [ "$COMMAND" = "pipeline" ]; then ngsCmd_PIPELINE; fi
