@@ -53,7 +53,8 @@ STAR_REPO=$REPO_LOCATION/star
 HTSEQ_REPO=$REPO_LOCATION/htseq
 SNP_REPO=$REPO_LOCATION/snp
 
-# make comparisons case insensitive
+# make comparisons case insensitive. Need to use [[ and ]] in if
+# conditionals, rather than [ and ].
 shopt -s nocasematch
 
 ###############################################################################################
@@ -159,24 +160,24 @@ SE=false  # default is paired-end
 # @@@ 4. ADD MODULE ARGUMENT FUNCTION HERE @@@
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-if [ "$COMMAND" = "help" ]; then ngsArgs_HELP $@; fi
-if [ "$COMMAND" = "version" ]; then ngsArgs_VERSION $@; fi
-if [ "$COMMAND" = "init" ]; then ngsArgs_INIT $@; fi
-if [ "$COMMAND" = "fastqc" ]; then ngsArgs_FASTQC $@; fi
-if [ "$COMMAND" = "blast" ]; then ngsArgs_BLAST $@; fi
-if [ "$COMMAND" = "bowtie" ]; then ngsArgs_BOWTIE $@; fi
-if [ "$COMMAND" = "trim" ]; then ngsArgs_TRIM $@; fi
-if [ "$COMMAND" = "star" ]; then ngsArgs_STAR $@; fi
-if [ "$COMMAND" = "rumalign" ]; then ngsArgs_RUMALIGN $@; fi
-if [ "$COMMAND" = "rumstatus" ]; then ngsArgs_RUMSTATUS $@; fi
-if [ "$COMMAND" = "post" ]; then ngsArgs_POST $@; fi
-if [ "$COMMAND" = "blastdb" ]; then ngsArgs_BLASTDB $@; fi
-if [ "$COMMAND" = "htseq" ]; then ngsArgs_HTSEQ $@; fi
-if [ "$COMMAND" = "snp" ]; then ngsArgs_SNP $@; fi
-if [ "$COMMAND" = "spades" ]; then ngsArgs_SPAdes $@; fi
-if [ "$COMMAND" = "rsync" ]; then ngsArgs_RSYNC $@ $JOURNAL; fi
-if [ "$COMMAND" = "stats" ]; then ngsArgs_STATS $@; fi
-if [ "$COMMAND" = "pipeline" ]; then ngsArgs_PIPELINE $@; fi
+if [[ "$COMMAND" = "help" ]]; then ngsArgs_HELP $@; fi
+if [[ "$COMMAND" = "version" ]]; then ngsArgs_VERSION $@; fi
+if [[ "$COMMAND" = "init" ]]; then ngsArgs_INIT $@; fi
+if [[ "$COMMAND" = "fastqc" ]]; then ngsArgs_FASTQC $@; fi
+if [[ "$COMMAND" = "blast" ]]; then ngsArgs_BLAST $@; fi
+if [[ "$COMMAND" = "bowtie" ]]; then ngsArgs_BOWTIE $@; fi
+if [[ "$COMMAND" = "trim" ]]; then ngsArgs_TRIM $@; fi
+if [[ "$COMMAND" = "star" ]]; then ngsArgs_STAR $@; fi
+if [[ "$COMMAND" = "rumalign" ]]; then ngsArgs_RUMALIGN $@; fi
+if [[ "$COMMAND" = "rumstatus" ]]; then ngsArgs_RUMSTATUS $@; fi
+if [[ "$COMMAND" = "post" ]]; then ngsArgs_POST $@; fi
+if [[ "$COMMAND" = "blastdb" ]]; then ngsArgs_BLASTDB $@; fi
+if [[ "$COMMAND" = "htseq" ]]; then ngsArgs_HTSEQ $@; fi
+if [[ "$COMMAND" = "snp" ]]; then ngsArgs_SNP $@; fi
+if [[ "$COMMAND" = "spades" ]]; then ngsArgs_SPAdes $@; fi
+if [[ "$COMMAND" = "rsync" ]]; then ngsArgs_RSYNC $@ $JOURNAL; fi
+if [[ "$COMMAND" = "stats" ]]; then ngsArgs_STATS $@; fi
+if [[ "$COMMAND" = "pipeline" ]]; then ngsArgs_PIPELINE $@; fi
 
 
 # if we've gotten to this point and $SAMPLE is not set, then something went wrong and abort
@@ -256,19 +257,19 @@ prnCmd "# COMMAND: $_cmd $COMMAND $_args"
 
 # HELP and VERSION do not have command functions.
 
-if [ "$COMMAND" = "init" ]; then ngsCmd_INIT; fi
-if [ "$COMMAND" = "fastqc" ]; then ngsCmd_FASTQC; fi
-if [ "$COMMAND" = "blast" ]; then ngsCmd_BLAST; fi
-if [ "$COMMAND" = "bowtie" ]; then ngsCmd_BOWTIE; fi
-if [ "$COMMAND" = "trim" ]; then ngsCmd_TRIM; fi
-if [ "$COMMAND" = "star" ]; then ngsCmd_STAR; fi
-if [ "$COMMAND" = "rumalign" ]; then ngsCmd_RUMALIGN; fi
-if [ "$COMMAND" = "rumstatus" ]; then ngsCmd_RUMSTATUS; fi
-if [ "$COMMAND" = "post" ]; then ngsCmd_POST; fi
-if [ "$COMMAND" = "blastdb" ]; then ngsCmd_BLASTDB; fi
-if [ "$COMMAND" = "htseq" ]; then ngsCmd_HTSEQ; fi
-if [ "$COMMAND" = "snp" ]; then ngsCmd_SNP; fi
-if [ "$COMMAND" = "spades" ]; then ngsCmd_SPAdes; fi
-if [ "$COMMAND" = "rsync" ]; then ngsCmd_RSYNC; fi
-if [ "$COMMAND" = "stats" ]; then ngsCmd_STATS; fi
-if [ "$COMMAND" = "pipeline" ]; then ngsCmd_PIPELINE; fi
+if [[ "$COMMAND" = "init" ]]; then ngsCmd_INIT; fi
+if [[ "$COMMAND" = "fastqc" ]]; then ngsCmd_FASTQC; fi
+if [[ "$COMMAND" = "blast" ]]; then ngsCmd_BLAST; fi
+if [[ "$COMMAND" = "bowtie" ]]; then ngsCmd_BOWTIE; fi
+if [[ "$COMMAND" = "trim" ]]; then ngsCmd_TRIM; fi
+if [[ "$COMMAND" = "star" ]]; then ngsCmd_STAR; fi
+if [[ "$COMMAND" = "rumalign" ]]; then ngsCmd_RUMALIGN; fi
+if [[ "$COMMAND" = "rumstatus" ]]; then ngsCmd_RUMSTATUS; fi
+if [[ "$COMMAND" = "post" ]]; then ngsCmd_POST; fi
+if [[ "$COMMAND" = "blastdb" ]]; then ngsCmd_BLASTDB; fi
+if [[ "$COMMAND" = "htseq" ]]; then ngsCmd_HTSEQ; fi
+if [[ "$COMMAND" = "snp" ]]; then ngsCmd_SNP; fi
+if [[ "$COMMAND" = "spades" ]]; then ngsCmd_SPAdes; fi
+if [[ "$COMMAND" = "rsync" ]]; then ngsCmd_RSYNC; fi
+if [[ "$COMMAND" = "stats" ]]; then ngsCmd_STATS; fi
+if [[ "$COMMAND" = "pipeline" ]]; then ngsCmd_PIPELINE; fi

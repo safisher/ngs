@@ -121,7 +121,8 @@ ngsCmd_BOWTIE() {
 	else prnCmd "# BEGIN: BOWTIE PAIRED-END ALIGNMENT"; fi
 	
     # print version info in journal file
-	prnCmd "# `bowtie --version | head -1`"
+	prnCmd "# bowtie version"
+	if ! $DEBUG; then prnCmd "# `bowtie --version | head -1`"; fi
 	
     # make relevant directory
 	if [ ! -d $SAMPLE/bowtie ]; then 

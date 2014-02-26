@@ -99,7 +99,7 @@ ngsCmd_STATS() {
 	TRIM_HEADER=`tail -2 $SAMPLE/trim/stats.txt | head -1`
 	TRIM_VALUES=`tail -1 $SAMPLE/trim/stats.txt`
 
-	if [ "$ngsLocal_STATS_ALIGNER" = "rum" ]; then
+	if [[ "$ngsLocal_STATS_ALIGNER" = "rum" ]]; then
 		echo -e "\n-- RUM --"
 		#head -32 $SAMPLE/rum.trim/mapping_stats.txt
 
@@ -119,7 +119,7 @@ ngsCmd_STATS() {
 			RUM_VALUES="$rumAli"
 		fi
 
-	elif [ "$ngsLocal_STATS_ALIGNER" = "star" ]; then
+	elif [[ "$ngsLocal_STATS_ALIGNER" = "star" ]]; then
 		echo -e "\n-- STAR --"
 
 		avgReadLen=`grep "Average input read length" $SAMPLE/star/Log.final.out | awk -F $'\t' '{print $2}'`
@@ -145,11 +145,11 @@ ngsCmd_STATS() {
 
 	echo -e "\n-- $SAMPLE --"
 
-	if [ "$ngsLocal_STATS_ALIGNER" = "rum" ]; then
+	if [[ "$ngsLocal_STATS_ALIGNER" = "rum" ]]; then
 		echo -e "$RUM_HEADER\t$BLAST_HEADER\t$TRIM_HEADER"
 		echo -e "$RUM_VALUES\t$BLAST_VALUES\t$TRIM_VALUES"
 
-	elif [ "$ngsLocal_STATS_ALIGNER" = "star" ]; then
+	elif [[ "$ngsLocal_STATS_ALIGNER" = "star" ]]; then
 		echo -e "$STAR_HEADER\t$BLAST_HEADER\t$TRIM_HEADER"
 		echo -e "$STAR_VALUES\t$BLAST_VALUES\t$TRIM_VALUES"
 

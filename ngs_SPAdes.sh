@@ -55,7 +55,7 @@ ngsLocal_SPAdes_KMERS="33,49,83"
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
-# SPAdes args: -i inputDir, -p numProc, -m maxRAM, -k kmers, -se, sampleID
+# SPAdes args: -i value, -p value, -m value, -k value, -se (optional), sampleID
 ##########################################################################################
 
 ngsArgs_SPAdes() {

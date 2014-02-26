@@ -96,7 +96,8 @@ ngsCmd_SNP() {
 	prnCmd "# BEGIN: SNP CALLING AND GENOME COVERAGE"
 	
     # print version info in journal file
-	prnCmd "# `freebayes --version | head -1`"
+	prnCmd "# freebayes version"
+	if ! $DEBUG; then prnCmd "# `freebayes --version | head -1`"; fi
 	
     # make relevant directory
 	if [ ! -d $SAMPLE/snp ]; then 

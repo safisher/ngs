@@ -30,21 +30,29 @@ ngsUsage_PIPELINE="Usage: `basename $0` pipeline OPTIONS sampleID    --  run ful
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_PIPELINE="Usage:\n\t`basename $0` pipeline [-i inputDir] [-o outputDir] -p numProc -s species [-se] sampleID\n"
+ngsHelp_PIPELINE="Usage:\n\t`basename $0` pipeline [-i inputDir] [-o outputDir] [-t RNASeq | WGS] -p numProc -s species [-se] sampleID\n"
 ngsHelp_PIPELINE+="Input:\n\tsee individual commands\n"
 ngsHelp_PIPELINE+="Output:\n\tsee individual commands\n"
 ngsHelp_PIPELINE+="Requires:\n\tsee individual commands\n"
 ngsHelp_PIPELINE+="OPTIONS:\n"
 ngsHelp_PIPELINE+="\t-i - parent directory containing subdirectory with compressed fastq files (default: ./raw). This is the parent directory of the sample-specific directory. The sampleID will be used to complete the directory path (ie inputDir/sampleID).\n"
 ngsHelp_PIPELINE+="\t-o - directory containing subdirectory with analysis files (default: ./analyzed). This is the parent directory of the sample-specific directory. The sampleID will be used to complete the directory path (ie outputDir/sampleID).\n"
+ngsHelp_PIPELINE+="\t-t type - RNASeq or WGS (Whole Genome Sequencing) (default: RNASeq).\n"
 ngsHelp_PIPELINE+="\t-p numProc - number of cpu to use.\n"
 ngsHelp_PIPELINE+="\t-s species - species from repository: $REPO_LOCATION.\n"
 ngsHelp_PIPELINE+="\t-se - single-end reads (default: paired-end)\n\n"
-ngsHelp_PIPELINE+="This will run init, fastqc, blast, trim, star, post, htseq, blastdb, and rsync. See individual modules for documentation."
+ngsHelp_PIPELINE+="This will process sequencing data using either an RNASeq or WGS (Whole Genome Sequencing) pipeline. For RNASeq the modules used are: init, fastqc, blast, trim, star, post, htseq, blastdb, and rsync. For WGS the modules used are: init, fastqc, blast, trim, bowtie, SPAdes, post, and rsync. See individual modules for documentation."
+
+##########################################################################################
+# LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
+# make sure these variables don't collide with the other modules.
+##########################################################################################
+
+ngsLocal_PIPELINE_TYPE="RNASeq"
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
-# PIPELINE args: -p value, -s value, -se (optional), sampleID
+# PIPELINE args: -i value, -o value, -t value, -p value, -s value, -se (optional), sampleID
 ##########################################################################################
 
 ngsArgs_PIPELINE() {
@@ -60,6 +68,9 @@ ngsArgs_PIPELINE() {
 				shift; shift;
 				;;
 			-o) ANALYZED=$2
+				shift; shift;
+				;;
+			-t) ngsLocal_PIPELINE_TYPE=$2
 				shift; shift;
 				;;
 			-p) NUMCPU=$2
@@ -91,33 +102,63 @@ ngsArgs_PIPELINE() {
 ##########################################################################################
 
 ngsCmd_PIPELINE() {
-	if $SE; then prnCmd "# BEGIN: SINGLE-END PIPELINE"
-	else prnCmd "# BEGIN: PAIRED-END PIPELINE"; fi
-		
+	if $SE; then prnCmd "# BEGIN: SINGLE-END, $ngsLocal_PIPELINE_TYPE PIPELINE"
+	else prnCmd "# BEGIN: PAIRED-END, $ngsLocal_PIPELINE_TYPE PIPELINE"; fi
+
 	# PIPELINE runs the command functions from the following commands. THE
 	# PIPELINE COMMAND IS SENSITIVE TO THE ORDER OF THE COMMAND FUNCTIONS
 	# BELOW. For example, INIT needs to prepare the files prior to FASTQC
 	# running.
 
-	# $RAW has a default value that is set when ngs.sh "sources"
-	# ngs_INIT.sh. We can only change this value in ngsArgs_INIT().
-	if $SE; then ngsArgs_INIT -i $RAW $SE $SAMPLE
-	else ngsArgs_INIT -i $RAW $SAMPLE; fi
-	ngsCmd_INIT
-	ngsCmd_FASTQC
-	ngsCmd_BLAST
-	ngsCmd_TRIM
-	# need different args to run FastQC on the trimmed data, so adjust
-	# args by calling ngsArgs_FASTQC() prior to running ngsCmd_FASTQC().
-	ngsArgs_FASTQC -i trim -o trim.fastqc $SAMPLE
-	ngsCmd_FASTQC
-	ngsCmd_STAR
-	ngsCmd_POST
-	ngsCmd_BLASTDB
-	ngsCmd_HTSEQ
-	ngsArgs_RSYNC -o $ANALYZED $SAMPLE
-	ngsCmd_RSYNC
+	# In order to change a "default" value, the ngsArgs_XXX() function
+	# needs to be called prior to the ngsCmd_XXX(). It is important
+	# that $SAMPLE is included as the last argument, every time
+	# ngsArgs_XXX() is called.
 
-	if $SE; then prnCmd "# FINISHED: SINGLE-END PIPELINE"
-	else prnCmd "# FINISHED: PAIRED-END PIPELINE"; fi
+	if [[ "$ngsLocal_PIPELINE_TYPE" = "RNASeq" ]]; then
+		# The value of $RAW is hardcoded in ngs.sh and is used to set
+		# inputDir in INIT. We allow users to change this value using the
+		# optional inputDir argument (-i inputDir). Since INIT defaults to
+		# the original (hardcoded) value of $RAW, we need to call
+		# ngsArgs_INIT() to update the value, prior to calling
+		# ngsCmd_INIT().
+		ngsArgs_INIT -i $RAW $SAMPLE
+		ngsCmd_INIT
+		ngsCmd_FASTQC
+		ngsCmd_BLAST
+		ngsCmd_TRIM
+		# Need different args to run FastQC on the trimmed data, so adjust
+		# args by calling ngsArgs_FASTQC() prior to running ngsCmd_FASTQC().
+		ngsArgs_FASTQC -i trim -o trim.fastqc $SAMPLE
+		ngsCmd_FASTQC
+		ngsCmd_STAR
+		ngsCmd_POST
+		ngsCmd_BLASTDB
+		ngsCmd_HTSEQ
+		# OutputDir defaults to $ANALYZED which is hardcoded in
+		# ngs.sh, just like inputDir and $RAW.
+		ngsArgs_RSYNC -o $ANALYZED $SAMPLE
+		ngsCmd_RSYNC
+
+	elif [[ "$ngsLocal_PIPELINE_TYPE" = "WGS" ]]; then
+		ngsArgs_INIT -i $RAW $SAMPLE
+		ngsCmd_INIT
+		ngsCmd_FASTQC
+		ngsCmd_BLAST
+		ngsArgs_TRIM -c $REPO_LOCATION/trim/contaminantsMITO.fa $SAMPLE
+		ngsCmd_TRIM
+		ngsArgs_FASTQC -i trim -o trim.fastqc $SAMPLE
+		ngsCmd_FASTQC
+		ngsCmd_BOWTIE
+		ngsCmd_SPAdes
+		ngsCmd_POST
+		ngsArgs_RSYNC -o $ANALYZED $SAMPLE
+		ngsCmd_RSYNC
+
+	else
+		prnCmd "ERROR: Invalid PIPELINE type $$ngsLocal_PIPELINE_TYPE. Valid options are 'RNASeq' and 'WGS'."
+	fi
+
+	if $SE; then prnCmd "# FINISHED: SINGLE-END, $ngsLocal_PIPELINE_TYPE PIPELINE"
+	else prnCmd "# FINISHED: PAIRED-END, $ngsLocal_PIPELINE_TYPE PIPELINE"; fi
 }
