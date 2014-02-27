@@ -734,18 +734,13 @@ if clArgs.contaminants_fa:
             if 'name' not in options:
                 quitOnError('Contaminant does not have a name.')
 
-            # use name to initialize contaminant trimming counts
+            # use name to initialize contaminant trimming counts. We
+            # initialize the counts for N and poly A/T removal below
+            # (ie outside of the if/then statement) as we might not
+            # always have a contaminants file.
             nFirstContaminantsTrim[options['name']] = 0
-            nFirstContaminantsTrim['remove5N'] = 0
-            nFirstContaminantsTrim['remove3N'] = 0
-            nFirstContaminantsTrim['polyA'] = 0
-            nFirstContaminantsTrim['polyT'] = 0
             if PAIRED: 
                 nSecondContaminantsTrim[options['name']] = 0
-                nSecondContaminantsTrim['remove5N'] = 0
-                nSecondContaminantsTrim['remove3N'] = 0
-                nSecondContaminantsTrim['polyA'] = 0
-                nSecondContaminantsTrim['polyT'] = 0
         else:
             seq = line.strip().upper()
 
@@ -768,6 +763,19 @@ if clArgs.contaminants_fa:
         print
     print 'Loaded contaminants: ' + str(count)
 
+# need to initialize the trim counters for N removal and poly A/T
+# removal. We initialized the counters for contaminants in the if/then
+# statement above.
+nFirstContaminantsTrim['remove5N'] = 0
+nFirstContaminantsTrim['remove3N'] = 0
+nFirstContaminantsTrim['polyA'] = 0
+nFirstContaminantsTrim['polyT'] = 0
+if PAIRED: 
+    nSecondContaminantsTrim['remove5N'] = 0
+    nSecondContaminantsTrim['remove3N'] = 0
+    nSecondContaminantsTrim['polyA'] = 0
+    nSecondContaminantsTrim['polyT'] = 0
+    
 #------------------------------------------------------------------------------------------
 # OPEN READ INPUT AND OUTPUT FILES
 #------------------------------------------------------------------------------------------
