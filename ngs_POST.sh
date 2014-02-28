@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2012,2013, Stephen Fisher and Junhyong Kim, University of
+# Copyright (c) 2012-2014, Stephen Fisher and Junhyong Kim, University of
 # Pennsylvania.  All Rights Reserved.
 #
 # You may not use this file except in compliance with the Kim Lab License
@@ -35,9 +35,9 @@ ngsUsage_POST="Usage: `basename $0` post OPTIONS sampleID    --  clean up RUM an
 ##########################################################################################
 
 ngsHelp_POST="Usage:\n\t`basename $0` post [-i inputDir] sampleID\n"
-ngsHelp_POST+="Input:\n\tsampleID/INPUTDIR/unaligned_1.fq\n\tsampleID/INPUTDIR/unaligned_2.fq (paired-end reads)\n"
-ngsHelp_POST+="Output:\n\tsampleID/INPUTDIR/unaligned_1.fq.gz\n\tsampleID/INPUTDIR/unaligned_2.fq.gz (paired-end reads)\n"
-ngsHelp_POST+="Compresses trim files."
+ngsHelp_POST+="Input:\n\tsampleID/INPUTDIR/*.fq\n"
+ngsHelp_POST+="Output:\n\tsampleID/INPUTDIR/*.fq.gz\n"
+ngsHelp_POST+="Compresses all files that end with 'fq'. For example the unaligned_1.fq file in the trim directory will be compressed with gzip and renamed unaligned_1.fq.gz."
 
 ##########################################################################################
 # LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to

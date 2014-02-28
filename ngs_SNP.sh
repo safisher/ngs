@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2012,2013, Stephen Fisher and Junhyong Kim, University of
+# Copyright (c) 2012-2014, Stephen Fisher, Hoa Giang and Junhyong Kim, University of
 # Pennsylvania.  All Rights Reserved.
 #
 # You may not use this file except in compliance with the Kim Lab License
@@ -38,8 +38,8 @@ ngsHelp_SNP+="Output:\n\tsampleID/snp/sampleID.filtered.vcf\n\tsampleID/snp/samp
 ngsHelp_SNP+="Requires:\n\tfreebayes ( https://github.com/ekg/freebayes )\n\tbedtools ( http://bedtools.readthedocs.org/en/latest/ )\n\tKent sources ( http://genomewiki.ucsc.edu/index.php/Kent_source_utilities )\n"
 ngsHelp_SNP+="Options:\n"
 ngsHelp_SNP+="\t-i inputDir - directory with unaligned reads (default: bowtie)\n"
-ngsHelp_SNP+="\t-r reference fasta file\n"
-ngsHelp_SNP+="\t-chrSize chromosome size file\n"
+ngsHelp_SNP+="\t-r reference fasta file (default: $REPO_LOCATION/snp/species.fa)\n"
+ngsHelp_SNP+="\t-chrSize chromosome size file (default: $REPO_LOCATION/snp/species.sizes)\n"
 ngsHelp_SNP+="\t-s species - species from repository: $SNP_REPO\n\n"
 ngsHelp_SNP+="Run SNP calling on the sorted bam file (ie sampleID/bowtie). Output is placed in the directory sampleID/snp."
 
@@ -49,6 +49,8 @@ ngsHelp_SNP+="Run SNP calling on the sorted bam file (ie sampleID/bowtie). Outpu
 ##########################################################################################
 
 ngsLocal_SNP_INP_DIR="bowtie"
+ngsLocal_SNP_REF_SEQ="$REPO_LOCATION/snp/$SPECIES.fa"
+ngsLocal_SNP_CHR_SIZE="$REPO_LOCATION/snp/$SPECIES.sizes"
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -108,16 +110,20 @@ ngsCmd_SNP() {
 	prnCmd "freebayes -f $ngsLocal_SNP_REF_SEQ $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.sorted.bam > $SAMPLE/snp/$SAMPLE.raw.vcf"
 	if ! $DEBUG; then freebayes -f $ngsLocal_SNP_REF_SEQ $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.sorted.bam > $SAMPLE/snp/$SAMPLE.raw.vcf; fi
 	prnCmd "vcffilter -f \"QUAL > 20\" $SAMPLE/snp/$SAMPLE.raw.vcf > $SAMPLE/snp/$SAMPLE.filtered.vcf"
-	if ! $DEBUG; then vcffilter -f \"QUAL > 20\" $SAMPLE/snp/$SAMPLE.raw.vcf > $SAMPLE/snp/$SAMPLE.filtered.vcf; fi
+	if ! $DEBUG; then vcffilter -f \"QUAL \> 20\" $SAMPLE/snp/$SAMPLE.raw.vcf > $SAMPLE/snp/$SAMPLE.filtered.vcf; fi
 	
 	prnCmd "bedtools genomecov -bga -ibam $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.sorted.bam > $SAMPLE/snp/$SAMPLE.bedGraph"
 	if ! $DEBUG; then bedtools genomecov -bga -ibam $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.sorted.bam > $SAMPLE/snp/$SAMPLE.bedGraph; fi
+
 	prnCmd "sort -k1,1 -k2,2n $SAMPLE/snp/$SAMPLE.bedGraph > $SAMPLE/snp/$SAMPLE.sorted.bedGraph"
 	if ! $DEBUG; then sort -k1,1 -k2,2n $SAMPLE/snp/$SAMPLE.bedGraph > $SAMPLE/snp/$SAMPLE.sorted.bedGraph; fi	
+
 	prnCmd "bedGraphToBigWig $SAMPLE/snp/$SAMPLE.sorted.bedGraph $ngsLocal_SNP_CHR_SIZE $SAMPLE/snp/$SAMPLE.bigWig"
 	if ! $DEBUG; then bedGraphToBigWig $SAMPLE/snp/$SAMPLE.sorted.bedGraph $ngsLocal_SNP_CHR_SIZE $SAMPLE/snp/$SAMPLE.bigWig; fi
+
 	prnCmd "bigWigToWig $SAMPLE/snp/$SAMPLE.bigWig $SAMPLE/snp/$SAMPLE.wig"
 	if ! $DEBUG; then bigWigToWig $SAMPLE/snp/$SAMPLE.bigWig $SAMPLE/snp/$SAMPLE.wig; fi
+
 	prnCmd "bedtools genomecov -d -ibam $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.sorted.bam > $SAMPLE/snp/$SAMPLE.cov"
 	if ! $DEBUG; then bedtools genomecov -d -ibam $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.sorted.bam > $SAMPLE/snp/$SAMPLE.cov; fi		
 	

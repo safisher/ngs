@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2012,2013, Stephen Fisher and Junhyong Kim, University of
+# Copyright (c) 2012-2014, Stephen Fisher, Hoa Giang and Junhyong Kim, University of
 # Pennsylvania.  All Rights Reserved.
 #
 # You may not use this file except in compliance with the Kim Lab License

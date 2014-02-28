@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2012,2013, Stephen Fisher and Junhyong Kim, University of
+# Copyright (c) 2012-2014, Stephen Fisher, Hoa Giang, and Junhyong Kim, University of
 # Pennsylvania.  All Rights Reserved.
 #
 # You may not use this file except in compliance with the Kim Lab License
@@ -17,11 +17,11 @@
 ##########################################################################################
 # SINGLE-END READS:
 # INPUT: $SAMPLE/trim/unaligned_1.fq
-# OUTPUT: $SAMPLE/bowtie/bowtie-sorted.bam and $SAMPLE/bowtie/stats.txt
+# OUTPUT: $SAMPLE/bowtie/$SAMPLE.sorted.bam
 #
 # PAIRED-END READS:
 # INPUT: $SAMPLE/trim/unaligned_1.fq and $SAMPLE/orig/unaligned_2.fq
-# OUTPUT: $SAMPLE/bowtie/bowtie-sorted.bam and $SAMPLE/bowtie/stats.txt
+# OUTPUT: $SAMPLE/bowtie/$SAMPLE.sorted.bam and $SAMPLE/bowtie/SE_mapping
 #
 # REQUIRES: bowtie, samtools
 ##########################################################################################
@@ -49,7 +49,7 @@ ngsHelp_BOWTIE+="\t-maxins maxInsertSize - maximum insert size for PE alignment 
 ngsHelp_BOWTIE+="\t-p numProc - number of cpu to use\n"
 ngsHelp_BOWTIE+="\t-s species - species from repository: $BOWTIE_REPO\n"
 ngsHelp_BOWTIE+="\t-se - single-end reads (default: paired-end)\n\n"
-ngsHelp_BOWTIE+="Run bowtie on the unaligned reads (ie sampleID/inputDir). The arguments used assume Bowtie version 1. Output is placed in the directory sampleID/bowtie. Multimapping reads that exceed the maxMulti count are output to the sampleID.suppressed.sorted.bam file (ie the Bowtie -max flag is used to direct the reads to this file)."
+ngsHelp_BOWTIE+="Run bowtie on the unaligned reads (ie sampleID/inputDir). The arguments used assume Bowtie version 1. Output is placed in the directory sampleID/bowtie. Multimapping reads that exceed the maxMulti count are output to the sampleID.suppressed.sorted.bam file (ie the Bowtie -max flag is used to direct the reads to this file). For paired-end samples, after the paired mapping is complete then all unmapped reads are aligned as if they were single-end with the alignments stored in the sampleID/bowtie/SE_mapping directory. The alignment stats for the single-end and paired-end mappings are reported in the stats file."
 
 ##########################################################################################
 # LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
@@ -128,19 +128,36 @@ ngsCmd_BOWTIE() {
 	if [ ! -d $SAMPLE/bowtie ]; then 
 		prnCmd "mkdir $SAMPLE/bowtie"
 		if ! $DEBUG; then mkdir $SAMPLE/bowtie; fi
+
+		if ! $SE; then
+			prnCmd "mkdir $SAMPLE/bowtie/SE_mapping"
+			if ! $DEBUG; then mkdir $SAMPLE/bowtie/SE_mapping; fi
+		fi
 	fi
 	
 	if $SE; then 
         # single-end
 		prnCmd "bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_1.fq $SAMPLE/bowtie/output_p.sam --max $SAMPLE/bowtie/suppressed.fq --un $SAMPLE/bowtie/unmapped.fq > $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1"
 		if ! $DEBUG; then 
-			bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_1.fq $SAMPLE/bowtie/output_p.sam --max $SAMPLE/bowtie/suppressed.fq --un $SAMPLE/bowtie/unmapped.fq > $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1
+			bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_1.fq $SAMPLE/bowtie/output_p.sam --max $SAMPLE/bowtie/suppressed.fq --un $SAMPLE/bowtie/Unmapped.out.mate.fq > $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1
 		fi
 	else 
         # paired-end
 		prnCmd "bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES --minins $ngsLocal_BOWTIE_MININST --maxins $ngsLocal_BOWTIE_MAXINST -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES -1 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_1.fq -2 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_2.fq $SAMPLE/bowtie/output_p.sam --max $SAMPLE/bowtie/suppressed.sam --un $SAMPLE/bowtie/unmapped.fq > $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1"
 		if ! $DEBUG; then 
-			bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES --minins $ngsLocal_BOWTIE_MININST --maxins $ngsLocal_BOWTIE_MAXINST -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES -1 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_1.fq -2 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_2.fq $SAMPLE/bowtie/output_p.sam --max $SAMPLE/bowtie/suppressed.sam --un $SAMPLE/bowtie/unmapped.fq > $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1
+			bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES --minins $ngsLocal_BOWTIE_MININST --maxins $ngsLocal_BOWTIE_MAXINST -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES -1 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_1.fq -2 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_2.fq $SAMPLE/bowtie/output_p.sam --max $SAMPLE/bowtie/suppressed.sam --un $SAMPLE/bowtie/Unmapped.out.mate.fq > $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1
+		fi
+	
+		# mate 1 as single-end reads
+		prnCmd "bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES $SAMPLE/bowtie/Unmapped.out.mate_1.fq $SAMPLE/bowtie/SE_mapping/output_se1.sam --un $SAMPLE/bowtie/SE_mapping/Unmapped.out.mate.fq >> $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1"
+		if ! $DEBUG; then 
+			bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES $SAMPLE/bowtie/Unmapped.out.mate_1.fq $SAMPLE/bowtie/SE_mapping/output_se1.sam --un $SAMPLE/bowtie/SE_mapping/Unmapped.out.mate.fq >> $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1
+		fi
+	
+		# mate 2 as single-end reads
+		prnCmd "bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES $SAMPLE/bowtie/Unmapped.out.mate_2.fq $SAMPLE/bowtie/SE_mapping/output_se2.sam --un $SAMPLE/bowtie/SE_mapping/Unmapped.out.mate.fq >> $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1"
+		if ! $DEBUG; then 
+			bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES $SAMPLE/bowtie/Unmapped.out.mate_2.fq $SAMPLE/bowtie/SE_mapping/output_se2.sam --un $SAMPLE/bowtie/SE_mapping/Unmapped.out.mate.fq >> $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1
 		fi
 	fi
 	
@@ -178,6 +195,13 @@ ngsCmd_BOWTIE() {
 	if ! $DEBUG; then samtools index $SAMPLE.suppressed.sorted.bam; fi
 	prnCmd "rm suppressed.sam suppressed.bam"
 	if ! $DEBUG; then rm suppressed.sam suppressed.bam; fi
+		
+	prnCmd "samtools view -h -b -S -o SE_mapping/$SAMPLE.mate1.bam SE_mapping/output_se1.sam"
+	if ! $DEBUG; then samtools view -h -b -S -o SE_mapping/$SAMPLE.mate1.bam SE_mapping/output_se1.sam; fi
+	prnCmd "samtools view -h -b -S -o SE_mapping/$SAMPLE.mate2.bam SE_mapping/output_se2.sam"
+	if ! $DEBUG; then samtools view -h -b -S -o SE_mapping/$SAMPLE.mate2.bam SE_mapping/output_se2.sam; fi
+	prnCmd "rm SE_mapping/output_se1.sam SE_mapping/output_se2.sam"
+	if ! $DEBUG; then rm SE_mapping/output_se1.sam SE_mapping/output_se2.sam; fi
 	
     # return to proper directory and restore $JOURNAL
 	prnCmd "cd $CUR_DIR"

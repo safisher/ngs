@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2012,2013, Stephen Fisher and Junhyong Kim, University of
+# Copyright (c) 2012-2014, Stephen Fisher, Hoa Giang, and Junhyong Kim, University of
 # Pennsylvania.  All Rights Reserved.
 #
 # You may not use this file except in compliance with the Kim Lab License
@@ -150,7 +150,12 @@ ngsCmd_PIPELINE() {
 		ngsArgs_FASTQC -i trim -o trim.fastqc $SAMPLE
 		ngsCmd_FASTQC
 		ngsCmd_BOWTIE
+		ngsCmd_SNP
 		ngsCmd_SPAdes
+		ngsCmd_POST
+		ngsArgs_POST -i $SAMPLE/bowtie $SAMPLE
+		ngsCmd_POST
+		ngsArgs_POST -i $SAMPLE/bowtie/SE_mapping $SAMPLE
 		ngsCmd_POST
 		ngsArgs_RSYNC -o $ANALYZED $SAMPLE
 		ngsCmd_RSYNC
