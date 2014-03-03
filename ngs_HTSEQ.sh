@@ -129,5 +129,21 @@ ngsCmd_HTSEQ() {
 		rm $SAMPLE/htseq/$SAMPLE.htseq.out $SAMPLE/htseq/tmp.txt
 	fi
 	
+	# run error checking
+	ngsErrorChk_HTSEQ $@
+
 	prnCmd "# FINISHED: HTSEQ"
 }
+
+##########################################################################################
+# ERROR CHECKING. 
+##########################################################################################
+
+ngsErrorChk_HTSEQ() {
+	prnCmd "# HTSEQ ERROR CHECKING: RUNNING"
+
+	# if error then output the contents of the error file.
+
+	prnCmd "# HTSEQ ERROR CHECKING: DONE"
+}
+

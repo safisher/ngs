@@ -40,6 +40,14 @@ ngsHelp_BLAST+="\t-s species - expected species\n\n"
 ngsHelp_BLAST+="Run blast on 5000 reads randomly sampled from orig/unaligned_1.fq. Blast paramters used are 'num_descriptions: 10 num_alignments: 10 word_size: 15 gapopen: 3 gapextend: 1 evalue: 1e-15'. The output is put in a directory called 'blast'. The species.txt file contains number of reads mapping to each species (mouse, rat, human, bacteria)."
 
 ##########################################################################################
+# LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
+# make sure these variables don't collide with the other modules.
+##########################################################################################
+
+# number of reads to randomly select
+ngsLocal_BLAST_NUM_READS=5000
+
+##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
 # BLAST args: -p value, sampleID
 ##########################################################################################
@@ -86,11 +94,11 @@ ngsCmd_BLAST() {
 	prnCmd "# blastn version"
 	if ! $DEBUG; then prnCmd "# `blastn -version | tail -1`"; fi
 	
-    # Get 5,000 randomly sampled reads
+    # Get ngsLocal_BLAST_NUM_READS (5,000) randomly sampled reads
     # Usage: randomSample.py <num lines> <lines grouped> <input> <output>
-	prnCmd "randomSample.py 5000 4 $SAMPLE/orig/unaligned_1.fq $SAMPLE/blast/raw.fq > $SAMPLE/blast/sampling.out.txt"
+	prnCmd "randomSample.py $ngsLocal_BLAST_NUM_READS 4 $SAMPLE/orig/unaligned_1.fq $SAMPLE/blast/raw.fq > $SAMPLE/blast/sampling.out.txt"
 	if ! $DEBUG; then 
-		randomSample.py 5000 4 $SAMPLE/orig/unaligned_1.fq $SAMPLE/blast/raw.fq > $SAMPLE/blast/sampling.out.txt
+		randomSample.py $ngsLocal_BLAST_NUM_READS 4 $SAMPLE/orig/unaligned_1.fq $SAMPLE/blast/raw.fq > $SAMPLE/blast/sampling.out.txt
 	fi
 	
     # Convert fastq file to fasta file
@@ -112,5 +120,40 @@ ngsCmd_BLAST() {
 		parseBlast.py $SPECIES $SAMPLE/blast/raw.fa $SAMPLE/blast/blast.txt
 	fi
 	
+	# run error checking
+	ngsErrorChk_BLAST $@
+
 	prnCmd "# FINISHED: BLAST"
+}
+
+##########################################################################################
+# ERROR CHECKING. Make sure output file exists and contains species counts.
+##########################################################################################
+
+ngsErrorChk_BLAST() {
+	prnCmd "# BLAST ERROR CHECKING: RUNNING"
+
+	inputFile="$SAMPLE/orig/unaligned_1.fq"
+	outputFile="$SAMPLE/blast/speciesCounts.txt"
+
+	# make sure expected output file exists
+	if [ ! -f $outputFile ]; then
+		errorMsg="Expected output file does not exist.\n"
+		errorMsg+="\tinput file: $inputFile\n"
+		errorMsg+="\toutput file: $outputFile\n"
+		prnError "$errorMsg"
+	fi
+
+	# compute number of lines in speciesCounts.txt
+	counts=`wc -l $outputFile | awk '{print $1}'`
+
+	# if counts file has less than 3 lines, then BLAST didn't work
+	if [ "$counts" -lt "3" ]; then
+		errorMsg="BLAST failed to run properly and there are no species counts.\n"
+		errorMsg+="\tinput file: $inputFile\n"
+		errorMsg+="\toutput file: $outputFile\n"
+		prnError "$errorMsg"
+	fi
+
+	prnCmd "# BLAST ERROR CHECKING: DONE"
 }

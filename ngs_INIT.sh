@@ -125,32 +125,66 @@ ngsCmd_INIT() {
 ngsErrorChk_INIT() {
 	prnCmd "# INIT ERROR CHECKING: RUNNING"
 
+	inputFile_1="$ngsLocal_INIT_INP_DIR/$SAMPLE/*_R1_*"
+	outputFile_1="$SAMPLE/orig/unaligned_1.fq"
+
+	# make sure expected output file exists
+	if [ ! -f $outputFile_1 ]; then
+		errorMsg="Expected output file does not exist.\n"
+		errorMsg+="\tinput file: $inputFile_1\n"
+		errorMsg+="\toutput file: $outputFile_1\n"
+		prnError "$errorMsg"
+	fi
+
 	# compute number of lines in first read file
-	mate1=`wc -l $SAMPLE/orig/unaligned_1.fq | awk '{print $1}'`
+	mate1=`wc -l $outputFile_1 | awk '{print $1}'`
 
 	# make sure first read file isn't empty
 	if [ "$mate1" -eq "0" ]; then
 		errorMsg="The first reads file is empty after uncompressing from the raw directory.\n"
-		errorMsg+="\tfile source: $ngsLocal_INIT_INP_DIR/$SAMPLE/*_R1_*\n"
+		errorMsg+="\tinput file: $inputFile_1\n"
+		errorMsg+="\toutput file: $outputFile_1\n"
 		prnError "$errorMsg"
+	fi
+
+	# if there are fewer than 5,000 reads in input file then BLAST will fail
+	if [ "$mate1" -lt "5000" ]; then
+		warningMsg="The first reads file contains fewer than 5,000 reads.\n"
+		warningMsg+="This will cause the BLAST module to crash.\n"
+		warningMsg+="If you are not using the BLAST module then you can safely ignore this warning.\n"
+		warningMsg+="\tinput file: $inputFile_1\n"
+		warningMsg+="\toutput file: $outputFile_1\n"
+		prnWarning "$warningMsg"
 	fi
 
 	if ! $SE; then
 		# paired-end
+		inputFile_2="$ngsLocal_INIT_INP_DIR/$SAMPLE/*_R2_*"
+		outputFile_2="$SAMPLE/orig/unaligned_2.fq"
+
+		# make sure expected output file exists
+		if [ ! -f $outputFile_2 ]; then
+			errorMsg="Expected output file does not exist.\n"
+			errorMsg+="\tinput file: $inputFile_2\n"
+			errorMsg+="\toutput file: $outputFile_2\n"
+			prnError "$errorMsg"
+		fi
 
 		# compute number of lines in second read file
-		mate2=`wc -l $SAMPLE/orig/unaligned_2.fq | awk '{print $1}'`
+		mate2=`wc -l $outputFile_2 | awk '{print $1}'`
 
 		# make sure first and second read files have same number of lines
 		if [ "$mate1" -ne "$mate2" ]; then
 			errorMsg="Read files do not have the same number of lines after uncompressing from the raw directory.\n"
 			errorMsg+="\tnum lines in first read file: $mate1\n"
+			errorMsg+="\tinput file: $inputFile_1\n"
+			errorMsg+="\toutput file: $outputFile_1\n\n"
 			errorMsg+="\tnum lines in second read file: $mate2\n"
-			errorMsg+="\tfirst read file source: $ngsLocal_INIT_INP_DIR/$SAMPLE/*_R1_*\n"
-			errorMsg+="\tsecond read file source: $ngsLocal_INIT_INP_DIR/$SAMPLE/*_R2_*\n"
+			errorMsg+="\tinput file: $inputFile_2\n"
+			errorMsg+="\toutput file: $outputFile_2\n"
 			prnError "$errorMsg"
 		fi
 	fi
 
-	prnCmd "# INIT ERROR CHECKING: NO PROBLEMS"
+	prnCmd "# INIT ERROR CHECKING: DONE"
 }

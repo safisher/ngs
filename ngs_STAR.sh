@@ -134,6 +134,9 @@ ngsCmd_STAR() {
 		# run post processing to generate necessary alignment files
 		starPostProcessing $@
 
+		# run error checking
+		ngsErrorChk_STAR $@
+
 		prnCmd "# FINISHED: STAR PAIRED-END ALIGNMENT"
 	fi
 }
@@ -214,4 +217,16 @@ starPostProcessing() {
 		JOURNAL=$JOURNAL_SAV
 		prnCmd "JOURNAL=$JOURNAL_SAV"
 	fi
+}
+
+##########################################################################################
+# ERROR CHECKING. 
+##########################################################################################
+
+ngsErrorChk_STAR() {
+	prnCmd "# STAR ERROR CHECKING: RUNNING"
+
+	# test that BAM files exists?
+
+	prnCmd "# STAR ERROR CHECKING: DONE"
 }

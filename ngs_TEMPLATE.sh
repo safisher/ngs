@@ -61,3 +61,11 @@ ngsArgs_TEMPLATE() {
 ngsCmd_TEMPLATE() {
 	# do something here
 }
+
+##########################################################################################
+# ERROR CHECKING
+##########################################################################################
+
+ngsErrorChk_TEMPLATE() {
+	# check to make sure output files are valid
+}

@@ -185,9 +185,12 @@ if [[ "$COMMAND" = "pipeline" ]]; then ngsArgs_PIPELINE $@; fi
 
 # if we've gotten to this point and $SAMPLE is not set, then something went wrong and abort
 if [ -z "$SAMPLE" ]; then
-	echo "Argument processing error."
+	echo -e "\n************************************************"
+	echo -ne "ERROR: "
+	echo -e `date`
+	echo "Error processing command arguments."
 	echo -e $usage
-	exit 0
+	exit 1
 fi
 
 
@@ -234,6 +237,14 @@ prnCmd() {
 		echo $SAMPLE
 		echo "##################################################################"
 	fi
+}
+
+# print warning to console
+prnWarning() {
+	echo -e "\n************************************************"
+	echo -ne "WARNING: "
+	echo -e `date`
+	echo -e $1
 }
 
 # exit on error
