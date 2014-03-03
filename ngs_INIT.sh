@@ -110,6 +110,47 @@ ngsCmd_INIT() {
 		fi
 	fi
 	
+	# run error checking
+	ngsErrorChk_INIT $@
+
 	if $SE; then prnCmd "# FINISHED: INIT SINGLE-END"
 	else prnCmd "# FINISHED: INIT PAIRED-END"; fi
+}
+
+##########################################################################################
+# ERROR CHECKING. Confirm that the input files are not empty and if PE
+# then make sure the files have the same number of lines.
+##########################################################################################
+
+ngsErrorChk_INIT() {
+	prnCmd "# INIT ERROR CHECKING: RUNNING"
+
+	# compute number of lines in first read file
+	mate1=`wc -l $SAMPLE/orig/unaligned_1.fq | awk '{print $1}'`
+
+	# make sure first read file isn't empty
+	if [ "$mate1" -eq "0" ]; then
+		errorMsg="The first reads file is empty after uncompressing from the raw directory.\n"
+		errorMsg+="\tfile source: $ngsLocal_INIT_INP_DIR/$SAMPLE/*_R1_*\n"
+		prnError "$errorMsg"
+	fi
+
+	if ! $SE; then
+		# paired-end
+
+		# compute number of lines in second read file
+		mate2=`wc -l $SAMPLE/orig/unaligned_2.fq | awk '{print $1}'`
+
+		# make sure first and second read files have same number of lines
+		if [ "$mate1" -ne "$mate2" ]; then
+			errorMsg="Read files do not have the same number of lines after uncompressing from the raw directory.\n"
+			errorMsg+="\tnum lines in first read file: $mate1\n"
+			errorMsg+="\tnum lines in second read file: $mate2\n"
+			errorMsg+="\tfirst read file source: $ngsLocal_INIT_INP_DIR/$SAMPLE/*_R1_*\n"
+			errorMsg+="\tsecond read file source: $ngsLocal_INIT_INP_DIR/$SAMPLE/*_R2_*\n"
+			prnError "$errorMsg"
+		fi
+	fi
+
+	prnCmd "# INIT ERROR CHECKING: NO PROBLEMS"
 }

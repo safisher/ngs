@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -eu
 
 # Copyright (c) 2012,2013, Stephen Fisher and Junhyong Kim, University of
 # Pennsylvania.  All Rights Reserved.
@@ -38,6 +38,9 @@ VERSION=2.0.0-alpha
 JOURNAL="analysis.log"
 
 DEBUG=false   # disable commands when true, use to see what commands would be run.
+
+# output every line of code to the console when running
+#if "$DEBUG"; then set -x
 
 # this is the location of the demultiplexed files, with each sample in a separate subdirectory named with the sample ID.
 RAW=raw
@@ -231,6 +234,15 @@ prnCmd() {
 		echo $SAMPLE
 		echo "##################################################################"
 	fi
+}
+
+# exit on error
+prnError() {
+	echo -e "\n************************************************"
+	echo -ne "ERROR: "
+	echo -e `date`
+	echo -e $1
+	exit 1
 }
 
 # create output directory first. This needs to happen prior to using
