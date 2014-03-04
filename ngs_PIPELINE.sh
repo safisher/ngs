@@ -132,9 +132,9 @@ ngsCmd_PIPELINE() {
 		ngsArgs_FASTQC -i trim -o trim.fastqc $SAMPLE
 		ngsCmd_FASTQC
 		ngsCmd_STAR
+		ngsCmd_HTSEQ
 		ngsCmd_POST
 		ngsCmd_BLASTDB
-		ngsCmd_HTSEQ
 		# OutputDir defaults to $ANALYZED which is hardcoded in
 		# ngs.sh, just like inputDir and $RAW.
 		ngsArgs_RSYNC -o $ANALYZED $SAMPLE
