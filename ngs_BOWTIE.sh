@@ -68,7 +68,7 @@ ngsLocal_BOWTIE_MAXINS=450
 ##########################################################################################
 
 ngsArgs_BOWTIE() {
-	if [ $# -lt 8 ]; then
+	if [ $# -lt 4 ]; then
 		printHelp $COMMAND
 		exit 0
 	fi
