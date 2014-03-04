@@ -88,7 +88,7 @@ ngsCmd_SNP() {
 	prnCmd "# BEGIN: SNP CALLING AND GENOME COVERAGE"
 	
     # print version info in journal file
-	prnCmd "# freebayes version"
+	prnCmd "# freebayes version v9.9.2-46-gdfddc43"
 	if ! $DEBUG; then prnCmd "# `freebayes --version | head -1`"; fi
 	
     # make relevant directory
@@ -100,7 +100,7 @@ ngsCmd_SNP() {
 	prnCmd "freebayes -f $SNP_REPO/$SPECIES.fa $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.sorted.bam > $SAMPLE/snp/$SAMPLE.raw.vcf"
 	if ! $DEBUG; then freebayes -f $SNP_REPO/$SPECIES.fa $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.sorted.bam > $SAMPLE/snp/$SAMPLE.raw.vcf; fi
 	prnCmd "vcffilter -f \"QUAL > 20\" $SAMPLE/snp/$SAMPLE.raw.vcf > $SAMPLE/snp/$SAMPLE.filtered.vcf"
-	if ! $DEBUG; then vcffilter -f \"QUAL \> 20\" $SAMPLE/snp/$SAMPLE.raw.vcf > $SAMPLE/snp/$SAMPLE.filtered.vcf; fi
+	if ! $DEBUG; then vcffilter -f 'QUAL > 20' $SAMPLE/snp/$SAMPLE.raw.vcf > $SAMPLE/snp/$SAMPLE.filtered.vcf; fi
 	
 	prnCmd "bedtools genomecov -bga -ibam $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.sorted.bam > $SAMPLE/snp/$SAMPLE.bedGraph"
 	if ! $DEBUG; then bedtools genomecov -bga -ibam $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.sorted.bam > $SAMPLE/snp/$SAMPLE.bedGraph; fi
