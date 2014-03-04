@@ -214,21 +214,24 @@ starPostProcessing() {
 }
 
 ##########################################################################################
-# ERROR CHECKING. 
+# ERROR CHECKING. Make sure output files exist and are not empty.
 ##########################################################################################
 
 ngsErrorChk_STAR() {
 	prnCmd "# STAR ERROR CHECKING: RUNNING"
 
 	inputFile_1="$SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq"
+	inputFile_2="$SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_2.fq"
 	outputFile_1="$SAMPLE/star/$SAMPLE.star.sorted.bam"
 	outputFile_2="$SAMPLE/star/$SAMPLE.star.unique.bam"
 
 	# make sure expected output files exists
-	if [ ! -f $outputFile_1 ]; then
-		errorMsg="Expected output file does not exist.\n"
-		errorMsg+="\tinput_1 file: $inputFile_1\n"
-		errorMsg+="\toutput file: $outputFile\n"
+	if [[ ! -s $outputFile_1 || ! -s $outputFile_2 ]]; then
+		errorMsg="Error with output files (don't exist or are empty).\n"
+		errorMsg+="\tinput file: $inputFile_1\n"
+		if ! $SE; then errorMsg+="\tinput file: $inputFile_2\n"; fi
+		errorMsg+="\toutput file (sorted alignments): $outputFile_1\n"
+		errorMsg+="\toutput file (unique alignments): $outputFile_2\n"
 		prnError "$errorMsg"
 	fi
 
