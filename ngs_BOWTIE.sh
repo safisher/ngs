@@ -17,11 +17,11 @@
 ##########################################################################################
 # SINGLE-END READS:
 # INPUT: $SAMPLE/trim/unaligned_1.fq
-# OUTPUT: $SAMPLE/bowtie/$SAMPLE.sorted.bam
+# OUTPUT: $SAMPLE/bowtie/$SAMPLE.bowtie.sorted.bam
 #
 # PAIRED-END READS:
 # INPUT: $SAMPLE/trim/unaligned_1.fq and $SAMPLE/orig/unaligned_2.fq
-# OUTPUT: $SAMPLE/bowtie/$SAMPLE.sorted.bam and $SAMPLE/bowtie/SE_mapping
+# OUTPUT: $SAMPLE/bowtie/$SAMPLE.bowtie.sorted.bam and $SAMPLE/bowtie/SE_mapping
 #
 # REQUIRES: bowtie, samtools
 ##########################################################################################
@@ -38,13 +38,13 @@ ngsUsage_BOWTIE="Usage: `basename $0` bowtie OPTIONS sampleID    --  run bowtie 
 
 ngsHelp_BOWTIE="Usage:\n\t`basename $0` bowtie [-i inputDir] [-v mismatches] [-m maxMulti] [-minins minInsertSize] [-maxins maxInsertSize] -p numProc -s species [-se] sampleID\n"
 ngsHelp_BOWTIE+="Input:\n\tsampleID/inputDir/unaligned_1.fq\n\tsampleID/inputDir/unaligned_2.fq (paired-end reads)\n"
-ngsHelp_BOWTIE+="Output:\n\tsampleID/bowtie/sampleID.sorted.bam\n\tsampleID/bowtie/sampleID.suppressed.sorted.bam\n\tsampleID/bowtie/sampleID.stats.txt\n"
+ngsHelp_BOWTIE+="Output:\n\tsampleID/bowtie/sampleID.bowtie.sorted.bam\n\tsampleID/bowtie/sampleID.suppressed.sorted.bam\n\tsampleID/bowtie/sampleID.stats.txt\n"
 ngsHelp_BOWTIE+="Requires:\n\tbowtie ( http://bowtie-bio.sourceforge.net/index.shtml )\n\tsamtools ( http://samtools.sourceforge.net/ )\n"
 ngsHelp_BOWTIE+="Options:\n"
 ngsHelp_BOWTIE+="\t-i inputDir - directory with unaligned reads (default: trim)\n"
 ngsHelp_BOWTIE+="\t-v mismatches - maximum mismatches allowed per read length (default: 3)\n"
 ngsHelp_BOWTIE+="\t-m maxMulti - suppress all alignments if > m alignments (default: 1)\n"
-ngsHelp_BOWTIE+="\t-minins minInsertSize - minimum insert size for PE alignment (default: 100bp)\n"
+ngsHelp_BOWTIE+="\t-minins minInsertSize - minimum insert size for PE alignment (default: 250bp)\n"
 ngsHelp_BOWTIE+="\t-maxins maxInsertSize - maximum insert size for PE alignment (default: 450bp)\n"
 ngsHelp_BOWTIE+="\t-p numProc - number of cpu to use\n"
 ngsHelp_BOWTIE+="\t-s species - species from repository: $BOWTIE_REPO\n"
@@ -59,7 +59,7 @@ ngsHelp_BOWTIE+="Run bowtie on the unaligned reads (ie sampleID/inputDir). The a
 ngsLocal_BOWTIE_INP_DIR="trim"
 ngsLocal_BOWTIE_MISMATCHES=3
 ngsLocal_BOWTIE_MAXMULTI=1
-ngsLocal_BOWTIE_MININS=100
+ngsLocal_BOWTIE_MININS=250
 ngsLocal_BOWTIE_MAXINS=450
 
 ##########################################################################################
@@ -143,9 +143,9 @@ ngsCmd_BOWTIE() {
 		fi
 	else 
         # paired-end
-		prnCmd "bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES --minins $ngsLocal_BOWTIE_MININST --maxins $ngsLocal_BOWTIE_MAXINST -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES -1 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_1.fq -2 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_2.fq $SAMPLE/bowtie/output_p.sam --max $SAMPLE/bowtie/suppressed.sam --un $SAMPLE/bowtie/unmapped.fq > $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1"
+		prnCmd "bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES --minins $ngsLocal_BOWTIE_MININS --maxins $ngsLocal_BOWTIE_MAXINS -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES -1 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_1.fq -2 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_2.fq $SAMPLE/bowtie/output_p.sam --max $SAMPLE/bowtie/suppressed.sam --un $SAMPLE/bowtie/unmapped.fq > $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1"
 		if ! $DEBUG; then 
-			bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES --minins $ngsLocal_BOWTIE_MININST --maxins $ngsLocal_BOWTIE_MAXINST -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES -1 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_1.fq -2 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_2.fq $SAMPLE/bowtie/output_p.sam --max $SAMPLE/bowtie/suppressed.sam --un $SAMPLE/bowtie/Unmapped.out.mate.fq > $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1
+			bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES --minins $ngsLocal_BOWTIE_MININS --maxins $ngsLocal_BOWTIE_MAXINS -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES -1 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_1.fq -2 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_2.fq $SAMPLE/bowtie/output_p.sam --max $SAMPLE/bowtie/suppressed.sam --un $SAMPLE/bowtie/unmapped.fq > $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1
 		fi
 	
 		# mate 1 as single-end reads
@@ -180,10 +180,10 @@ ngsCmd_BOWTIE() {
 	
 	prnCmd "samtools view -h -b -S -o output_p.bam output_p.sam"
 	if ! $DEBUG; then samtools view -h -b -S -o output_p.bam output_p.sam; fi
-	prnCmd "samtools sort output_p.bam bowtie-sorted"
-	if ! $DEBUG; then samtools sort output_p.bam $SAMPLE.sorted; fi
-	prnCmd "samtools index $SAMPLE.sorted.bam"
-	if ! $DEBUG; then samtools index $SAMPLE.sorted.bam; fi
+	prnCmd "samtools sort output_p.bam $SAMPLE.bowtie.sorted"
+	if ! $DEBUG; then samtools sort output_p.bam $SAMPLE.bowtie.sorted; fi
+	prnCmd "samtools index $SAMPLE.bowtie.sorted.bam"
+	if ! $DEBUG; then samtools index $SAMPLE.bowtie.sorted.bam; fi
 	prnCmd "rm output_p.sam output_p.bam"
 	if ! $DEBUG; then rm output_p.sam output_p.bam; fi
 	
@@ -212,6 +212,32 @@ ngsCmd_BOWTIE() {
 		prnCmd "JOURNAL=$JOURNAL_SAV"
 	fi
 	
+	# run error checking
+	ngsErrorChk_BOWTIE $@
+
 	if $SE; then prnCmd "# FINISHED: BOWTIE SINGLE-END ALIGNMENT"
 	else prnCmd "# FINISHED: BOWTIE PAIRED-END ALIGNMENT"; fi
+}
+
+##########################################################################################
+# ERROR CHECKING. Make sure output file exists and is not empty.
+##########################################################################################
+
+ngsErrorChk_BOWTIE() {
+	prnCmd "# BOWTIE ERROR CHECKING: RUNNING"
+
+	inputFile_1="$SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_1.fq"
+	inputFile_2="$SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_2.fq"
+	outputFile="$SAMPLE/bowtie/$SAMPLE.bowtie.sorted.bam"
+
+	# make sure expected output file exists
+	if [[ ! -s $outputFile ]]; then
+		errorMsg="Output file doesn't exist or is empty.\n"
+		errorMsg+="\tinput file: $inputFile_1\n"
+		if ! $SE; then errorMsg+="\tinput file: $inputFile_2\n"; fi
+		errorMsg+="\toutput file: $outputFile\n"
+		prnError "$errorMsg"
+	fi
+
+	prnCmd "# BOWTIE ERROR CHECKING: DONE"
 }

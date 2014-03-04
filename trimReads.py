@@ -96,7 +96,7 @@ argParser = argparse.ArgumentParser(version=VERSION,
 '\t\t * totalIdentity: total identity threshold for trimming method 2. If this is less than the k-mer size then it will have no impact on trimming. (default 16)\n'
                                     )
 argParser.add_argument( '-p', '--padPaired', dest='padPaired', action='store_true', default=False,
-                        help='Pad paired reads so that they are the same length after trimming all trimming has occured. N\'s will be added to the 3\' end with \'#\' added to the quality score for each N that is added. This will not do anything for single-end reads. (default: no)' )
+                        help='Pad paired reads so that they are the same length after all trimming has occured. N\'s will be added to the 3\' end with \'#\' added to the quality score for each N that is added. This will not do anything for single-end reads. (default: no)' )
 argParser.add_argument( '-m', '--minLen', dest='min_len', action='store', default=0, type=int,
                         help='Minimum size of trimmed read. If trimmed beyond minLen, then read is discarded. If read is paired then read is replaced with N\'s, unless both reads in pair are smaller than minLen in which case the pair is discarded. (default: no minimum length)' )
 argParser.add_argument( '-c3', '--cut3', dest='num_cut_3', action='store', default=0, type=int, 
