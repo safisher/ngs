@@ -124,7 +124,7 @@ ngsCmd_SPAdes() {
 		# paired-end
 		prnCmd "spades.py -1 $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq -2 $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_2.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes"
 		if ! $DEBUG; then 
-			spades.py -1 $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq -2 $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_2.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_oKMERS -n $SAMPLE -o $SAMPLE/SPAdes
+			spades.py -1 $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq -2 $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_2.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes
 		fi
 
 		prnCmd "# FINISHED: SPAdes PAIRED-END ASSEMBLY"

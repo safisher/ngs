@@ -153,9 +153,9 @@ ngsCmd_PIPELINE() {
 		ngsCmd_SNP
 		ngsCmd_SPAdes
 		ngsCmd_POST
-		ngsArgs_POST -i $SAMPLE/bowtie $SAMPLE
+		ngsArgs_POST -i bowtie $SAMPLE
 		ngsCmd_POST
-		ngsArgs_POST -i $SAMPLE/bowtie/SE_mapping $SAMPLE
+		ngsArgs_POST -i bowtie/SE_mapping $SAMPLE
 		ngsCmd_POST
 		ngsArgs_RSYNC -o $ANALYZED $SAMPLE
 		ngsCmd_RSYNC
