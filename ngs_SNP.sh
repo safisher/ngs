@@ -89,7 +89,7 @@ ngsCmd_SNP() {
 	
     # print version info in journal file
 	prnCmd "# freebayes version v9.9.2-46-gdfddc43"
-	if ! $DEBUG; then prnCmd "# `freebayes --version | head -1`"; fi
+	#if ! $DEBUG; then prnCmd "# `freebayes --version | head -1`"; fi
 	
     # make relevant directory
 	if [ ! -d $SAMPLE/snp ]; then 
