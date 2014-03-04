@@ -241,18 +241,18 @@ prnCmd() {
 
 # print warning to console
 prnWarning() {
-	echo -e "\n************************************************"
-	echo -ne "WARNING: "
-	echo -e `date`
-	echo -e $1
+	echo -e "\n************************************************" >& 2
+	echo -ne "WARNING: " >& 2
+	echo -e `date` >& 2
+	echo -e $1 >& 2
 }
 
 # exit on error
 prnError() {
-	echo -e "\n************************************************"
-	echo -ne "ERROR: "
-	echo -e `date`
-	echo -e $1
+	echo -e "\n************************************************" >& 2
+	echo -ne "ERROR: " >& 2
+	echo -e `date` >& 2
+	echo -e $1 >& 2
 	exit 1
 }
 

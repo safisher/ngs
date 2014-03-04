@@ -136,13 +136,44 @@ ngsCmd_HTSEQ() {
 }
 
 ##########################################################################################
-# ERROR CHECKING. 
+# ERROR CHECKING. Make sure output file exists, is not effectively
+# empty and warn user if HTSeq output any warnings.
 ##########################################################################################
 
 ngsErrorChk_HTSEQ() {
 	prnCmd "# HTSEQ ERROR CHECKING: RUNNING"
 
-	# if error then output the contents of the error file.
+	inputFile="$SAMPLE/$ngsLocal_HTSEQ_INP_DIR/$ngsLocal_HTSEQ_INP_FILE"
+	outputFile="$SAMPLE/htseq/$SAMPLE.htseq.cnts.txt"
+
+	# make sure expected output file exists
+	if [ ! -f $outputFile ]; then
+		errorMsg="Expected output file does not exist.\n"
+		errorMsg+="\tinput file: $inputFile\n"
+		errorMsg+="\toutput file: $outputFile\n"
+		prnError "$errorMsg"
+	fi
+
+	# if cnts file only has 1 line then error and print contents of log file
+	counts=`wc -l $outputFile | awk '{print $1}'`
+
+	# if counts file only has one line, then HTSeq didn't work
+	if [ "$counts" -eq "1" ]; then
+		errorMsg="HTSeq failed to run properly. See HTSeq error below:\n"
+		errorMsg+="\tinput file: $inputFile\n"
+		errorMsg+="\toutput file: $outputFile\n\n"
+		errorMsg+=`cat $SAMPLE/htseq/$SAMPLE.htseq.log.txt`
+		prnError "$errorMsg"
+	fi
+
+	# if counts file only has one line, then HTSeq didn't work
+	if [ -s $SAMPLE/htseq/$SAMPLE.htseq.err.txt ]; then
+		warningMsg="Review the error file listed below to view HTSeq warnings.\n"
+		warningMsg+="\tinput file: $inputFile\n"
+		warningMsg+="\toutput file: $outputFile\n"
+		warningMsg+="\tERROR FILE: $SAMPLE/htseq/$SAMPLE.htseq.err.txt\n"
+		prnWarning "$warningMsg"
+	fi
 
 	prnCmd "# HTSEQ ERROR CHECKING: DONE"
 }
