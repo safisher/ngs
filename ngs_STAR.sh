@@ -17,11 +17,11 @@
 ##########################################################################################
 # SINGLE-END READS
 # INPUT: $SAMPLE/trim/unaligned_1.fq
-# OUTPUT: $SAMPLE/star/STAR.bam and $SAMPLE/star/STAR_Unique.bam
+# OUTPUT: $SAMPLE/star/$SAMPLE.star.sorted.bam and $SAMPLE/star/$SAMPLE.star.unique.bam
 #
 # PAIRED-END READS
 # INPUT: $SAMPLE/trim/unaligned_1.fq and $SAMPLE/trim/unaligned_2.fq
-# OUTPUT: $SAMPLE/star/STAR.bam and $SAMPLE/star/STAR_Unique.bam
+# OUTPUT: $SAMPLE/star/$SAMPLE.star.sorted.bam and $SAMPLE/star/$SAMPLE.star.unique.bam
 #
 # REQUIRES: samtools, STAR version 2.3.0.1 (STAR does not have a versions option so
 # the version is hardcoded in this file)
@@ -39,7 +39,7 @@ ngsUsage_STAR="Usage: `basename $0` star OPTIONS sampleID    --   run STAR on tr
 
 ngsHelp_STAR="Usage:\n\t`basename $0` star [-i inputDir] -p numProc -s species [-se] sampleID\n"
 ngsHelp_STAR+="Input:\n\tsampleID/inputDir/unaligned_1.fq\n\tsampleID/inputDir/unaligned_2.fq (paired-end reads)\n"
-ngsHelp_STAR+="Output:\n\tsampleID/star/STAR.bam (all alignments)\n\tsampleID/star/STAR_Unique.bam (uniquely aligned reads)\n"
+ngsHelp_STAR+="Output:\n\tsampleID/star/sampleID.star.sorted.bam (all alignments)\n\tsampleID/star/sampleID.star.unique.bam (uniquely aligned reads)\n"
 ngsHelp_STAR+="Requires:\n\tSTAR ( http://code.google.com/p/rna-star )\n\tsamtools ( http://samtools.sourceforge.net/ )\n"
 ngsHelp_STAR+="Options:\n"
 ngsHelp_STAR+="\t-i inputDir - location of source files (default: trim).\n"
@@ -173,14 +173,14 @@ starPostProcessing() {
 		samtools view -h -b -S -o STAR.bam Aligned.out.sam
 	fi
 	
-	prnCmd "samtools sort STAR.bam STAR.sorted"
+	prnCmd "samtools sort STAR.bam $SAMPLE.star.sorted"
 	if ! $DEBUG; then 
-		samtools sort STAR.bam STAR.sorted
+		samtools sort STAR.bam $SAMPLE.star.sorted
 	fi
 	
-	prnCmd "samtools index STAR.sorted.bam"
+	prnCmd "samtools index $SAMPLE.star.sorted.bam"
 	if ! $DEBUG; then 
-		samtools index STAR.sorted.bam
+		samtools index $SAMPLE.star.sorted.bam
 	fi
 	
 	# generate BAM file containing all uniquely mapped reads. This variant will
@@ -189,17 +189,11 @@ starPostProcessing() {
 	prnCmd "# generating STAR_Unique.bam file"
 	prnCmd "samtools view -H -S Aligned.out.sam > header.sam"
 	# (1) extract all mapped reads from SAM file, (2) filter by number of mappings, (3) add header, (4) convert to BAM
-	prnCmd "samtools view -S -F 0x4 Aligned.out.sam | grep -P 'NH:i:1\t' | cat header.sam - | samtools view -bS - > STAR_Unique.bam"
-	#prnCmd "samtools sort STAR_Unique.bam STAR_Unique.sorted"
-	#prnCmd "samtools index STAR_Unique.sorted.bam"
-	#prnCmd "rm header.sam STAR_Unique.bam"
+	prnCmd "samtools view -S -F 0x4 Aligned.out.sam | grep -P 'NH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.star.unique.bam"
 	prnCmd "rm header.sam"
 	if ! $DEBUG; then 
 		samtools view -H -S Aligned.out.sam > header.sam
-		samtools view -S -F 0x4 Aligned.out.sam | grep -P 'NH:i:1\t' | cat header.sam - | samtools view -bS - > STAR_Unique.bam
-		#samtools sort STAR_Unique.bam STAR_Unique.sorted
-		#samtools index STAR_Unique.sorted.bam
-		#rm header.sam STAR_Unique.bam
+		samtools view -S -F 0x4 Aligned.out.sam | grep -P 'NH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.star.unique.bam
 		rm header.sam
 	fi
 	
@@ -226,7 +220,17 @@ starPostProcessing() {
 ngsErrorChk_STAR() {
 	prnCmd "# STAR ERROR CHECKING: RUNNING"
 
-	# test that BAM files exists?
+	inputFile_1="$SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq"
+	outputFile_1="$SAMPLE/star/$SAMPLE.star.sorted.bam"
+	outputFile_2="$SAMPLE/star/$SAMPLE.star.unique.bam"
+
+	# make sure expected output files exists
+	if [ ! -f $outputFile_1 ]; then
+		errorMsg="Expected output file does not exist.\n"
+		errorMsg+="\tinput_1 file: $inputFile_1\n"
+		errorMsg+="\toutput file: $outputFile\n"
+		prnError "$errorMsg"
+	fi
 
 	prnCmd "# STAR ERROR CHECKING: DONE"
 }
