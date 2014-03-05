@@ -130,7 +130,7 @@ ngsCmd_HTSEQ() {
 	fi
 	
 	# run error checking
-	ngsErrorChk_HTSEQ $@
+	if ! $DEBUG; then ngsErrorChk_HTSEQ $@; fi
 
 	prnCmd "# FINISHED: HTSEQ"
 }

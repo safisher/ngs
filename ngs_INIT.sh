@@ -111,7 +111,7 @@ ngsCmd_INIT() {
 	fi
 	
 	# run error checking
-	ngsErrorChk_INIT $@
+	if ! $DEBUG; then ngsErrorChk_INIT $@; fi
 
 	if $SE; then prnCmd "# FINISHED: INIT SINGLE-END"
 	else prnCmd "# FINISHED: INIT PAIRED-END"; fi

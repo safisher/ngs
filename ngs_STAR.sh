@@ -135,7 +135,7 @@ ngsCmd_STAR() {
 		starPostProcessing $@
 
 		# run error checking
-		ngsErrorChk_STAR $@
+		if ! $DEBUG; then ngsErrorChk_STAR $@; fi
 
 		prnCmd "# FINISHED: STAR PAIRED-END ALIGNMENT"
 	fi

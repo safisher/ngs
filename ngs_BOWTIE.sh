@@ -213,7 +213,7 @@ ngsCmd_BOWTIE() {
 	fi
 	
 	# run error checking
-	ngsErrorChk_BOWTIE $@
+	if ! $DEBUG; then ngsErrorChk_BOWTIE $@; fi
 
 	if $SE; then prnCmd "# FINISHED: BOWTIE SINGLE-END ALIGNMENT"
 	else prnCmd "# FINISHED: BOWTIE PAIRED-END ALIGNMENT"; fi

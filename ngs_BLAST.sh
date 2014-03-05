@@ -121,7 +121,7 @@ ngsCmd_BLAST() {
 	fi
 	
 	# run error checking
-	ngsErrorChk_BLAST $@
+	if ! $DEBUG; then ngsErrorChk_BLAST $@; fi
 
 	prnCmd "# FINISHED: BLAST"
 }
