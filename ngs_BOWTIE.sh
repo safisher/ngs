@@ -137,27 +137,27 @@ ngsCmd_BOWTIE() {
 	
 	if $SE; then 
         # single-end
-		prnCmd "bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_1.fq $SAMPLE/bowtie/output_p.sam --max $SAMPLE/bowtie/suppressed.fq --un $SAMPLE/bowtie/unmapped.fq > $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1"
+		prnCmd "bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_1.fq $SAMPLE/bowtie/output_p.sam --max $SAMPLE/bowtie/suppressed.fq --un $SAMPLE/bowtie/notMapped_1.fq > $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1"
 		if ! $DEBUG; then 
-			bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_1.fq $SAMPLE/bowtie/output_p.sam --max $SAMPLE/bowtie/suppressed.fq --un $SAMPLE/bowtie/Unmapped.out.mate.fq > $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1
+			bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_1.fq $SAMPLE/bowtie/output_p.sam --max $SAMPLE/bowtie/suppressed.fq --un $SAMPLE/bowtie/notMapped_1.fq > $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1
 		fi
 	else 
         # paired-end
 		prnCmd "bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES --minins $ngsLocal_BOWTIE_MININS --maxins $ngsLocal_BOWTIE_MAXINS -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES -1 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_1.fq -2 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_2.fq $SAMPLE/bowtie/output_p.sam --max $SAMPLE/bowtie/suppressed.sam --un $SAMPLE/bowtie/unmapped.fq > $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1"
 		if ! $DEBUG; then 
-			bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES --minins $ngsLocal_BOWTIE_MININS --maxins $ngsLocal_BOWTIE_MAXINS -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES -1 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_1.fq -2 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_2.fq $SAMPLE/bowtie/output_p.sam --max $SAMPLE/bowtie/suppressed.sam --un $SAMPLE/bowtie/unmapped.fq > $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1
+			bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES --minins $ngsLocal_BOWTIE_MININS --maxins $ngsLocal_BOWTIE_MAXINS -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES -1 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_1.fq -2 $SAMPLE/$ngsLocal_BOWTIE_INP_DIR/unaligned_2.fq $SAMPLE/bowtie/output_p.sam --max $SAMPLE/bowtie/suppressed.sam --un $SAMPLE/bowtie/notMapped.fq > $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1
 		fi
 	
 		# mate 1 as single-end reads
-		prnCmd "bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES $SAMPLE/bowtie/Unmapped.out.mate_1.fq $SAMPLE/bowtie/SE_mapping/output_se1.sam --un $SAMPLE/bowtie/SE_mapping/Unmapped.out.mate.fq >> $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1"
+		prnCmd "bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES $SAMPLE/bowtie/notMapped_1.fq $SAMPLE/bowtie/SE_mapping/output_se1.sam --un $SAMPLE/bowtie/SE_mapping/notMapped_1.fq >> $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1"
 		if ! $DEBUG; then 
-			bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES $SAMPLE/bowtie/Unmapped.out.mate_1.fq $SAMPLE/bowtie/SE_mapping/output_se1.sam --un $SAMPLE/bowtie/SE_mapping/Unmapped.out.mate.fq >> $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1
+			bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES $SAMPLE/bowtie/notMapped_1.fq $SAMPLE/bowtie/SE_mapping/output_se1.sam --un $SAMPLE/bowtie/SE_mapping/notMapped_1.fq >> $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1
 		fi
 	
 		# mate 2 as single-end reads
-		prnCmd "bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES $SAMPLE/bowtie/Unmapped.out.mate_2.fq $SAMPLE/bowtie/SE_mapping/output_se2.sam --un $SAMPLE/bowtie/SE_mapping/Unmapped.out.mate.fq >> $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1"
+		prnCmd "bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES $SAMPLE/bowtie/notMapped_2.fq $SAMPLE/bowtie/SE_mapping/output_se2.sam --un $SAMPLE/bowtie/SE_mapping/notMapped_2.fq >> $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1"
 		if ! $DEBUG; then 
-			bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES $SAMPLE/bowtie/Unmapped.out.mate_2.fq $SAMPLE/bowtie/SE_mapping/output_se2.sam --un $SAMPLE/bowtie/SE_mapping/Unmapped.out.mate.fq >> $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1
+			bowtie -t -v $ngsLocal_BOWTIE_MISMATCHES -a -m $ngsLocal_BOWTIE_MAXMULTI --best --sam -p $NUMCPU $BOWTIE_REPO/$SPECIES $SAMPLE/bowtie/notMapped_2.fq $SAMPLE/bowtie/SE_mapping/output_se2.sam --un $SAMPLE/bowtie/SE_mapping/notMapped_2.fq >> $SAMPLE/bowtie/$SAMPLE.stats.txt 2>&1
 		fi
 	fi
 	
