@@ -1,4 +1,4 @@
-#!/bin/bash -eu
+#!/bin/bash -e
 
 # Copyright (c) 2012,2013, Stephen Fisher and Junhyong Kim, University of
 # Pennsylvania.  All Rights Reserved.
@@ -59,6 +59,11 @@ SNP_REPO=$REPO_LOCATION/snp
 # make comparisons case insensitive. Need to use [[ and ]] in if
 # conditionals, rather than [ and ].
 shopt -s nocasematch
+
+# cause an error to happen if trying to use an unset variable. We
+# don't use the -u option when launching bash above as that may cause
+# bash initialization scripts to error.
+set -o nounset
 
 ###############################################################################################
 # PROCESS COMMAND ARGUMENTS
