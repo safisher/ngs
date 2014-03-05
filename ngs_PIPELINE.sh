@@ -145,7 +145,8 @@ ngsCmd_PIPELINE() {
 		ngsCmd_INIT
 		ngsCmd_FASTQC
 		ngsCmd_BLAST
-		ngsArgs_TRIM -c $REPO_LOCATION/trim/contaminantsMITO.fa $SAMPLE
+		# disable poly-A/T trimming for WGS
+		ngsArgs_TRIM -rAT 0 -c $REPO_LOCATION/trim/contaminantsMITO.fa $SAMPLE
 		ngsCmd_TRIM
 		ngsArgs_FASTQC -i trim -o trim.fastqc $SAMPLE
 		ngsCmd_FASTQC
