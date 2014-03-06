@@ -178,6 +178,7 @@ ngsCmd_BOWTIE() {
 		prnCmd "JOURNAL=../../$JOURNAL"
 	fi
 	
+	# conver SAM output into a sorted BAM file.
 	prnCmd "samtools view -h -b -S -o output_p.bam output_p.sam"
 	if ! $DEBUG; then samtools view -h -b -S -o output_p.bam output_p.sam; fi
 	prnCmd "samtools sort output_p.bam $SAMPLE.bowtie.sorted"
@@ -187,21 +188,31 @@ ngsCmd_BOWTIE() {
 	prnCmd "rm output_p.sam output_p.bam"
 	if ! $DEBUG; then rm output_p.sam output_p.bam; fi
 	
-	prnCmd "samtools view -h -b -S -o suppressed.bam suppressed.sam"
-	if ! $DEBUG; then samtools view -h -b -S -o suppressed.bam suppressed.sam; fi
-	prnCmd "samtools sort suppressed.bam $SAMPLE.suppressed.sorted"
-	if ! $DEBUG; then samtools sort suppressed.bam $SAMPLE.suppressed.sorted; fi
-	prnCmd "samtools index $SAMPLE.suppressed.sorted.bam"
-	if ! $DEBUG; then samtools index $SAMPLE.suppressed.sorted.bam; fi
-	prnCmd "rm suppressed.sam suppressed.bam"
-	if ! $DEBUG; then rm suppressed.sam suppressed.bam; fi
-		
-	prnCmd "samtools view -h -b -S -o SE_mapping/$SAMPLE.mate1.bam SE_mapping/output_se1.sam"
-	if ! $DEBUG; then samtools view -h -b -S -o SE_mapping/$SAMPLE.mate1.bam SE_mapping/output_se1.sam; fi
-	prnCmd "samtools view -h -b -S -o SE_mapping/$SAMPLE.mate2.bam SE_mapping/output_se2.sam"
-	if ! $DEBUG; then samtools view -h -b -S -o SE_mapping/$SAMPLE.mate2.bam SE_mapping/output_se2.sam; fi
-	prnCmd "rm SE_mapping/output_se1.sam SE_mapping/output_se2.sam"
-	if ! $DEBUG; then rm SE_mapping/output_se1.sam SE_mapping/output_se2.sam; fi
+	# the suppressed file contains multimapping that were not included
+	# in the sorted output (ie too many multimappings for a single
+	# read). This file won't always exist, so we need to make sure it
+	# does exist before trying to convert it into a sorted BAM file.
+	if [[ -s $SAMPLE/bowtie/suppressed.sam ]]; then 
+		prnCmd "samtools view -h -b -S -o suppressed.bam suppressed.sam"
+		if ! $DEBUG; then samtools view -h -b -S -o suppressed.bam suppressed.sam; fi
+		prnCmd "samtools sort suppressed.bam $SAMPLE.suppressed.sorted"
+		if ! $DEBUG; then samtools sort suppressed.bam $SAMPLE.suppressed.sorted; fi
+		prnCmd "samtools index $SAMPLE.suppressed.sorted.bam"
+		if ! $DEBUG; then samtools index $SAMPLE.suppressed.sorted.bam; fi
+		prnCmd "rm suppressed.sam suppressed.bam"
+		if ! $DEBUG; then rm suppressed.sam suppressed.bam; fi
+	fi
+
+	if ! $SE; then 
+		# if paired-end then we need to also compress the aligning of
+		# the unpaired mates that were mapped.
+		prnCmd "samtools view -h -b -S -o SE_mapping/$SAMPLE.mate1.bam SE_mapping/output_se1.sam"
+		if ! $DEBUG; then samtools view -h -b -S -o SE_mapping/$SAMPLE.mate1.bam SE_mapping/output_se1.sam; fi
+		prnCmd "samtools view -h -b -S -o SE_mapping/$SAMPLE.mate2.bam SE_mapping/output_se2.sam"
+		if ! $DEBUG; then samtools view -h -b -S -o SE_mapping/$SAMPLE.mate2.bam SE_mapping/output_se2.sam; fi
+		prnCmd "rm SE_mapping/output_se1.sam SE_mapping/output_se2.sam"
+		if ! $DEBUG; then rm SE_mapping/output_se1.sam SE_mapping/output_se2.sam; fi
+	fi
 	
     # return to proper directory and restore $JOURNAL
 	prnCmd "cd $CUR_DIR"
