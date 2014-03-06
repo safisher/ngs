@@ -117,5 +117,31 @@ ngsCmd_SNP() {
 	prnCmd "bedtools genomecov -d -ibam $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.sorted.bam > $SAMPLE/snp/$SAMPLE.cov"
 	if ! $DEBUG; then bedtools genomecov -d -ibam $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.sorted.bam > $SAMPLE/snp/$SAMPLE.cov; fi		
 	
+	# run error checking
+	if ! $DEBUG; then ngsErrorChk_SNP $@; fi
+
 	prnCmd "# FINISHED: SNP CALLING AND GENOME COVERAGE"
+}
+
+##########################################################################################
+# ERROR CHECKING. Make sure output files exist and are not empty.
+##########################################################################################
+
+ngsErrorChk_SNP() {
+	prnCmd "# SNP ERROR CHECKING: RUNNING"
+
+	inputFile="$SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.sorted.bam"
+	outputFile_1="$SAMPLE/snp/$SAMPLE.bigWig"
+	outputFile_2="$SAMPLE/snp/$SAMPLE.cov"
+
+	# make sure expected output files exists
+	if [[ ! -s $outputFile_1 || ! -s $outputFile_2 ]]; then
+		errorMsg="Error with output files (don't exist or are empty).\n"
+		errorMsg+="\tinput file: $inputFile\n"
+		errorMsg+="\toutput file (sorted alignments): $outputFile_1\n"
+		errorMsg+="\toutput file (unique alignments): $outputFile_2\n"
+		prnError "$errorMsg"
+	fi
+
+	prnCmd "# SNP ERROR CHECKING: DONE"
 }

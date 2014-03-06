@@ -134,9 +134,6 @@ ngsCmd_STAR() {
 		# run post processing to generate necessary alignment files
 		starPostProcessing $@
 
-		# run error checking
-		if ! $DEBUG; then ngsErrorChk_STAR $@; fi
-
 		prnCmd "# FINISHED: STAR PAIRED-END ALIGNMENT"
 	fi
 }
@@ -211,6 +208,9 @@ starPostProcessing() {
 		JOURNAL=$JOURNAL_SAV
 		prnCmd "JOURNAL=$JOURNAL_SAV"
 	fi
+
+	# run error checking
+	if ! $DEBUG; then ngsErrorChk_STAR $@; fi
 }
 
 ##########################################################################################

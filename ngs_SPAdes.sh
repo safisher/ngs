@@ -114,20 +114,44 @@ ngsCmd_SPAdes() {
 	
 	if $SE; then
 		# single-end
-		prnCmd "spades.py -1 $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes"
+		prnCmd "spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unaligned_1.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes"
 		if ! $DEBUG; then 
-			spades.py -1 $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes
+			spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unaligned_1.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes
 		fi
-		
-		prnCmd "# FINISHED: SPAdes SINGLE-END ASSEMBLY"
 	else
 		# paired-end
-		prnCmd "spades.py -1 $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq -2 $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_2.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes"
+		prnCmd "spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unaligned_1.fq -2 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unaligned_2.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes"
 		if ! $DEBUG; then 
-			spades.py -1 $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq -2 $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_2.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes
+			spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unaligned_1.fq -2 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unaligned_2.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes
 		fi
-
-		prnCmd "# FINISHED: SPAdes PAIRED-END ASSEMBLY"
 	fi
+		
+	# run error checking
+	if ! $DEBUG; then ngsErrorChk_SPAdes $@; fi
+	
+	if $SE; then prnCmd "# FINISHED: SPAdes SINGLE-END ASSEMBLY"
+	else prnCmd "# FINISHED: SPAdes PAIRED-END ASSEMBLY"; fi
 }
 
+##########################################################################################
+# ERROR CHECKING. Make sure output files exist and are not empty.
+##########################################################################################
+
+ngsErrorChk_SPAdes() {
+	prnCmd "# SPAdes ERROR CHECKING: RUNNING"
+
+	inputFile_1="$SAMPLE/$ngsLocal_SPAdes_INP_DIR/unaligned_1.fq"
+	inputFile_2="$SAMPLE/$ngsLocal_SPAdes_INP_DIR/unaligned_2.fq"
+	outputFile="$SAMPLE/SPAdes/$SAMPLE.fasta"
+
+	# make sure expected output file exists and is not empty
+	if [ ! -s $outputFile ]; then
+		errorMsg="Expected output file does not exist or is empty.\n"
+		errorMsg+="\tinput file: $inputFile_1\n"
+		if ! $SE; then errorMsg+="\tinput file: $inputFile_2\n"; fi
+		errorMsg+="\toutput file: $outputFile\n"
+		prnError "$errorMsg"
+	fi
+
+	prnCmd "# SPAdes ERROR CHECKING: DONE"
+}
