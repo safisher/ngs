@@ -33,7 +33,7 @@ ngsUsage_SPAdes="Usage:\n\t`basename $0` SPAdes OPTIONS sampleID -- run SPAdes o
 ##########################################################################################
 
 ngsHelp_SPAdes="Usage:\n\t`basename $0` SPAdes [-i inputDir] -p numProc -m maxRAM -k kmers [-se] sampleID\n"
-ngsHelp_SPAdes+="Input:\n\tsampleID/inputDir/unmapped_1.fq\n\tsampleID/inputDir/unmapped_2.fq (paired-end reads)\n"
+ngsHelp_SPAdes+="Input:\n\tsampleID/inputDir/notMapped_1.fq\n\tsampleID/inputDir/notMapped_2.fq (paired-end reads)\n"
 ngsHelp_SPAdes+="Output:\n\tsampleID/SPAdes/SampleID.fasta \n"
 ngsHelp_SPAdes+="Requires:\n\tSPAdes ( http://bioinf.spbau.ru/spades )\n"
 ngsHelp_SPAdes+="Options:\n"
@@ -114,18 +114,22 @@ ngsCmd_SPAdes() {
 	
 	if $SE; then
 		# single-end
-		prnCmd "spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unmapped_1.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes"
+		prnCmd "spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/notMapped_1.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes"
 		if ! $DEBUG; then 
-			spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unmapped_1.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes
+			spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/notMapped_1.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes
 		fi
 	else
 		# paired-end
-		prnCmd "spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unmapped_1.fq -2 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unmapped_2.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes"
+		prnCmd "spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/notMapped_1.fq -2 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/notMapped_2.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes"
 		if ! $DEBUG; then 
-			spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unmapped_1.fq -2 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unmapped_2.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes
+			spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/notMapped_1.fq -2 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/notMapped_2.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes
 		fi
 	fi
-		
+
+	# move the SPAdes output to be more accessible
+	prnCmd "mv $SAMPLE/SPAdes/$SAMPLE/contigs/$SAMPLE.fasta $SAMPLE/SPAdes/$SAMPLE.fasta"
+	if ! $DEBUG; then mv $SAMPLE/SPAdes/$SAMPLE/contigs/$SAMPLE.fasta $SAMPLE/SPAdes/$SAMPLE.fasta; fi
+
 	# run error checking
 	if ! $DEBUG; then ngsErrorChk_SPAdes $@; fi
 	
@@ -140,9 +144,9 @@ ngsCmd_SPAdes() {
 ngsErrorChk_SPAdes() {
 	prnCmd "# SPAdes ERROR CHECKING: RUNNING"
 
-	inputFile_1="$SAMPLE/$ngsLocal_SPAdes_INP_DIR/unmapped_1.fq"
-	inputFile_2="$SAMPLE/$ngsLocal_SPAdes_INP_DIR/unmapped_2.fq"
-	outputFile="$SAMPLE/SPAdes/$SAMPLE/contigs/$SAMPLE.fasta"
+	inputFile_1="$SAMPLE/$ngsLocal_SPAdes_INP_DIR/notMapped_1.fq"
+	inputFile_2="$SAMPLE/$ngsLocal_SPAdes_INP_DIR/notMapped_2.fq"
+	outputFile="$SAMPLE/SPAdes/$SAMPLE.fasta"
 
 	# make sure expected output file exists and is not empty
 	if [ ! -s $outputFile ]; then
