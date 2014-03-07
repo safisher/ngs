@@ -33,7 +33,7 @@ ngsUsage_SNP="Usage:\n\t`basename $0` snp OPTIONS sampleID -- run SNP calling an
 ##########################################################################################
 
 ngsHelp_SNP="Usage:\n\t`basename $0` snp [-i inputDir] -s species sampleID\n"
-ngsHelp_SNP+="Input:\n\tsampleID/inputDir/sampleID.sorted.bam\n"
+ngsHelp_SNP+="Input:\n\tsampleID/inputDir/sampleID.bowtie.sorted.bam\n"
 ngsHelp_SNP+="Output:\n\tsampleID/snp/sampleID.filtered.vcf\n\tsampleID/snp/sampleID.bigWig\n"
 ngsHelp_SNP+="Requires:\n\tfreebayes ( https://github.com/ekg/freebayes )\n\tbedtools ( http://bedtools.readthedocs.org/en/latest/ )\n\tKent sources ( http://genomewiki.ucsc.edu/index.php/Kent_source_utilities )\n"
 ngsHelp_SNP+="Options:\n"
@@ -97,13 +97,13 @@ ngsCmd_SNP() {
 		if ! $DEBUG; then mkdir $SAMPLE/snp; fi
 	fi
 	
-	prnCmd "freebayes -f $SNP_REPO/$SPECIES.fa $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.sorted.bam > $SAMPLE/snp/$SAMPLE.raw.vcf"
-	if ! $DEBUG; then freebayes -f $SNP_REPO/$SPECIES.fa $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.sorted.bam > $SAMPLE/snp/$SAMPLE.raw.vcf; fi
+	prnCmd "freebayes -f $SNP_REPO/$SPECIES.fa $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.bowtie.sorted.bam > $SAMPLE/snp/$SAMPLE.raw.vcf"
+	if ! $DEBUG; then freebayes -f $SNP_REPO/$SPECIES.fa $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.bowtie.sorted.bam > $SAMPLE/snp/$SAMPLE.raw.vcf; fi
 	prnCmd "vcffilter -f \"QUAL > 20\" $SAMPLE/snp/$SAMPLE.raw.vcf > $SAMPLE/snp/$SAMPLE.filtered.vcf"
 	if ! $DEBUG; then vcffilter -f 'QUAL > 20' $SAMPLE/snp/$SAMPLE.raw.vcf > $SAMPLE/snp/$SAMPLE.filtered.vcf; fi
 	
-	prnCmd "bedtools genomecov -bga -ibam $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.sorted.bam > $SAMPLE/snp/$SAMPLE.bedGraph"
-	if ! $DEBUG; then bedtools genomecov -bga -ibam $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.sorted.bam > $SAMPLE/snp/$SAMPLE.bedGraph; fi
+	prnCmd "bedtools genomecov -bga -ibam $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.bowtie.sorted.bam > $SAMPLE/snp/$SAMPLE.bedGraph"
+	if ! $DEBUG; then bedtools genomecov -bga -ibam $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.bowtie.sorted.bam > $SAMPLE/snp/$SAMPLE.bedGraph; fi
 
 	prnCmd "sort -k1,1 -k2,2n $SAMPLE/snp/$SAMPLE.bedGraph > $SAMPLE/snp/$SAMPLE.sorted.bedGraph"
 	if ! $DEBUG; then sort -k1,1 -k2,2n $SAMPLE/snp/$SAMPLE.bedGraph > $SAMPLE/snp/$SAMPLE.sorted.bedGraph; fi	
@@ -114,8 +114,8 @@ ngsCmd_SNP() {
 	prnCmd "bigWigToWig $SAMPLE/snp/$SAMPLE.bigWig $SAMPLE/snp/$SAMPLE.wig"
 	if ! $DEBUG; then bigWigToWig $SAMPLE/snp/$SAMPLE.bigWig $SAMPLE/snp/$SAMPLE.wig; fi
 
-	prnCmd "bedtools genomecov -d -ibam $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.sorted.bam > $SAMPLE/snp/$SAMPLE.cov"
-	if ! $DEBUG; then bedtools genomecov -d -ibam $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.sorted.bam > $SAMPLE/snp/$SAMPLE.cov; fi		
+	prnCmd "bedtools genomecov -d -ibam $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.bowtie.sorted.bam > $SAMPLE/snp/$SAMPLE.cov"
+	if ! $DEBUG; then bedtools genomecov -d -ibam $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.bowtie.sorted.bam > $SAMPLE/snp/$SAMPLE.cov; fi		
 	
 	# run error checking
 	if ! $DEBUG; then ngsErrorChk_SNP $@; fi
@@ -130,7 +130,7 @@ ngsCmd_SNP() {
 ngsErrorChk_SNP() {
 	prnCmd "# SNP ERROR CHECKING: RUNNING"
 
-	inputFile="$SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.sorted.bam"
+	inputFile="$SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.bowtie.sorted.bam"
 	outputFile_1="$SAMPLE/snp/$SAMPLE.bigWig"
 	outputFile_2="$SAMPLE/snp/$SAMPLE.cov"
 

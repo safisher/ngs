@@ -33,23 +33,23 @@ ngsUsage_SPAdes="Usage:\n\t`basename $0` SPAdes OPTIONS sampleID -- run SPAdes o
 ##########################################################################################
 
 ngsHelp_SPAdes="Usage:\n\t`basename $0` SPAdes [-i inputDir] -p numProc -m maxRAM -k kmers [-se] sampleID\n"
-ngsHelp_SPAdes+="Input:\n\tsampleID/inputDir/unaligned_1.fq\n\tsampleID/inputDir/unaligned_2.fq (paired-end reads)\n"
+ngsHelp_SPAdes+="Input:\n\tsampleID/inputDir/unmapped_1.fq\n\tsampleID/inputDir/unmapped_2.fq (paired-end reads)\n"
 ngsHelp_SPAdes+="Output:\n\tsampleID/SPAdes/SampleID.fasta \n"
 ngsHelp_SPAdes+="Requires:\n\tSPAdes ( http://bioinf.spbau.ru/spades )\n"
 ngsHelp_SPAdes+="Options:\n"
-ngsHelp_SPAdes+="\t-i inputDir - location of source files (default: trim).\n"
+ngsHelp_SPAdes+="\t-i inputDir - location of source files (default: bowtie).\n"
 ngsHelp_SPAdes+="\t-p numProc - number of cpu to use.\n"
 ngsHelp_SPAdes+="\t-k kmers (default: 33,49,83) --> SPAdes\n"
 ngsHelp_SPAdes+="\t-m maximum RAM (default: 250)\n"
 ngsHelp_SPAdes+="\t-se - single-end reads (default: paired-end)\n\n"
-ngsHelp_SPAdes+="Runs SPAdes using the trimmed files from sampleID/trim. Output is stored in sampleID/SPAdes."
+ngsHelp_SPAdes+="Runs SPAdes using the reads that BOWTIE was not able to map (sampleID/bowtie). Output is stored in sampleID/SPAdes."
 
 ##########################################################################################
 # LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
 # make sure these variables don't collide with the other modules.
 ##########################################################################################
 
-ngsLocal_SPAdes_INP_DIR="trim"
+ngsLocal_SPAdes_INP_DIR="bowtie"
 ngsLocal_SPAdes_MAX_RAM=100
 ngsLocal_SPAdes_KMERS="33,49,83"
 
@@ -59,7 +59,7 @@ ngsLocal_SPAdes_KMERS="33,49,83"
 ##########################################################################################
 
 ngsArgs_SPAdes() {
-	if [ $# -lt 6 ]; then
+	if [ $# -lt 4 ]; then
 		printHelp $COMMAND
 		exit 0
 	fi
@@ -114,15 +114,15 @@ ngsCmd_SPAdes() {
 	
 	if $SE; then
 		# single-end
-		prnCmd "spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unaligned_1.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes"
+		prnCmd "spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unmapped_1.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes"
 		if ! $DEBUG; then 
-			spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unaligned_1.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes
+			spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unmapped_1.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes
 		fi
 	else
 		# paired-end
-		prnCmd "spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unaligned_1.fq -2 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unaligned_2.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes"
+		prnCmd "spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unmapped_1.fq -2 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unmapped_2.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes"
 		if ! $DEBUG; then 
-			spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unaligned_1.fq -2 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unaligned_2.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes
+			spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unmapped_1.fq -2 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/unmapped_2.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes
 		fi
 	fi
 		
@@ -140,9 +140,9 @@ ngsCmd_SPAdes() {
 ngsErrorChk_SPAdes() {
 	prnCmd "# SPAdes ERROR CHECKING: RUNNING"
 
-	inputFile_1="$SAMPLE/$ngsLocal_SPAdes_INP_DIR/unaligned_1.fq"
-	inputFile_2="$SAMPLE/$ngsLocal_SPAdes_INP_DIR/unaligned_2.fq"
-	outputFile="$SAMPLE/SPAdes/$SAMPLE.fasta"
+	inputFile_1="$SAMPLE/$ngsLocal_SPAdes_INP_DIR/unmapped_1.fq"
+	inputFile_2="$SAMPLE/$ngsLocal_SPAdes_INP_DIR/unmapped_2.fq"
+	outputFile="$SAMPLE/SPAdes/$SAMPLE/contigs/$SAMPLE.fasta"
 
 	# make sure expected output file exists and is not empty
 	if [ ! -s $outputFile ]; then
