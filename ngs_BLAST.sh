@@ -53,7 +53,7 @@ ngsLocal_BLAST_NUM_READS=5000
 ##########################################################################################
 
 ngsArgs_BLAST() {
-	if [ $# -lt 5 ]; then
+	if [ $# -lt 3 ]; then
 		printHelp $COMMAND
 		exit 0
 	fi
