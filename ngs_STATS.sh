@@ -30,7 +30,7 @@ ngsUsage_STATS="Usage: `basename $0` stats OPTIONS modules sampleID    --  print
 ##########################################################################################
 
 ngsHelp_STATS="Usage:\n\t`basename $0` stats [-v] modules sampleID\n\n"
-ngsHelp_STATS+="Input:\n\tsampleID/blast/speciesCounts.txt\n\tsampleID/trim/stats.txt\n\tsampleID/star/Log.final.out (if STAR specified)\n\tsampleID/rum/mapping_stats.txt (if RUM specied)\n"
+ngsHelp_STATS+="Input:\n\tmodule specific\n"
 ngsHelp_STATS+="Output:\n\tprinting to console\n"
 ngsHelp_STATS+="Options:\n"
 ngsHelp_STATS+="\t-v - verbose printing of alignment stats (default: off).\n"
