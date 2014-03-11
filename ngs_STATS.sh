@@ -35,7 +35,7 @@ ngsHelp_STATS+="Output:\n\tprinting to console\n"
 ngsHelp_STATS+="Options:\n"
 ngsHelp_STATS+="\t-v - verbose printing of alignment stats (default: off).\n"
 ngsHelp_STATS+="\tmodules - comma separated, ordered list of modules to include for stats (must not include spaces).\n"
-ngsHelp_STATS+="Prints out stats for user-specified list of modules. The stats will be tab delimited so they can be copy-pasted into an Excel table. This will not write to the analysis.log file."
+ngsHelp_STATS+="Prints stats for user-specified list of modules. The stats will be tab delimited so they can be copy-pasted into an Excel table. This will not write to the analysis.log file."
 
 ##########################################################################################
 # LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
