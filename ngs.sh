@@ -80,7 +80,7 @@ source ngs_BLAST.sh
 source ngs_BOWTIE.sh
 source ngs_TRIM.sh
 source ngs_STAR.sh
-source ngs_RUMALIGN.sh
+source ngs_RUM.sh
 source ngs_RUMSTATUS.sh
 source ngs_POST.sh
 source ngs_BLASTDB.sh
@@ -107,7 +107,7 @@ usage+=$ngsUsage_BLAST
 usage+=$ngsUsage_BOWTIE
 usage+=$ngsUsage_TRIM
 usage+=$ngsUsage_STAR
-usage+=$ngsUsage_RUMALIGN
+usage+=$ngsUsage_RUM
 usage+=$ngsUsage_RUMSTATUS
 usage+=$ngsUsage_POST
 usage+=$ngsUsage_BLASTDB
@@ -132,7 +132,7 @@ printHelp() {
 		 'bowtie') echo -e $ngsHelp_BOWTIE;;
 		 'trim') echo -e $ngsHelp_TRIM;;
 		 'star') echo -e $ngsHelp_STAR;;
-		 'rumalign') echo -e $ngsHelp_RUMALIGN;;
+		 'rum') echo -e $ngsHelp_RUM;;
 		 'rumstatus') echo -e $ngsHelp_RUMSTATUS;;
 		 'post') echo -e $ngsHelp_POST;;
 		 'blastdb') echo -e $ngsHelp_BLASTDB;;
@@ -176,7 +176,7 @@ if [[ "$COMMAND" = "blast" ]]; then ngsArgs_BLAST $@; fi
 if [[ "$COMMAND" = "bowtie" ]]; then ngsArgs_BOWTIE $@; fi
 if [[ "$COMMAND" = "trim" ]]; then ngsArgs_TRIM $@; fi
 if [[ "$COMMAND" = "star" ]]; then ngsArgs_STAR $@; fi
-if [[ "$COMMAND" = "rumalign" ]]; then ngsArgs_RUMALIGN $@; fi
+if [[ "$COMMAND" = "rum" ]]; then ngsArgs_RUM $@; fi
 if [[ "$COMMAND" = "rumstatus" ]]; then ngsArgs_RUMSTATUS $@; fi
 if [[ "$COMMAND" = "post" ]]; then ngsArgs_POST $@; fi
 if [[ "$COMMAND" = "blastdb" ]]; then ngsArgs_BLASTDB $@; fi
@@ -291,7 +291,7 @@ if [[ "$COMMAND" = "blast" ]]; then ngsCmd_BLAST; fi
 if [[ "$COMMAND" = "bowtie" ]]; then ngsCmd_BOWTIE; fi
 if [[ "$COMMAND" = "trim" ]]; then ngsCmd_TRIM; fi
 if [[ "$COMMAND" = "star" ]]; then ngsCmd_STAR; fi
-if [[ "$COMMAND" = "rumalign" ]]; then ngsCmd_RUMALIGN; fi
+if [[ "$COMMAND" = "rum" ]]; then ngsCmd_RUM; fi
 if [[ "$COMMAND" = "rumstatus" ]]; then ngsCmd_RUMSTATUS; fi
 if [[ "$COMMAND" = "post" ]]; then ngsCmd_POST; fi
 if [[ "$COMMAND" = "blastdb" ]]; then ngsCmd_BLASTDB; fi

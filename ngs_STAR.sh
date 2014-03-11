@@ -227,7 +227,7 @@ ngsErrorChk_STAR() {
 
 	# make sure expected output files exists
 	if [[ ! -s $outputFile_1 || ! -s $outputFile_2 ]]; then
-		errorMsg="Error with output files (don't exist or are empty).\n"
+		errorMsg="Error with STAR output files (don't exist or are empty).\n"
 		errorMsg+="\tinput file: $inputFile_1\n"
 		if ! $SE; then errorMsg+="\tinput file: $inputFile_2\n"; fi
 		errorMsg+="\toutput file (sorted alignments): $outputFile_1\n"
@@ -236,4 +236,51 @@ ngsErrorChk_STAR() {
 	fi
 
 	prnCmd "# STAR ERROR CHECKING: DONE"
+}
+
+##########################################################################################
+# PRINT STATS. Prints a tab-delimited list stats of interest.
+##########################################################################################
+
+ngsStats_STAR() {
+	if [ $# -ne 1 ]; then
+		prnError "Incorrect number of parameters for ngsStats_STAR()."
+	fi
+
+	avgReadLen=`grep "Average input read length" $SAMPLE/star/Log.final.out | awk -F $'\t' '{print $2}'`
+	STAR_HEADER="Avg Inp Read Len"
+	STAR_VALUES="$avgReadLen"
+
+	avgMapLen=`grep "Average mapped length" $SAMPLE/star/Log.final.out | awk -F $'\t' '{print $2}'`
+	STAR_HEADER="$STAR_HEADER\tAvg Uniq Map Len"
+	STAR_VALUES="$STAR_VALUES\t$avgMapLen"
+
+	uniqMap=`grep "Uniquely mapped reads %" $SAMPLE/star/Log.final.out | awk -F $'\t' '{print $2}'`
+	STAR_HEADER="$STAR_HEADER\tUniq Map"
+	STAR_VALUES="$STAR_VALUES\t$uniqMap"
+
+	multimapped=`grep "% of reads mapped to multiple loci" $SAMPLE/star/Log.final.out | awk -F $'\t' '{print $2}'`
+	STAR_HEADER="$STAR_HEADER\tMultimapped"
+	STAR_VALUES="$STAR_VALUES\t$multimapped"
+
+	tooShort=`grep "% of reads unmapped: too short" $SAMPLE/star/Log.final.out | awk -F $'\t' '{print $2}'`
+	STAR_HEADER="$STAR_HEADER\tToo Short"
+	STAR_VALUES="$STAR_VALUES\t$tooShort"
+
+	case $1 in
+		header)
+			# the second to the last line of the stats.txt file is a tab-delimited lists of headers
+			echo "$STAR_HEADER"
+			;;
+
+		values)
+			# the last line of the stats.txt file is a tab-delimited lists of values
+			echo "$STAR_VALUES"
+			;;
+
+		*) 
+			# incorrect argument
+			prnError "Invalid parameter for ngsStats_STAR() (got $1, expected: 'header|values')."
+			;;
+	esac
 }

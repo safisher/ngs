@@ -23,25 +23,28 @@
 # USAGE
 ##########################################################################################
 
-ngsUsage_STATS="Usage: `basename $0` stats OPTIONS sampleID    --  print stats from blast, trimming and aligner\n"
+ngsUsage_STATS="Usage: `basename $0` stats OPTIONS modules sampleID    --  print stats from user-specified list of modules\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_STATS="Usage:\n\t`basename $0` stats [-a aligner] sampleID\n\n"
+ngsHelp_STATS="Usage:\n\t`basename $0` stats [-v] modules sampleID\n\n"
 ngsHelp_STATS+="Input:\n\tsampleID/blast/speciesCounts.txt\n\tsampleID/trim/stats.txt\n\tsampleID/star/Log.final.out (if STAR specified)\n\tsampleID/rum/mapping_stats.txt (if RUM specied)\n"
 ngsHelp_STATS+="Output:\n\tprinting to console\n"
 ngsHelp_STATS+="Options:\n"
-ngsHelp_STATS+="\t-a aligner - which aligner log file to parse for stats (default: star). Choices are 'star' or 'rum'.\n"
-ngsHelp_STATS+="Prints out BLAST, TRIM, and STAR (or RUM) stats. The stats will be tab delimited so they can be copy-pasted into an Excel table. This will not write to the analysis.log file."
+ngsHelp_STATS+="\t-v - verbose printing of alignment stats (default: off).\n"
+ngsHelp_STATS+="\tmodules - comma separated, ordered list of modules to include for stats (must not include spaces).\n"
+ngsHelp_STATS+="Prints out stats for user-specified list of modules. The stats will be tab delimited so they can be copy-pasted into an Excel table. This will not write to the analysis.log file."
 
 ##########################################################################################
 # LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
 # make sure these variables don't collide with the other modules.
 ##########################################################################################
 
-ngsLocal_STATS_ALIGNER="star"
+# we assume this should only print the essential data as tab-delimited key:value pairs
+ngsLocal_STATS_VERBOSE="false"
+ngsLocal_STATS_MODULES=""
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -49,16 +52,11 @@ ngsLocal_STATS_ALIGNER="star"
 ##########################################################################################
 
 ngsArgs_STATS() {
-	if [ $# -lt 1 ]; then
-		printHelp $COMMAND
-		exit 0
-	fi
-
 	# getopts doesn't allow for optional arguments so handle them manually
 	while true; do
 		case $1 in
-			-a) ngsLocal_STATS_ALIGNER=$2
-				shift; shift;
+			-v) ngsLocal_STATS_VERBOSE=true
+				shift;
 				;;
 			-*) printf "Illegal option: '%s'\n" "$1"
 				printHelp $COMMAND
@@ -67,8 +65,16 @@ ngsArgs_STATS() {
  			*) break ;;
 		esac
 	done
-	
-	SAMPLE=$1
+
+	# we need to still have two parameters
+	if [ $# -lt 2 ]; then
+		printHelp $COMMAND
+		exit 0
+	fi
+
+	ngsLocal_STATS_MODULES=$1
+
+	SAMPLE=$2
 }
 
 ##########################################################################################
@@ -77,92 +83,65 @@ ngsArgs_STATS() {
 ##########################################################################################
 
 ngsCmd_STATS() {
-	# don't write to log file as this is just printing stats
-	echo -e "\n##################################################################"
-	echo "# BEGIN: STATS"
-	echo -ne `date`
-	echo -ne "  "
-	echo $SAMPLE
-	echo "##################################################################"
-	
-	echo "-- BLAST --"
-	cat $SAMPLE/blast/speciesCounts.txt; 
-
-	# the last line of the speciesCounts.txt file is the following tab-delimited list of values:
-	# Total Hits	Hits Not Counted	Bacteria	Fish	Fly	Human	Mouse	Rat	Yeast
-	BLAST_HEADER=`tail -2 $SAMPLE/blast/speciesCounts.txt | head -1`
-	BLAST_VALUES=`tail -1 $SAMPLE/blast/speciesCounts.txt`
-	
-	echo -e "\n-- Trimming --"
-	cat $SAMPLE/trim/stats.txt; 
-
-	TRIM_HEADER=`tail -2 $SAMPLE/trim/stats.txt | head -1`
-	TRIM_VALUES=`tail -1 $SAMPLE/trim/stats.txt`
-
-	if [[ "$ngsLocal_STATS_ALIGNER" = "rum" ]]; then
-		echo -e "\n-- RUM --"
-		#head -32 $SAMPLE/rum.trim/mapping_stats.txt
-
-		# we aren't currently using NUMTRIM. For now it's just to flag whether or not the sample is single- or paired-end.
-		numTrim=`head -32 $SAMPLE/rum.trim/mapping_stats.txt | grep "Number of read pairs:" | awk '{print $5}'`
-
-		rumAli=`head -32 $SAMPLE/rum.trim/mapping_stats.txt | tail -10 | grep "At least one" | awk '{print $10}' | tr -d '()'`
-		RUM_HEADER="RUM Total Aligned"
-		RUM_VALUES="$rumAli"
-	
-		# if $NUMTRIM is empty then probably single-end, which has different stats in mapping_stats.txt file
-		if [ ! "$numTrim" ]; then
-			echo -e "\nPROCESSING RUM AS SINGLE-END"
-
-			rumAli=`head -20 $SAMPLE/rum.trim/mapping_stats.txt | grep "TOTAL:" | awk '{print $3}' | tr -d '()'`
-			RUM_HEADER="RUM Total Aligned"
-			RUM_VALUES="$rumAli"
-		fi
-
-	elif [[ "$ngsLocal_STATS_ALIGNER" = "star" ]]; then
-		echo -e "\n-- STAR --"
-
-		avgReadLen=`grep "Average input read length" $SAMPLE/star/Log.final.out | awk -F $'\t' '{print $2}'`
-		STAR_HEADER="Avg Inp Read Len"
-		STAR_VALUES="$avgReadLen"
-
-		avgMapLen=`grep "Average mapped length" $SAMPLE/star/Log.final.out | awk -F $'\t' '{print $2}'`
-		STAR_HEADER="$STAR_HEADER\tAvg Uniq Map Len"
-		STAR_VALUES="$STAR_VALUES\t$avgMapLen"
-
-		uniqMap=`grep "Uniquely mapped reads %" $SAMPLE/star/Log.final.out | awk -F $'\t' '{print $2}'`
-		STAR_HEADER="$STAR_HEADER\tUniq Map"
-		STAR_VALUES="$STAR_VALUES\t$uniqMap"
-
-		multimapped=`grep "% of reads mapped to multiple loci" $SAMPLE/star/Log.final.out | awk -F $'\t' '{print $2}'`
-		STAR_HEADER="$STAR_HEADER\tMultimapped"
-		STAR_VALUES="$STAR_VALUES\t$multimapped"
-
-		tooShort=`grep "% of reads unmapped: too short" $SAMPLE/star/Log.final.out | awk -F $'\t' '{print $2}'`
-		STAR_HEADER="$STAR_HEADER\tToo Short"
-		STAR_VALUES="$STAR_VALUES\t$tooShort"
+	if $ngsLocal_STATS_VERBOSE; then
+		# don't write to log file as this is just printing stats
+		echo -e "\n##################################################################"
+		echo -ne "# BEGIN: STATS - $ngsLocal_STATS_MODULES\n# "
+		echo -ne `date`
+		echo -ne "  "
+		echo $SAMPLE
+		echo "##################################################################"
 	fi
 
-	echo -e "\n-- $SAMPLE --"
+	# these will be tab-delimited lists that include the stats column names and values
+	header="Sample ID"
+	values="$SAMPLE"
 
-	if [[ "$ngsLocal_STATS_ALIGNER" = "rum" ]]; then
-		echo -e "$RUM_HEADER\t$BLAST_HEADER\t$TRIM_HEADER"
-		echo -e "$RUM_VALUES\t$BLAST_VALUES\t$TRIM_VALUES"
+	# the bash IFS variable dictates the word delimiting which is "
+	# \t\n" by default. We are capturing command output that includes
+	# tab characters. If we don't remove the '\t' from IFS then all
+	# tabs in our output get converted to spaces.
+	local IFS=" "
 
-	elif [[ "$ngsLocal_STATS_ALIGNER" = "star" ]]; then
-		echo -e "$STAR_HEADER\t$BLAST_HEADER\t$TRIM_HEADER"
-		echo -e "$STAR_VALUES\t$BLAST_VALUES\t$TRIM_VALUES"
+	for module in ${ngsLocal_STATS_MODULES//,/ }; do
+		case $module in
+			blast)
+				if $ngsLocal_STATS_VERBOSE; then echo "# EXTRACTING BLAST STATS"; fi
+				header="$header\t$(ngsStats_BLAST 'header')"
+				values="$values\t$(ngsStats_BLAST 'values')"
+				;;
+			trim)
+				if $ngsLocal_STATS_VERBOSE; then echo "# EXTRACTING TRIM STATS"; fi
+				header="$header\t$(ngsStats_TRIM 'header')"
+				values="$values\t$(ngsStats_TRIM 'values')"
+				;;
+			star)
+				if $ngsLocal_STATS_VERBOSE; then echo "# EXTRACTING STAR STATS"; fi
+				header="$header\t$(ngsStats_STAR 'header')"
+				values="$values\t$(ngsStats_STAR 'values')"
+				;;
+			rum)
+				if $ngsLocal_STATS_VERBOSE; then echo "# EXTRACTING RUM STATS"; fi
+				header="$header\t$(ngsStats_RUM 'header')"
+				values="$values\t$(ngsStats_RUM 'values')"
+				;;
+ 			*) 
+				errorMsg="Illegal module option: '$module'\n"
+				prnError "$errorMsg"
+				;;
+		esac
+	done
 
-	else
-		echo -e "$BLAST_HEADER\t$TRIM_HEADER"
-		echo -e "$BLAST_VALUES\t$TRIM_VALUES"
+	echo -e $header
+	echo -e $values
+
+	if $ngsLocal_STATS_VERBOSE; then
+		# don't write to log file as this is just printing stats
+		echo -e "\n##################################################################"
+		echo -ne "# FINISHED: STATS\n# "
+		echo -ne `date`
+		echo -ne "  "
+		echo $SAMPLE
+		echo "##################################################################"
 	fi
-	
-	# don't write to log file as this is just printing stats
-	echo -e "\n##################################################################"
-	echo "# FINISHED: STATS"
-	echo -ne `date`
-	echo -ne "  "
-	echo $SAMPLE
-	echo "##################################################################"
 }

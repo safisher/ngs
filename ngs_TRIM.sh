@@ -184,7 +184,7 @@ ngsErrorChk_TRIM() {
 	if $SE; then
 		# make sure expected output file exists and is not empty
 		if [ ! -s $outputFile_1 ]; then
-			errorMsg="Expected output file does not exist.\n"
+			errorMsg="Expected TRIM output file does not exist.\n"
 			errorMsg+="\tinput file: $inputFile_1\n"
 			errorMsg+="\toutput file: $outputFile_1\n"
 			prnError "$errorMsg"
@@ -197,7 +197,7 @@ ngsErrorChk_TRIM() {
 
 		# make sure expected output files exists
 		if [[ ! -s $outputFile_1 || ! -s $outputFile_2 ]]; then
-			errorMsg="Error with output files (don't exist or are empty).\n"
+			errorMsg="Error with TRIM output files (don't exist or are empty).\n"
 			errorMsg+="\tinput file: $inputFile_1\n"
 			errorMsg+="\toutput file: $outputFile_1\n\n"
 			errorMsg+="\tinput file: $inputFile_2\n"
@@ -223,4 +223,50 @@ ngsErrorChk_TRIM() {
 	fi
 
 	prnCmd "# TRIM ERROR CHECKING: DONE"
+}
+
+##########################################################################################
+# PRINT STATS. Prints a tab-delimited list stats of interest.
+##########################################################################################
+
+ngsStats_TRIM() {
+	if [ $# -ne 1 ]; then
+		prnError "Incorrect number of parameters for ngsStats_TRIM()."
+	fi
+
+	case $1 in
+		header)
+			# the second to the last line of the stats.txt file is a tab-delimited lists of headers
+			echo `tail -2 $SAMPLE/trim/stats.txt | head -1`
+			;;
+
+		values)
+			# the last line of the stats.txt file is a tab-delimited lists of values
+			echo `tail -1 $SAMPLE/trim/stats.txt`
+			;;
+
+		keyvalue)
+			# output key:value pair of stats
+
+			# the bash IFS variable dictates the word delimiting which is " \t\n" 
+			# by default. We want to only delimite by tabs for the case here.
+			local IFS=$'\t'
+			
+			# the last two lines of the stats.txt file are tab-delimited lists of headers and values
+			declare -a header=($(tail -2 $SAMPLE/trim/stats.txt | head -1))
+			declare -a values=($(tail -1 $SAMPLE/trim/stats.txt))
+			
+			# output a tab-delimited, key:value list
+			numFields=${#header[@]}
+			for ((i=0; i<$numFields-1; ++i)); do
+				echo -en "${header[$i]}:${values[$i]}\t"
+			done
+			echo "${header[$numFields-1]}:${values[$numFields-1]}"
+			;;
+
+		*) 
+			# incorrect argument
+			prnError "Invalid parameter for ngsStats_TRIM() (got $1, expected: 'header|values')."
+			;;
+	esac
 }

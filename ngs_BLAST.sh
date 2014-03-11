@@ -83,7 +83,7 @@ ngsArgs_BLAST() {
 
 ngsCmd_BLAST() {
 	prnCmd "# BEGIN: BLAST"
-		
+
 	# make relevant directory
 	if [ ! -d $SAMPLE/blast ]; then 
 		prnCmd "mkdir $SAMPLE/blast"
@@ -138,7 +138,7 @@ ngsErrorChk_BLAST() {
 
 	# make sure expected output file exists
 	if [ ! -f $outputFile ]; then
-		errorMsg="Expected output file does not exist.\n"
+		errorMsg="Expected BLAST output file does not exist.\n"
 		errorMsg+="\tinput file: $inputFile\n"
 		errorMsg+="\toutput file: $outputFile\n"
 		prnError "$errorMsg"
@@ -156,4 +156,51 @@ ngsErrorChk_BLAST() {
 	fi
 
 	prnCmd "# BLAST ERROR CHECKING: DONE"
+}
+
+##########################################################################################
+# PRINT STATS. Prints a tab-delimited list stats of interest.
+##########################################################################################
+
+ngsStats_BLAST() {
+	if [ $# -ne 1 ]; then
+		prnError "Incorrect number of parameters for ngsStats_BLAST()."
+	fi
+
+	case $1 in
+		header) 
+			# the second to the last line of the stats.txt file is a tab-delimited lists of headers
+			echo `tail -2 $SAMPLE/blast/speciesCounts.txt | head -1`
+			;;
+
+		values) 
+			# the last line of the stats.txt file is a tab-delimited lists of values
+			echo `tail -1 $SAMPLE/blast/speciesCounts.txt`
+			;;
+
+		keyvalue) 
+			# output key:value pair of stats
+
+			# the bash IFS variable dictates the word delimiting which is " \t\n" 
+			# by default. We want to only delimite by tabs for the case here.
+			local IFS=$'\t'
+			
+			# the last line of the speciesCounts.txt file is the following tab-delimited list of values:
+			# Total Hits	Hits Not Counted	Bacteria	Fish	Fly	Human	Mouse	Rat	Yeast
+			declare -a header=($(tail -2 $SAMPLE/blast/speciesCounts.txt | head -1))
+			declare -a values=($(tail -1 $SAMPLE/blast/speciesCounts.txt))
+			
+			# output a tab-delimited, key:value list
+			numFields=${#header[@]}
+			for ((i=0; i<$numFields-1; ++i)); do
+				echo -en "${header[$i]}:${values[$i]}\t"
+			done
+			echo "${header[$numFields-1]}:${values[$numFields-1]}"
+			;;
+
+		*) 
+			# incorrect argument
+			prnError "Invalid parameter for ngsStats_BLAST() (got $1, expected: 'header|values')."
+			;;
+	esac
 }

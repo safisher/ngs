@@ -55,9 +55,9 @@ ngsArgs_RUMSTATUS() {
 ngsCmd_RUMSTATUS() {
 	prnCmd "# BEGIN: RUM STATUS"
 	
-	prnCmd "rum_runner status --output $SAMPLE/rum.trim"
+	prnCmd "rum_runner status --output $SAMPLE/rum"
 	if ! $DEBUG; then 
-		rum_runner status --output $SAMPLE/rum.trim
+		rum_runner status --output $SAMPLE/rum
 	fi
 		
 	prnCmd "# FINISHED: RUM STATUS"

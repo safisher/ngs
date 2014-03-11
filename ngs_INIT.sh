@@ -130,7 +130,7 @@ ngsErrorChk_INIT() {
 
 	# make sure expected output file exists
 	if [ ! -f $outputFile_1 ]; then
-		errorMsg="Expected output file does not exist.\n"
+		errorMsg="Expected INIT output file does not exist.\n"
 		errorMsg+="\tinput file: $inputFile_1\n"
 		errorMsg+="\toutput file: $outputFile_1\n"
 		prnError "$errorMsg"
@@ -164,7 +164,7 @@ ngsErrorChk_INIT() {
 
 		# make sure expected output file exists
 		if [ ! -f $outputFile_2 ]; then
-			errorMsg="Expected output file does not exist.\n"
+			errorMsg="Expected INIT output file does not exist.\n"
 			errorMsg+="\tinput file: $inputFile_2\n"
 			errorMsg+="\toutput file: $outputFile_2\n"
 			prnError "$errorMsg"

@@ -61,11 +61,19 @@ ngsArgs_TEMPLATE() {
 ngsCmd_TEMPLATE() {
 	# do something here
 }
-
+>
 ##########################################################################################
 # ERROR CHECKING
 ##########################################################################################
 
 ngsErrorChk_TEMPLATE() {
 	# check to make sure output files are valid
+}
+
+##########################################################################################
+# PRINT STATS
+##########################################################################################
+
+ngsStats_TEMPLATE() {
+	# expect one argument that is either "header" or "values" and output tab-delimited list stats of interest.
 }

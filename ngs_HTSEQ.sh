@@ -148,7 +148,7 @@ ngsErrorChk_HTSEQ() {
 
 	# make sure expected output file exists
 	if [ ! -f $outputFile ]; then
-		errorMsg="Expected output file does not exist.\n"
+		errorMsg="Expected HTSeq output file does not exist.\n"
 		errorMsg+="\tinput file: $inputFile\n"
 		errorMsg+="\toutput file: $outputFile\n"
 		prnError "$errorMsg"
@@ -178,3 +178,27 @@ ngsErrorChk_HTSEQ() {
 	prnCmd "# HTSEQ ERROR CHECKING: DONE"
 }
 
+##########################################################################################
+# PRINT STATS. Prints a tab-delimited list stats of interest.
+##########################################################################################
+
+ngsStats_HTSEQ() {
+	if [ $# -ne 1 ]; then
+		prnError "Incorrect number of parameters for ngsStats_HTSEQ()."
+	fi
+
+	case $1 in
+		header) 
+			# do something here
+			;;
+
+		values) 
+			# do something here
+			;;
+
+		*) 
+			# incorrect argument
+			prnError "Invalid parameter for ngsStats_HTSEQ() (got $1, expected: 'header|values')."
+			;;
+	esac
+}
