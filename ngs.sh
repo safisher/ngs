@@ -34,7 +34,16 @@
 
 VERSION=2.0.0-alpha
 
-# all commands will be output to this file as a report of what was done
+# each module should output a tab-delimited list of file and program
+# version information. This file should have two lines, the first line
+# being header information and the second line being the versions. The
+# prnVersion() command should be used to generate this file. This file
+# will live in the respective module subdirectory (ie
+# $SAMPLE/MODULE/VERSION)
+VERSION_FILE="VERSION"
+
+# all commands will be output to this file as a report of what was
+# done. The file will be located in the $SAMPLE directory.
 JOURNAL="analysis.log"
 
 DEBUG=false   # disable commands when true, use to see what commands would be run.
@@ -202,8 +211,26 @@ fi
 ###############################################################################################
 # MISCELLANEOUS DEFINITIONS
 
-
 JOURNAL="$SAMPLE/$JOURNAL"
+
+# output version information to the module subdirectory. We assume the
+# output directory already exists ($SAMPLE/MODULE). We expect three
+# arguments: module, header, values.
+prnVersion() {
+	if [ $# -ne 3 ]; then prnError "prnVersion() requires 3 arguments. Only received $#. arguments"; fi
+
+	# we can't rely on COMMAND to know the module calling this
+	# function since COMMAND might be pipeline.
+	outFile="$SAMPLE/$1/$VERSION_FILE"
+
+	# append pipeline version number
+	header="Pipeline\t$2"
+	values="$VERSION\t$3"
+
+	# we intentionally write over the previous file, if it exists
+	echo -e $header > $outFile
+	echo -e $values >> $outFile
+}
 
 # this will uniformily format the output that is put into the JOURNAL file
 prnCmd() {
