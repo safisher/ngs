@@ -91,14 +91,14 @@ ngsCmd_BLAST() {
 	fi
 		
     # print version info in journal file
-	prnCmd "# blastn version: blastn -version | tail -1 | awk '{print $3}' | sed s/,//"
+	prnCmd "# blastn version: blastn -version | tail -1 | awk '{print \$3}' | sed s/,//"
 	if ! $DEBUG; then 
-		# gets this: Package: blast 2.2.28, build Mar 12 2013 16:52:31
-		# returns this: 2.2.28
-		ver=`blastn -version | tail -1 | awk '{print $3}' | sed s/,//`
+		# gets this: "Package: blast 2.2.28, build Mar 12 2013 16:52:31"
+		# returns this: "2.2.28"
+		ver=$(blastn -version | tail -1 | awk '{print $3}' | sed s/,//)
 		prnVersion "blast" "blast_version\tblast_app\tspecies" "$ver\tblastn\t$SPECIES"
 	fi
-	
+
     # Get ngsLocal_BLAST_NUM_READS (5,000) randomly sampled reads
     # Usage: randomSample.py <num lines> <lines grouped> <input> <output>
 	prnCmd "randomSample.py $ngsLocal_BLAST_NUM_READS 4 $SAMPLE/orig/unaligned_1.fq $SAMPLE/blast/raw.fq > $SAMPLE/blast/sampling.out.txt"
