@@ -59,15 +59,18 @@ ngsArgs_TEMPLATE() {
 ##########################################################################################
 
 ngsCmd_TEMPLATE() {
-	# do something here
+	# 1. create subdirectory, if necessary
+	# 2. output version information using prnVersion() (see ngs.sh)
+	# 3. do stuff here
+	# 4. call ngsErrorChk_TEMPLATE
 }
->
+
 ##########################################################################################
 # ERROR CHECKING
 ##########################################################################################
 
 ngsErrorChk_TEMPLATE() {
-	# check to make sure output files are valid
+	# check to make sure output files are valid (eg they exist and are not empty)
 }
 
 ##########################################################################################
