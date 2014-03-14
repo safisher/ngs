@@ -190,14 +190,44 @@ ngsStats_HTSEQ() {
 	if [ $# -ne 1 ]; then
 		prnError "Incorrect number of parameters for ngsStats_HTSEQ()."
 	fi
+   
+	# number of genes with at least 1 read mapped
+	numGenes=$(grep -vP "\t0$" $SAMPLE/htseq/$SAMPLE.htseq.cnts.txt | grep -v "gene" | wc -l)
+	header="$header\tAmbiguous"
+	values="$values\t$numGenes"
+
+	# total number of reads that mapped unambigously to genes
+	readsCounted=$(cat $SAMPLE/htseq/$SAMPLE.htseq.cnts.txt | awk '{sum += $2} END {print sum}')
+	header="Reads Counted"
+	values="$readsCounted"
+
+	# average number of reads that mapped unambigously to genes
+	avgReadPerGene=$(($readsCounted/$numGenes))
+	header="$header\tAvg Read Per Gene"
+	values="$values\t$avgReadPerGene"
+
+	# maximum number of reads that mapped unambigously to a single gene
+	maxReadsPerGene=$(grep -v "gene" $SAMPLE/htseq/$SAMPLE.htseq.cnts.txt | awk '{if(max=="") {max=$2}; if($2>max) {max=$2};} END {print max}')
+	header="$header\tMax Reads Per Gene"
+	values="$values\t$maxReadsPerGene"
+
+	# number of reads that didn't map to a gene region
+	noFeature=$(tail -5 $SAMPLE/htseq/$SAMPLE.htseq.log.txt | head -1 | awk '{print $2}')
+	header="$header\tNo Feature"
+	values="$values\t$noFeature"
+
+	# number of reads that completely overlapped two or more gene regions
+	ambiguousMapped=$(tail -4 $SAMPLE/htseq/$SAMPLE.htseq.log.txt | head -1 | awk '{print $2}')
+	header="$header\tAmbiguous Mapped"
+	values="$values\t$ambiguousMapped"
 
 	case $1 in
 		header) 
-			# do something here
+			echo "$header"
 			;;
 
 		values) 
-			# do something here
+			echo "$values"
 			;;
 
 		*) 

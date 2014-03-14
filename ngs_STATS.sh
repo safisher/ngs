@@ -102,34 +102,16 @@ ngsCmd_STATS() {
 	# tab characters. If we don't remove the '\t' from IFS then all
 	# tabs in our output get converted to spaces.
 	local IFS=" "
+	
+	# convert module names to upper case
+	ngsLocal_STATS_MODULES=$( echo $ngsLocal_STATS_MODULES | tr [a-z] [A-Z])
 
+	# step through each user-specified module and call the module's
+	# ngsStats_MODULE() function.
 	for module in ${ngsLocal_STATS_MODULES//,/ }; do
-		case $module in
-			blast)
-				if $ngsLocal_STATS_VERBOSE; then echo "# EXTRACTING BLAST STATS"; fi
-				header="$header\t$(ngsStats_BLAST 'header')"
-				values="$values\t$(ngsStats_BLAST 'values')"
-				;;
-			trim)
-				if $ngsLocal_STATS_VERBOSE; then echo "# EXTRACTING TRIM STATS"; fi
-				header="$header\t$(ngsStats_TRIM 'header')"
-				values="$values\t$(ngsStats_TRIM 'values')"
-				;;
-			star)
-				if $ngsLocal_STATS_VERBOSE; then echo "# EXTRACTING STAR STATS"; fi
-				header="$header\t$(ngsStats_STAR 'header')"
-				values="$values\t$(ngsStats_STAR 'values')"
-				;;
-			rum)
-				if $ngsLocal_STATS_VERBOSE; then echo "# EXTRACTING RUM STATS"; fi
-				header="$header\t$(ngsStats_RUM 'header')"
-				values="$values\t$(ngsStats_RUM 'values')"
-				;;
- 			*) 
-				errorMsg="Illegal module option: '$module'\n"
-				prnError "$errorMsg"
-				;;
-		esac
+		if $ngsLocal_STATS_VERBOSE; then echo "# EXTRACTING $module STATS"; fi
+		header="$header\t$(ngsStats_$module 'header')"
+		values="$values\t$(ngsStats_$module 'values')"
 	done
 
 	echo -e $header

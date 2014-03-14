@@ -217,7 +217,7 @@ JOURNAL="$SAMPLE/$JOURNAL"
 # output directory already exists ($SAMPLE/MODULE). We expect three
 # arguments: module, header, values.
 prnVersion() {
-	if [ $# -ne 3 ]; then prnError "prnVersion() requires 3 arguments. Only received $#. arguments"; fi
+	if [[ $# -ne 3 ]]; then prnError "prnVersion() requires 3 arguments. Only received $#. arguments"; fi
 
 	# we can't rely on COMMAND to know the module calling this
 	# function since COMMAND might be pipeline.
@@ -296,11 +296,14 @@ if [ ! -d $SAMPLE ]; then
 	mkdir $SAMPLE
 fi
 
-# log version and run-time information
-if $DEBUG; then prnCmd "# DEBUG MODE"; fi
-_cmd=`basename $0`
-_args=`echo $@`
-prnCmd "# COMMAND: $_cmd $COMMAND $_args"
+# STATS shouldn't write anything to the log file
+if [[ "$COMMAND" != "stats" ]]; then
+	# log version and run-time information
+	if $DEBUG; then prnCmd "# DEBUG MODE"; fi
+	_cmd=`basename $0`
+	_args=`echo $@`
+	prnCmd "# COMMAND: $_cmd $COMMAND $_args"
+fi
 
 ###############################################################################################
 # RUN COMMANDS
