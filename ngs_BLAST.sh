@@ -24,20 +24,22 @@
 # USAGE
 ##########################################################################################
 
-ngsUsage_BLAST="Usage: `basename $0` blast OPTIONS sampleID    --  run blast on randomly sampled subset of reads\n"
+NGS_USAGE+="Usage: `basename $0` blast OPTIONS sampleID    --  run blast on randomly sampled subset of reads\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_BLAST="Usage:\n\t`basename $0` blast -p numProc -s species sampleID\n"
-ngsHelp_BLAST+="Input:\n\tsampleID/orig/unaligned_1.fq\n"
-ngsHelp_BLAST+="Output:\n\tsampleID/blast/blast.txt (blast output)\n\tsampleID/blast/species.txt (species hit counts)\n"
-ngsHelp_BLAST+="Requires:\n\tblastn ( ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/ )\n\trandomSample.py ( https://github.com/safisher/ngs )\n\tparseBlast.py ( https://github.com/safisher/ngs )\n"
-ngsHelp_BLAST+="Options:\n"
-ngsHelp_BLAST+="\t-p numProc - number of cpu to use\n"
-ngsHelp_BLAST+="\t-s species - expected species\n\n"
-ngsHelp_BLAST+="Run blast on 5000 reads randomly sampled from orig/unaligned_1.fq. Blast paramters used are 'num_descriptions: 10 num_alignments: 10 word_size: 15 gapopen: 3 gapextend: 1 evalue: 1e-15'. The output is put in a directory called 'blast'. The species.txt file contains number of reads mapping to each species (mouse, rat, human, bacteria)."
+ngsHelp_BLAST() {
+	echo -e "Usage:\n\t`basename $0` blast -p numProc -s species sampleID"
+	echo -e "Input:\n\tsampleID/orig/unaligned_1.fq"
+	echo -e "Output:\n\tsampleID/blast/blast.txt (blast output)\n\tsampleID/blast/species.txt (species hit counts)"
+	echo -e "Requires:\n\tblastn ( ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/ )\n\trandomSample.py ( https://github.com/safisher/ngs )\n\tparseBlast.py ( https://github.com/safisher/ngs )"
+	echo -e "Options:"
+	echo -e "\t-p numProc - number of cpu to use"
+	echo -e "\t-s species - expected species\n"
+	echo -e "Run blast on 5000 reads randomly sampled from orig/unaligned_1.fq. Blast paramters used are 'num_descriptions: 10 num_alignments: 10 word_size: 15 gapopen: 3 gapextend: 1 evalue: 1e-15'. The output is put in a directory called 'blast'. The species.txt file contains number of reads mapping to each species (mouse, rat, human, bacteria)."
+}
 
 ##########################################################################################
 # LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
@@ -53,10 +55,7 @@ ngsLocal_BLAST_NUM_READS=5000
 ##########################################################################################
 
 ngsArgs_BLAST() {
-	if [ $# -lt 5 ]; then
-		printHelp $COMMAND
-		exit 0
-	fi
+	if [ $# -lt 5 ]; then printHelp "BLAST"; fi
 		
 	while getopts "p:s:" opt; do
 		case $opt in

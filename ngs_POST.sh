@@ -28,16 +28,18 @@
 # USAGE
 ##########################################################################################
 
-ngsUsage_POST="Usage: `basename $0` post OPTIONS sampleID    --  clean up RUM and trimmed data\n"
+NGS_USAGE+="Usage: `basename $0` post OPTIONS sampleID    --  clean up RUM and trimmed data\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_POST="Usage:\n\t`basename $0` post [-i inputDir] sampleID\n"
-ngsHelp_POST+="Input:\n\tsampleID/INPUTDIR/*.fq\n"
-ngsHelp_POST+="Output:\n\tsampleID/INPUTDIR/*.fq.gz\n"
-ngsHelp_POST+="Compresses all files that end with 'fq'. For example the unaligned_1.fq file in the trim directory will be compressed with gzip and renamed unaligned_1.fq.gz."
+ngsHelp_POST() {
+	echo -e "Usage:\n\t`basename $0` post [-i inputDir] sampleID"
+	echo -e "Input:\n\tsampleID/INPUTDIR/*.fq"
+	echo -e "Output:\n\tsampleID/INPUTDIR/*.fq.gz\n"
+	echo -e "Compresses all files that end with 'fq'. For example the unaligned_1.fq file in the trim directory will be compressed with gzip and renamed unaligned_1.fq.gz."
+}
 
 ##########################################################################################
 # LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
@@ -52,10 +54,7 @@ ngsLocal_POST_INP_DIR="trim"
 ##########################################################################################
 
 ngsArgs_POST() {
-	if [ $# -lt 1 ]; then
-		printHelp $COMMAND
-		exit 0
-	fi
+	if [ $# -lt 1 ]; then printHelp "POST"; fi
 
 	# getopts doesn't allow for optional arguments so handle them manually
 	while true; do

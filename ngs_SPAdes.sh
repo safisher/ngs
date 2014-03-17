@@ -26,57 +26,56 @@
 # USAGE 
 ##########################################################################################
 
-ngsUsage_SPAdes="Usage:\n\t`basename $0` SPAdes OPTIONS sampleID -- run SPAdes on trimmed reads.\n"
+NGS_USAGE+="Usage: `basename $0` SPADES OPTIONS sampleID -- run SPADES on trimmed reads.\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_SPAdes="Usage:\n\t`basename $0` SPAdes [-i inputDir] -p numProc -m maxRAM -k kmers [-se] sampleID\n"
-ngsHelp_SPAdes+="Input:\n\tsampleID/inputDir/notMapped_1.fq\n\tsampleID/inputDir/notMapped_2.fq (paired-end reads)\n"
-ngsHelp_SPAdes+="Output:\n\tsampleID/SPAdes/SampleID.fasta \n"
-ngsHelp_SPAdes+="Requires:\n\tSPAdes ( http://bioinf.spbau.ru/spades )\n"
-ngsHelp_SPAdes+="Options:\n"
-ngsHelp_SPAdes+="\t-i inputDir - location of source files (default: bowtie).\n"
-ngsHelp_SPAdes+="\t-p numProc - number of cpu to use.\n"
-ngsHelp_SPAdes+="\t-k kmers (default: 33,49,83) --> SPAdes\n"
-ngsHelp_SPAdes+="\t-m maximum RAM (default: 250)\n"
-ngsHelp_SPAdes+="\t-se - single-end reads (default: paired-end)\n\n"
-ngsHelp_SPAdes+="Runs SPAdes using the reads that BOWTIE was not able to map (sampleID/bowtie). Output is stored in sampleID/SPAdes."
+ngsHelp_SPADES() {
+	echo -e "Usage:\n\t`basename $0` SPADES [-i inputDir] -p numProc -m maxRAM -k kmers [-se] sampleID"
+	echo -e "Input:\n\tsampleID/inputDir/notMapped_1.fq\n\tsampleID/inputDir/notMapped_2.fq (paired-end reads)"
+	echo -e "Output:\n\tsampleID/spades/SampleID.fasta "
+	echo -e "Requires:\n\tSPAdes ( http://bioinf.spbau.ru/spades )"
+	echo -e "Options:"
+	echo -e "\t-i inputDir - location of source files (default: bowtie)."
+	echo -e "\t-p numProc - number of cpu to use."
+	echo -e "\t-k kmers (default: 33,49,83) --> SPAdes"
+	echo -e "\t-m maximum RAM (default: 250)"
+	echo -e "\t-se - single-end reads (default: paired-end)\n"
+	echo -e "Runs SPAdes using the reads that BOWTIE was not able to map (sampleID/bowtie). Output is stored in sampleID/spades."
+}
 
 ##########################################################################################
 # LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
 # make sure these variables don't collide with the other modules.
 ##########################################################################################
 
-ngsLocal_SPAdes_INP_DIR="bowtie"
-ngsLocal_SPAdes_MAX_RAM=100
-ngsLocal_SPAdes_KMERS="33,49,83"
+ngsLocal_SPADES_INP_DIR="bowtie"
+ngsLocal_SPADES_MAX_RAM=100
+ngsLocal_SPADES_KMERS="33,49,83"
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
-# SPAdes args: -i value, -p value, -m value, -k value, -se (optional), sampleID
+# SPADES args: -i value, -p value, -m value, -k value, -se (optional), sampleID
 ##########################################################################################
 
-ngsArgs_SPAdes() {
-	if [ $# -lt 4 ]; then
-		printHelp $COMMAND
-		exit 0
-	fi
+ngsArgs_SPADES() {
+	if [ $# -lt 7 ]; then printHelp "SPADES"; fi
 	
 	# getopts doesn't allow for optional arguments so handle them manually
 	while true; do
 		case $1 in
-			-i) ngsLocal_SPAdes_INP_DIR=$2
+			-i) ngsLocal_SPADES_INP_DIR=$2
 				shift; shift;
 				;;
 			-p) NUMCPU=$2
 				shift; shift;
 				;;
-			-m) ngsLocal_SPAdes_MAX_RAM=$2
+			-m) ngsLocal_SPADES_MAX_RAM=$2
 				shift; shift;
 				;;
-			-k) ngsLocal_SPAdes_KMERS=$2
+			-k) ngsLocal_SPADES_KMERS=$2
 				shift; shift;
 				;;
 			-se) SE=true
@@ -96,17 +95,17 @@ ngsArgs_SPAdes() {
 
 ##########################################################################################
 # RUNNING COMMAND ACTION
-# SPAdes command, version 2.2.1
+# SPADES command, version 2.2.1
 ##########################################################################################
 
-ngsCmd_SPAdes() {
-	if $SE; then prnCmd "# BEGIN: SPAdes SINGLE-END ASSEMBLY"
-	else prnCmd "# BEGIN: SPAdes PAIRED-END ASSEMBLY"; fi
+ngsCmd_SPADES() {
+	if $SE; then prnCmd "# BEGIN: SPADES SINGLE-END ASSEMBLY"
+	else prnCmd "# BEGIN: SPADES PAIRED-END ASSEMBLY"; fi
 	
 	# make relevant directory
-	if [ ! -d $SAMPLE/SPAdes ]; then 
-		prnCmd "mkdir $SAMPLE/SPAdes"
-		if ! $DEBUG; then mkdir $SAMPLE/SPAdes; fi
+	if [ ! -d $SAMPLE/spades ]; then 
+		prnCmd "mkdir $SAMPLE/spades"
+		if ! $DEBUG; then mkdir $SAMPLE/spades; fi
 	fi
 	
 	# print version info in journal file
@@ -114,39 +113,39 @@ ngsCmd_SPAdes() {
 	
 	if $SE; then
 		# single-end
-		prnCmd "spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/notMapped_1.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes"
+		prnCmd "spades.py -1 $SAMPLE/$ngsLocal_SPADES_INP_DIR/notMapped_1.fq -t $NUMCPU -m $ngsLocal_SPADES_MAX_RAM -k $ngsLocal_SPADES_KMERS -n $SAMPLE -o $SAMPLE/spades"
 		if ! $DEBUG; then 
-			spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/notMapped_1.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes
+			spades.py -1 $SAMPLE/$ngsLocal_SPADES_INP_DIR/notMapped_1.fq -t $NUMCPU -m $ngsLocal_SPADES_MAX_RAM -k $ngsLocal_SPADES_KMERS -n $SAMPLE -o $SAMPLE/spades
 		fi
 	else
 		# paired-end
-		prnCmd "spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/notMapped_1.fq -2 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/notMapped_2.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes"
+		prnCmd "spades.py -1 $SAMPLE/$ngsLocal_SPADES_INP_DIR/notMapped_1.fq -2 $SAMPLE/$ngsLocal_SPADES_INP_DIR/notMapped_2.fq -t $NUMCPU -m $ngsLocal_SPADES_MAX_RAM -k $ngsLocal_SPADES_KMERS -n $SAMPLE -o $SAMPLE/spades"
 		if ! $DEBUG; then 
-			spades.py -1 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/notMapped_1.fq -2 $SAMPLE/$ngsLocal_SPAdes_INP_DIR/notMapped_2.fq -t $NUMCPU -m $ngsLocal_SPAdes_MAX_RAM -k $ngsLocal_SPAdes_KMERS -n $SAMPLE -o $SAMPLE/SPAdes
+			spades.py -1 $SAMPLE/$ngsLocal_SPADES_INP_DIR/notMapped_1.fq -2 $SAMPLE/$ngsLocal_SPADES_INP_DIR/notMapped_2.fq -t $NUMCPU -m $ngsLocal_SPADES_MAX_RAM -k $ngsLocal_SPADES_KMERS -n $SAMPLE -o $SAMPLE/spades
 		fi
 	fi
 
 	# move the SPAdes output to be more accessible
-	prnCmd "mv $SAMPLE/SPAdes/$SAMPLE/contigs/$SAMPLE.fasta $SAMPLE/SPAdes/$SAMPLE.fasta"
-	if ! $DEBUG; then mv $SAMPLE/SPAdes/$SAMPLE/contigs/$SAMPLE.fasta $SAMPLE/SPAdes/$SAMPLE.fasta; fi
+	prnCmd "mv $SAMPLE/spades/$SAMPLE/contigs/$SAMPLE.fasta $SAMPLE/spades/$SAMPLE.fasta"
+	if ! $DEBUG; then mv $SAMPLE/spades/$SAMPLE/contigs/$SAMPLE.fasta $SAMPLE/spades/$SAMPLE.fasta; fi
 
 	# run error checking
-	if ! $DEBUG; then ngsErrorChk_SPAdes $@; fi
+	if ! $DEBUG; then ngsErrorChk_SPADES $@; fi
 	
-	if $SE; then prnCmd "# FINISHED: SPAdes SINGLE-END ASSEMBLY"
-	else prnCmd "# FINISHED: SPAdes PAIRED-END ASSEMBLY"; fi
+	if $SE; then prnCmd "# FINISHED: SPADES SINGLE-END ASSEMBLY"
+	else prnCmd "# FINISHED: SPADES PAIRED-END ASSEMBLY"; fi
 }
 
 ##########################################################################################
 # ERROR CHECKING. Make sure output files exist and are not empty.
 ##########################################################################################
 
-ngsErrorChk_SPAdes() {
-	prnCmd "# SPAdes ERROR CHECKING: RUNNING"
+ngsErrorChk_SPADES() {
+	prnCmd "# SPADES ERROR CHECKING: RUNNING"
 
-	inputFile_1="$SAMPLE/$ngsLocal_SPAdes_INP_DIR/notMapped_1.fq"
-	inputFile_2="$SAMPLE/$ngsLocal_SPAdes_INP_DIR/notMapped_2.fq"
-	outputFile="$SAMPLE/SPAdes/$SAMPLE.fasta"
+	inputFile_1="$SAMPLE/$ngsLocal_SPADES_INP_DIR/notMapped_1.fq"
+	inputFile_2="$SAMPLE/$ngsLocal_SPADES_INP_DIR/notMapped_2.fq"
+	outputFile="$SAMPLE/spades/$SAMPLE.fasta"
 
 	# make sure expected output file exists and is not empty
 	if [ ! -s $outputFile ]; then
@@ -157,5 +156,5 @@ ngsErrorChk_SPAdes() {
 		prnError "$errorMsg"
 	fi
 
-	prnCmd "# SPAdes ERROR CHECKING: DONE"
+	prnCmd "# SPADES ERROR CHECKING: DONE"
 }

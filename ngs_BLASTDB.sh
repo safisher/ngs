@@ -30,19 +30,21 @@
 # USAGE
 ##########################################################################################
 
-ngsUsage_BLASTDB="Usage: `basename $0` blastdb OPTIONS sampleID    --  create blast database from reads\n"
+NGS_USAGE+="Usage: `basename $0` blastdb OPTIONS sampleID    --  create blast database from reads\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_BLASTDB="Usage:\n\t`basename $0` blastdb [-se] sampleID\n"
-ngsHelp_BLASTDB+="Input:\n\tsampleID/orig/unaligned_1.fq\n\tsampleID/orig/unaligned_2.fq (paired-end reads)\n"
-ngsHelp_BLASTDB+="Output:\n\tsampleID/blastdb/*\n"
-ngsHelp_BLASTDB+="Requires:\n\tmakeblastdb ( ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/ )\n"
-ngsHelp_BLASTDB+="Options:\n"
-ngsHelp_BLASTDB+="\t-se - single-end reads (default: paired-end)\n\n"
-ngsHelp_BLASTDB+="Generates blast database from reads."
+ngsHelp_BLASTDB() {
+	echo -e "Usage:\n\t`basename $0` blastdb [-se] sampleID"
+	echo -e "Input:\n\tsampleID/orig/unaligned_1.fq\n\tsampleID/orig/unaligned_2.fq (paired-end reads)"
+	echo -e "Output:\n\tsampleID/blastdb/*"
+	echo -e "Requires:\n\tmakeblastdb ( ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/ )"
+	echo -e "Options:"
+	echo -e "\t-se - single-end reads (default: paired-end)\n"
+	echo -e "Generates blast database from reads."
+}
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -50,10 +52,7 @@ ngsHelp_BLASTDB+="Generates blast database from reads."
 ##########################################################################################
 
 ngsArgs_BLASTDB() {
-	if [ $# -lt 1 ]; then
-		printHelp $COMMAND
-		exit 0
-	fi
+	if [ $# -lt 1 ]; then printHelp "BLASTDB"; fi
 	
 	SAMPLE=$1
 	

@@ -23,14 +23,16 @@
 # USAGE
 ##########################################################################################
 
-ngsUsage_VERSION="Usage: `basename $0` version    --  print version information\n"
+NGS_USAGE+="Usage: `basename $0` version    --  print version information\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_VERSION="Usage:\n\t`basename $0` version\n\n"
-ngsHelp_VERSION+="Prints version information for `basename $0`."
+ngsHelp_VERSION() {
+	echo -e "Usage:\n\t`basename $0` version\n"
+	echo -e "Prints version information for `basename $0`."
+}
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS

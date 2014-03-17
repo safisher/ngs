@@ -30,26 +30,28 @@
 # USAGE
 ##########################################################################################
 
-ngsUsage_BOWTIE="Usage: `basename $0` bowtie OPTIONS sampleID    --  run bowtie on trimmed reads\n"
+NGS_USAGE+="Usage: `basename $0` bowtie OPTIONS sampleID    --  run bowtie on trimmed reads\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_BOWTIE="Usage:\n\t`basename $0` bowtie [-i inputDir] [-v mismatches] [-m maxMulti] [-minins minInsertSize] [-maxins maxInsertSize] -p numProc -s species [-se] sampleID\n"
-ngsHelp_BOWTIE+="Input:\n\tsampleID/inputDir/unaligned_1.fq\n\tsampleID/inputDir/unaligned_2.fq (paired-end reads)\n"
-ngsHelp_BOWTIE+="Output:\n\tsampleID/bowtie/sampleID.bowtie.sorted.bam\n\tsampleID/bowtie/sampleID.suppressed.sorted.bam\n\tsampleID/bowtie/sampleID.stats.txt\n"
-ngsHelp_BOWTIE+="Requires:\n\tbowtie ( http://bowtie-bio.sourceforge.net/index.shtml )\n\tsamtools ( http://samtools.sourceforge.net/ )\n"
-ngsHelp_BOWTIE+="Options:\n"
-ngsHelp_BOWTIE+="\t-i inputDir - directory with unaligned reads (default: trim)\n"
-ngsHelp_BOWTIE+="\t-v mismatches - maximum mismatches allowed per read length (default: 3)\n"
-ngsHelp_BOWTIE+="\t-m maxMulti - suppress all alignments if > m alignments (default: 1)\n"
-ngsHelp_BOWTIE+="\t-minins minInsertSize - minimum insert size for PE alignment (default: 250bp)\n"
-ngsHelp_BOWTIE+="\t-maxins maxInsertSize - maximum insert size for PE alignment (default: 450bp)\n"
-ngsHelp_BOWTIE+="\t-p numProc - number of cpu to use\n"
-ngsHelp_BOWTIE+="\t-s species - species from repository: $BOWTIE_REPO\n"
-ngsHelp_BOWTIE+="\t-se - single-end reads (default: paired-end)\n\n"
-ngsHelp_BOWTIE+="Run bowtie on the unaligned reads (ie sampleID/inputDir). The arguments used assume Bowtie version 1. Output is placed in the directory sampleID/bowtie. Multimapping reads that exceed the maxMulti count are output to the sampleID.suppressed.sorted.bam file (ie the Bowtie -max flag is used to direct the reads to this file). For paired-end samples, after the paired mapping is complete then all unmapped reads are aligned as if they were single-end with the alignments stored in the sampleID/bowtie/SE_mapping directory. The alignment stats for the single-end and paired-end mappings are reported in the stats file."
+ngsHelp_BOWTIE() {
+	echo -e "Usage:\n\t`basename $0` bowtie [-i inputDir] [-v mismatches] [-m maxMulti] [-minins minInsertSize] [-maxins maxInsertSize] -p numProc -s species [-se] sampleID"
+	echo -e "Input:\n\tsampleID/inputDir/unaligned_1.fq\n\tsampleID/inputDir/unaligned_2.fq (paired-end reads)"
+	echo -e "Output:\n\tsampleID/bowtie/sampleID.bowtie.sorted.bam\n\tsampleID/bowtie/sampleID.suppressed.sorted.bam\n\tsampleID/bowtie/sampleID.stats.txt"
+	echo -e "Requires:\n\tbowtie ( http://bowtie-bio.sourceforge.net/index.shtml )\n\tsamtools ( http://samtools.sourceforge.net/ )"
+	echo -e "Options:"
+	echo -e "\t-i inputDir - directory with unaligned reads (default: trim)"
+	echo -e "\t-v mismatches - maximum mismatches allowed per read length (default: 3)"
+	echo -e "\t-m maxMulti - suppress all alignments if > m alignments (default: 1)"
+	echo -e "\t-minins minInsertSize - minimum insert size for PE alignment (default: 250bp)"
+	echo -e "\t-maxins maxInsertSize - maximum insert size for PE alignment (default: 450bp)"
+	echo -e "\t-p numProc - number of cpu to use"
+	echo -e "\t-s species - species from repository: $BOWTIE_REPO"
+	echo -e "\t-se - single-end reads (default: paired-end)\n"
+	echo -e "Run bowtie on the unaligned reads (ie sampleID/inputDir). The arguments used assume Bowtie version 1. Output is placed in the directory sampleID/bowtie. Multimapping reads that exceed the maxMulti count are output to the sampleID.suppressed.sorted.bam file (ie the Bowtie -max flag is used to direct the reads to this file). For paired-end samples, after the paired mapping is complete then all unmapped reads are aligned as if they were single-end with the alignments stored in the sampleID/bowtie/SE_mapping directory. The alignment stats for the single-end and paired-end mappings are reported in the stats file."
+}
 
 ##########################################################################################
 # LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
@@ -68,10 +70,7 @@ ngsLocal_BOWTIE_MAXINS=450
 ##########################################################################################
 
 ngsArgs_BOWTIE() {
-	if [ $# -lt 4 ]; then
-		printHelp $COMMAND
-		exit 0
-	fi
+	if [ $# -lt 5 ]; then printHelp "BOWTIE"; fi
 	
    	# getopts doesn't allow for optional arguments so handle them manually
 	while true; do

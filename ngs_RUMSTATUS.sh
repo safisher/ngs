@@ -24,14 +24,16 @@
 # USAGE
 ##########################################################################################
 
-ngsUsage_RUMSTATUS="Usage: `basename $0` rumstatus sampleID    --  get status of RUM run\n"
+NGS_USAGE+="Usage: `basename $0` rumstatus sampleID    --  get status of RUM run\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_RUMSTATUS="Usage:\n\t`basename $0` rumstatus sampleID\n\n"
-ngsHelp_RUMSTATUS+="Returns the output from RUM status command. This will only work if rumalign has previously been run."
+ngsHelp_RUMSTATUS() {
+	echo -e "Usage:\n\t`basename $0` rumstatus sampleID\n"
+	echo -e "Returns the output from RUM status command. This will only work if rumalign has previously been run."
+}
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -39,12 +41,9 @@ ngsHelp_RUMSTATUS+="Returns the output from RUM status command. This will only w
 ##########################################################################################
 
 ngsArgs_RUMSTATUS() {
-	if [ $# -lt 1 ]; then
-		printHelp $COMMAND
-		exit 0
-	else
-		SAMPLE=$1
-	fi
+	if [ $# -lt 1 ]; then printHelp "RUMSTATUS"; fi
+
+	SAMPLE=$1
 }
 
 ##########################################################################################

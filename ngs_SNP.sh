@@ -26,20 +26,22 @@
 # USAGE
 ##########################################################################################
 
-ngsUsage_SNP="Usage:\n\t`basename $0` snp OPTIONS sampleID -- run SNP calling and genome coverage on bowtie alignment\n"
+NGS_USAGE+="Usage: `basename $0` snp OPTIONS sampleID -- run SNP calling and genome coverage on bowtie alignment\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_SNP="Usage:\n\t`basename $0` snp [-i inputDir] -s species sampleID\n"
-ngsHelp_SNP+="Input:\n\tsampleID/inputDir/sampleID.bowtie.sorted.bam\n"
-ngsHelp_SNP+="Output:\n\tsampleID/snp/sampleID.filtered.vcf\n\tsampleID/snp/sampleID.bigWig\n"
-ngsHelp_SNP+="Requires:\n\tfreebayes ( https://github.com/ekg/freebayes )\n\tbedtools ( http://bedtools.readthedocs.org/en/latest/ )\n\tKent sources ( http://genomewiki.ucsc.edu/index.php/Kent_source_utilities )\n"
-ngsHelp_SNP+="Options:\n"
-ngsHelp_SNP+="\t-i inputDir - directory with unaligned reads (default: bowtie)\n"
-ngsHelp_SNP+="\t-s species - species from repository: $SNP_REPO\n\n"
-ngsHelp_SNP+="Run SNP calling on the sorted bam file (ie sampleID/bowtie). Output is placed in the directory sampleID/snp."
+ngsHelp_SNP() {
+	echo -e "Usage:\n\t`basename $0` snp [-i inputDir] -s species sampleID"
+	echo -e "Input:\n\tsampleID/inputDir/sampleID.bowtie.sorted.bam"
+	echo -e "Output:\n\tsampleID/snp/sampleID.filtered.vcf\n\tsampleID/snp/sampleID.bigWig"
+	echo -e "Requires:\n\tfreebayes ( https://github.com/ekg/freebayes )\n\tbedtools ( http://bedtools.readthedocs.org/en/latest/ )\n\tKent sources ( http://genomewiki.ucsc.edu/index.php/Kent_source_utilities )"
+	echo -e "Options:"
+	echo -e "\t-i inputDir - directory with unaligned reads (default: bowtie)"
+	echo -e "\t-s species - species from repository: $SNP_REPO\n"
+	echo -e "Run SNP calling on the sorted bam file (ie sampleID/bowtie). Output is placed in the directory sampleID/snp."
+}
 
 ##########################################################################################
 # LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
@@ -54,10 +56,7 @@ ngsLocal_SNP_INP_DIR="bowtie"
 ##########################################################################################
 
 ngsArgs_SNP() {
-	if [ $# -lt 1 ]; then
-		printHelp $COMMAND
-		exit 0
-	fi
+	if [ $# -lt 3 ]; then printHelp "SNP"; fi
 	
    	# getopts doesn't allow for optional arguments so handle them manually
 	while true; do

@@ -27,15 +27,17 @@
 # ngsUsage_TEMPLATE should be a single line that ends in a "\n"
 ##########################################################################################
 
-ngsUsage_TEMPLATE="put usage and brief description here\n"
+NGS_USAGE+="put usage and brief description here\n"
 
 ##########################################################################################
 # HELP TEXT
 # ngsHelp_TEMPLATE should contain expanded help
 ##########################################################################################
 
-ngsHelp_TEMPLATE="put usage here\n\n"
-ngsHelp_TEMPLATE+="descriptive help here"
+ngsHelp_TEMPLATE() {
+	echo -e "put usage here\t"
+	echo -e "descriptive text here"
+}
 
 ##########################################################################################
 # LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to

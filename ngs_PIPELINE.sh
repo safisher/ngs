@@ -24,24 +24,26 @@
 # USAGE
 ##########################################################################################
 
-ngsUsage_PIPELINE="Usage: `basename $0` pipeline OPTIONS sampleID    --  run full pipeline\n"
+NGS_USAGE+="Usage: `basename $0` pipeline OPTIONS sampleID    --  run full pipeline\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_PIPELINE="Usage:\n\t`basename $0` pipeline [-i inputDir] [-o outputDir] [-t RNASeq | WGS] -p numProc -s species [-se] sampleID\n"
-ngsHelp_PIPELINE+="Input:\n\tsee individual commands\n"
-ngsHelp_PIPELINE+="Output:\n\tsee individual commands\n"
-ngsHelp_PIPELINE+="Requires:\n\tsee individual commands\n"
-ngsHelp_PIPELINE+="OPTIONS:\n"
-ngsHelp_PIPELINE+="\t-i - parent directory containing subdirectory with compressed fastq files (default: ./raw). This is the parent directory of the sample-specific directory. The sampleID will be used to complete the directory path (ie inputDir/sampleID).\n"
-ngsHelp_PIPELINE+="\t-o - directory containing subdirectory with analysis files (default: ./analyzed). This is the parent directory of the sample-specific directory. The sampleID will be used to complete the directory path (ie outputDir/sampleID).\n"
-ngsHelp_PIPELINE+="\t-t type - RNASeq or WGS (Whole Genome Sequencing) (default: RNASeq).\n"
-ngsHelp_PIPELINE+="\t-p numProc - number of cpu to use.\n"
-ngsHelp_PIPELINE+="\t-s species - species from repository: $REPO_LOCATION.\n"
-ngsHelp_PIPELINE+="\t-se - single-end reads (default: paired-end)\n\n"
-ngsHelp_PIPELINE+="This will process sequencing data using either an RNASeq or WGS (Whole Genome Sequencing) pipeline. For RNASeq the modules used are: init, fastqc, blast, trim, star, post, htseq, blastdb, and rsync. For WGS the modules used are: init, fastqc, blast, trim, bowtie, SPAdes, post, and rsync. See individual modules for documentation."
+ngsHelp_PIPELINE() {
+	echo -e "Usage:\n\t`basename $0` pipeline [-i inputDir] [-o outputDir] [-t RNASeq | WGS] -p numProc -s species [-se] sampleID"
+	echo -e "Input:\n\tsee individual commands"
+	echo -e "Output:\n\tsee individual commands"
+	echo -e "Requires:\n\tsee individual commands"
+	echo -e "OPTIONS:"
+	echo -e "\t-i - parent directory containing subdirectory with compressed fastq files (default: ./raw). This is the parent directory of the sample-specific directory. The sampleID will be used to complete the directory path (ie inputDir/sampleID)."
+	echo -e "\t-o - directory containing subdirectory with analysis files (default: ./analyzed). This is the parent directory of the sample-specific directory. The sampleID will be used to complete the directory path (ie outputDir/sampleID)."
+	echo -e "\t-t type - RNASeq or WGS (Whole Genome Sequencing) (default: RNASeq)."
+	echo -e "\t-p numProc - number of cpu to use."
+	echo -e "\t-s species - species from repository: $REPO_LOCATION."
+	echo -e "\t-se - single-end reads (default: paired-end)\n"
+	echo -e "This will process sequencing data using either an RNASeq or WGS (Whole Genome Sequencing) pipeline. For RNASeq the modules used are: init, fastqc, blast, trim, star, post, htseq, blastdb, and rsync. For WGS the modules used are: init, fastqc, blast, trim, bowtie, SPAdes, post, and rsync. See individual modules for documentation."
+}
 
 ##########################################################################################
 # LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
@@ -56,10 +58,7 @@ ngsLocal_PIPELINE_TYPE="RNASeq"
 ##########################################################################################
 
 ngsArgs_PIPELINE() {
-	if [ $# -lt 5 ]; then
-		printHelp $COMMAND
-		exit 0
-	fi
+	if [ $# -lt 5 ]; then printHelp "PIPELINE"; fi
 
 	# getopts doesn't allow for optional arguments so handle them manually
 	while true; do
@@ -152,7 +151,7 @@ ngsCmd_PIPELINE() {
 		ngsCmd_FASTQC
 		ngsCmd_BOWTIE
 		ngsCmd_SNP
-		ngsCmd_SPAdes
+		ngsCmd_SPADES
 		ngsCmd_POST
 		ngsArgs_POST -i bowtie $SAMPLE
 		ngsCmd_POST

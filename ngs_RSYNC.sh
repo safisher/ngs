@@ -23,17 +23,19 @@
 # USAGE
 ##########################################################################################
 
-ngsUsage_RSYNC="Usage: `basename $0` rsync OPTIONS sampleID    --  copy data to analyzed directory\n"
+NGS_USAGE+="Usage: `basename $0` rsync OPTIONS sampleID    --  copy data to analyzed directory\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_RSYNC="Usage:\n\t`basename $0` rsync [-o outputDir] sampleID\n"
-ngsHelp_RSYNC+="Output\n\tall subdirectories in sampleID except 'orig' are copied to $ANALYZED\sampleID\n"
-ngsHelp_RSYNC+="Options:\n"
-ngsHelp_RSYNC+="\t-o - directory containing subdirectory with analysis files (default: ./analyzed). This is the parent directory of the sample-specific directory. The sampleID will be used to complete the directory path (ie outputDir/sampleID).\n\n"
-ngsHelp_RSYNC+="Copies all data to 'outputDir/sampleID' directory. This will not copy the files in the sampleID/orig directory. Rsync is run twice as a consistency check."
+ngsHelp_RSYNC() {
+	echo -e "Usage:\n\t`basename $0` rsync [-o outputDir] sampleID"
+	echo -e "Output\n\tall subdirectories in sampleID except 'orig' are copied to $ANALYZED\sampleID"
+	echo -e "Options:"
+	echo -e "\t-o - directory containing subdirectory with analysis files (default: ./analyzed). This is the parent directory of the sample-specific directory. The sampleID will be used to complete the directory path (ie outputDir/sampleID).\n"
+	echo -e "Copies all data to 'outputDir/sampleID' directory. This will not copy the files in the sampleID/orig directory. Rsync is run twice as a consistency check."
+}
 
 ##########################################################################################
 # LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
@@ -48,10 +50,7 @@ ngsLocal_RSYNC_OUT_DIR=$ANALYZED
 ##########################################################################################
 
 ngsArgs_RSYNC() {
-	if [ $# -lt 1 ]; then
-		printHelp $COMMAND
-		exit 0
-	fi
+	if [ $# -lt 1 ]; then printHelp "RSYNC"; fi
 
 	# getopts doesn't allow for optional arguments so handle them manually
 	while true; do

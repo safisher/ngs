@@ -23,14 +23,16 @@
 # USAGE
 ##########################################################################################
 
-ngsUsage_HELP="Usage: `basename $0` help COMMAND    --  expanded command help (ex: `basename $0` help blast)\n"
+NGS_USAGE+="Usage: `basename $0` help COMMAND    --  expanded command help (ex: `basename $0` help blast)\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_HELP="Usage:\n\t`basename $0` help COMMAND\n"
-ngsHelp_HELP+="Example:\n\t`basename $0` help blastdb"
+ngsHelp_HELP() {
+	echo -e "Usage:\n\t`basename $0` help COMMAND\n"
+	echo -e "Example:\n\t`basename $0` help blastdb"
+}
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -38,16 +40,11 @@ ngsHelp_HELP+="Example:\n\t`basename $0` help blastdb"
 ##########################################################################################
 
 ngsArgs_HELP() {
-	if [ $# -lt 1 ]; then
-		printHelp $COMMAND
-	else
-		printHelp $1
-	fi
+	if [ $# -lt 1 ]; then printHelp "HELP"; fi
+	
+	# convert module name to uppercase
+	helpModule=$( echo $1 | tr "[a-z]" "[A-Z]" )
+	printHelp $helpModule
+
 	exit 0
 }
-
-##########################################################################################
-# RUNNING COMMAND ACTION
-# There is no command action for the HELP module.
-##########################################################################################
-

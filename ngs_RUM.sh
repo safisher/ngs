@@ -30,22 +30,24 @@
 # USAGE
 ##########################################################################################
 
-ngsUsage_RUM="Usage: `basename $0` rum OPTIONS sampleID    --   run RUM on trimmed reads\n"
+NGS_USAGE+="Usage: `basename $0` rum OPTIONS sampleID    --   run RUM on trimmed reads\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_RUM="Usage:\n\t`basename $0` rum [-i inputDir] -p numProc -s species [-se] sampleID\n"
-ngsHelp_RUM+="Input:\n\tsampleID/INPUTDIR/unaligned_1.fq\n\tsampleID/INPUTDIR/unaligned_2.fq (paired-end reads)\n"
-ngsHelp_RUM+="Output:\n\tsampleID/rum/sampleID.rum.sorted.bam (all aligned reads)\n\tsampleID/rum/sampleID.rum.unique.bam (uniquely aligned reads)\n"
-ngsHelp_RUM+="Requires:\n\tRUM ( http://cbil.upenn.edu/RUM )\n\tsamtools ( http://samtools.sourceforge.net/ )\n"
-ngsHelp_RUM+="Options:\n"
-ngsHelp_RUM+="\t-i inputDir - location of source files (default: trim).\n"
-ngsHelp_RUM+="\t-p numProc - number of cpu to use.\n"
-ngsHelp_RUM+="\t-s species - species from repository: $RUM_REPO.\n"
-ngsHelp_RUM+="\t-se - single-end reads (default: paired-end)\n\n"
-ngsHelp_RUM+="Runs RUM using the trimmed files from sampleID/trim. Output is stored in sampleID/rum directory. No non-default options are specified for RUM."
+ngsHelp_RUM() {
+	echo -e "Usage:\n\t`basename $0` rum [-i inputDir] -p numProc -s species [-se] sampleID"
+	echo -e "Input:\n\tsampleID/INPUTDIR/unaligned_1.fq\n\tsampleID/INPUTDIR/unaligned_2.fq (paired-end reads)"
+	echo -e "Output:\n\tsampleID/rum/sampleID.rum.sorted.bam (all aligned reads)\n\tsampleID/rum/sampleID.rum.unique.bam (uniquely aligned reads)"
+	echo -e "Requires:\n\tRUM ( http://cbil.upenn.edu/RUM )\n\tsamtools ( http://samtools.sourceforge.net/ )"
+	echo -e "Options:"
+	echo -e "\t-i inputDir - location of source files (default: trim)."
+	echo -e "\t-p numProc - number of cpu to use."
+	echo -e "\t-s species - species from repository: $RUM_REPO."
+	echo -e "\t-se - single-end reads (default: paired-end)\n"
+	echo -e "Runs RUM using the trimmed files from sampleID/trim. Output is stored in sampleID/rum directory. No non-default options are specified for RUM."
+}
 
 ##########################################################################################
 # LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
@@ -60,10 +62,7 @@ ngsLocal_RUM_INP_DIR="trim"
 ##########################################################################################
 
 ngsArgs_RUM() {
-	if [ $# -lt 5 ]; then
-		printHelp $COMMAND
-		exit 0
-	fi
+	if [ $# -lt 5 ]; then printHelp "RUM"; fi
 	
 	# getopts doesn't allow for optional arguments so handle them manually
 	while true; do

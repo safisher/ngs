@@ -65,6 +65,14 @@ STAR_REPO=$REPO_LOCATION/star
 HTSEQ_REPO=$REPO_LOCATION/htseq
 SNP_REPO=$REPO_LOCATION/snp
 
+MODULES=( "HELP" "INIT" "FASTQC" "BLAST" "BOWTIE" "TRIM" "STAR" "RUM" "RUMSTATUS" "POST" "BLASTDB" "HTSEQ" "SNP" "SPAdes" "RSYNC" "STATS" "PIPELINE" "VERSION" )
+
+# when modules are loaded, the add their usage to this variable.
+NGS_USAGE=""
+
+# default is paired-end.
+SE=false  
+
 # make comparisons case insensitive. Need to use [[ and ]] in if
 # conditionals, rather than [ and ].
 shopt -s nocasematch
@@ -74,144 +82,33 @@ shopt -s nocasematch
 # bash initialization scripts to error.
 set -o nounset
 
-###############################################################################################
-# PROCESS COMMAND ARGUMENTS
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# LOAD MODULES
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
- 
-# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-# @@@ 1. SOURCE MODULES HERE               @@@
-# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-source ngs_HELP.sh
-source ngs_INIT.sh
-source ngs_FASTQC.sh
-source ngs_BLAST.sh
-source ngs_BOWTIE.sh
-source ngs_TRIM.sh
-source ngs_STAR.sh
-source ngs_RUM.sh
-source ngs_RUMSTATUS.sh
-source ngs_POST.sh
-source ngs_BLASTDB.sh
-source ngs_HTSEQ.sh
-source ngs_SNP.sh
-source ngs_SPAdes.sh
-source ngs_RSYNC.sh
-source ngs_STATS.sh
-source ngs_PIPELINE.sh
-source ngs_VERSION.sh
-
+for module in "${MODULES[@]}"; do
+	source ngs_${module}.sh
+done
 
 ###############################################################################################
-# HELP FUNCTIONS
+# HELPER FUNCTIONS
 
-
-# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-# @@@ 2. ADD MODULE USAGE HERE             @@@
-# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-usage=$ngsUsage_HELP
-usage+=$ngsUsage_INIT
-usage+=$ngsUsage_FASTQC
-usage+=$ngsUsage_BLAST
-usage+=$ngsUsage_BOWTIE
-usage+=$ngsUsage_TRIM
-usage+=$ngsUsage_STAR
-usage+=$ngsUsage_RUM
-usage+=$ngsUsage_RUMSTATUS
-usage+=$ngsUsage_POST
-usage+=$ngsUsage_BLASTDB
-usage+=$ngsUsage_HTSEQ
-usage+=$ngsUsage_SNP
-usage+=$ngsUsage_SPAdes
-usage+=$ngsUsage_RSYNC
-usage+=$ngsUsage_STATS
-usage+=$ngsUsage_PIPELINE
-usage+=$ngsUsage_VERSION
-
-# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-# @@@ 3. ADD MODULE HELP HERE              @@@
-# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
+# print the help text for a module.
 printHelp() {
-     case $1 in
-         'help') echo -e $ngsHelp_HELP;;
-		 'init') echo -e $ngsHelp_INIT;;
-		 'fastqc') echo -e $ngsHelp_FASTQC;;
-		 'blast') echo -e $ngsHelp_BLAST;;
-		 'bowtie') echo -e $ngsHelp_BOWTIE;;
-		 'trim') echo -e $ngsHelp_TRIM;;
-		 'star') echo -e $ngsHelp_STAR;;
-		 'rum') echo -e $ngsHelp_RUM;;
-		 'rumstatus') echo -e $ngsHelp_RUMSTATUS;;
-		 'post') echo -e $ngsHelp_POST;;
-		 'blastdb') echo -e $ngsHelp_BLASTDB;;
-		 'htseq') echo -e $ngsHelp_HTSEQ;;
-		 'snp') echo -e $ngsHelp_SNP;;
-		 'spades') echo -e $ngsHelp_SPAdes;;
-		 'rsync') echo -e $ngsHelp_RSYNC;;
-		 'stats') echo -e $ngsHelp_STATS;;
-		 'pipeline') echo -e $ngsHelp_PIPELINE;;
-		 'version') echo -e $ngsHelp_VERSION;;
+	local NOT_FOUND=true
 
-		 *) echo -e $usage;;
-	 esac
-}
+	for module in "${MODULES[@]}"; do
+		if [[ "$module" == "$1" ]]; then
+			ngsHelp_$1
+			NOT_FOUND=false
+			break
+		fi
+	done
 
+	if $NOT_FOUND; then echo -e $NGS_USAGE; fi
 
-###############################################################################################
-# PROCESS COMMAND ARGUMENTS
-
-
-# if no args then print out usage
-if [ $# -lt 1 ]; then
-	echo -e $usage
-	exit 0
-fi
-
-COMMAND=$1
-shift  # shift removes $1 (ie COMMAND) from the argument list
-
-SE=false  # default is paired-end
-
-# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-# @@@ 4. ADD MODULE ARGUMENT FUNCTION HERE @@@
-# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-if [[ "$COMMAND" = "help" ]]; then ngsArgs_HELP $@; fi
-if [[ "$COMMAND" = "version" ]]; then ngsArgs_VERSION $@; fi
-if [[ "$COMMAND" = "init" ]]; then ngsArgs_INIT $@; fi
-if [[ "$COMMAND" = "fastqc" ]]; then ngsArgs_FASTQC $@; fi
-if [[ "$COMMAND" = "blast" ]]; then ngsArgs_BLAST $@; fi
-if [[ "$COMMAND" = "bowtie" ]]; then ngsArgs_BOWTIE $@; fi
-if [[ "$COMMAND" = "trim" ]]; then ngsArgs_TRIM $@; fi
-if [[ "$COMMAND" = "star" ]]; then ngsArgs_STAR $@; fi
-if [[ "$COMMAND" = "rum" ]]; then ngsArgs_RUM $@; fi
-if [[ "$COMMAND" = "rumstatus" ]]; then ngsArgs_RUMSTATUS $@; fi
-if [[ "$COMMAND" = "post" ]]; then ngsArgs_POST $@; fi
-if [[ "$COMMAND" = "blastdb" ]]; then ngsArgs_BLASTDB $@; fi
-if [[ "$COMMAND" = "htseq" ]]; then ngsArgs_HTSEQ $@; fi
-if [[ "$COMMAND" = "snp" ]]; then ngsArgs_SNP $@; fi
-if [[ "$COMMAND" = "spades" ]]; then ngsArgs_SPAdes $@; fi
-if [[ "$COMMAND" = "rsync" ]]; then ngsArgs_RSYNC $@ $JOURNAL; fi
-if [[ "$COMMAND" = "stats" ]]; then ngsArgs_STATS $@; fi
-if [[ "$COMMAND" = "pipeline" ]]; then ngsArgs_PIPELINE $@; fi
-
-
-# if we've gotten to this point and $SAMPLE is not set, then something went wrong and abort
-if [ -z "$SAMPLE" ]; then
-	echo -e "\n************************************************"
-	echo -ne "ERROR: "
-	echo -e `date`
-	echo "Error processing command arguments."
-	echo -e $usage
 	exit 1
-fi
-
-
-###############################################################################################
-# MISCELLANEOUS DEFINITIONS
-
-JOURNAL="$SAMPLE/$JOURNAL"
+}
 
 # output version information to the module subdirectory. We assume the
 # output directory already exists ($SAMPLE/MODULE). We expect three
@@ -288,6 +185,39 @@ prnError() {
 	exit 1
 }
 
+###############################################################################################
+# PROCESS COMMAND ARGUMENTS
+ 
+# if no args then print out usage
+if [ $# -lt 1 ]; then
+	echo -e $NGS_USAGE
+	exit 0
+fi
+
+# get command as upper case
+COMMAND=$( echo $1 | tr "[a-z]" "[A-Z]" )
+shift  # shift removes $1 (ie COMMAND) from the argument list
+
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# PROCESS MODULE'S ARGUMENT FUNCTION
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+ngsArgs_${COMMAND} $@
+
+# if we've gotten to this point and $SAMPLE is not set, then something
+# went wrong and abort
+if [ -z "$SAMPLE" ]; then
+	echo -e "\n************************************************"
+	echo -ne "ERROR: "
+	echo -e `date`
+	echo "Error processing command arguments."
+	echo -e $NGS_USAGE
+	exit 1
+fi
+
+# adjust the location of the JOURNAL file, now that we know the SAMPLE
+JOURNAL="$SAMPLE/$JOURNAL"
+
 # create output directory first. This needs to happen prior to using
 # the prnCmd() function, so we can create the output file ($JOURNAL)
 # that is used by prnCmd. This happens even during debugging because
@@ -308,26 +238,9 @@ fi
 ###############################################################################################
 # RUN COMMANDS
 
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# RUN MODULE'S COMMAND FUNCTION
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-# @@@ 5. ADD MODULE COMMAND FUNCTIONS HERE @@@
-# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+ngsCmd_${COMMAND}
 
-# HELP and VERSION do not have command functions.
-
-if [[ "$COMMAND" = "init" ]]; then ngsCmd_INIT; fi
-if [[ "$COMMAND" = "fastqc" ]]; then ngsCmd_FASTQC; fi
-if [[ "$COMMAND" = "blast" ]]; then ngsCmd_BLAST; fi
-if [[ "$COMMAND" = "bowtie" ]]; then ngsCmd_BOWTIE; fi
-if [[ "$COMMAND" = "trim" ]]; then ngsCmd_TRIM; fi
-if [[ "$COMMAND" = "star" ]]; then ngsCmd_STAR; fi
-if [[ "$COMMAND" = "rum" ]]; then ngsCmd_RUM; fi
-if [[ "$COMMAND" = "rumstatus" ]]; then ngsCmd_RUMSTATUS; fi
-if [[ "$COMMAND" = "post" ]]; then ngsCmd_POST; fi
-if [[ "$COMMAND" = "blastdb" ]]; then ngsCmd_BLASTDB; fi
-if [[ "$COMMAND" = "htseq" ]]; then ngsCmd_HTSEQ; fi
-if [[ "$COMMAND" = "snp" ]]; then ngsCmd_SNP; fi
-if [[ "$COMMAND" = "spades" ]]; then ngsCmd_SPAdes; fi
-if [[ "$COMMAND" = "rsync" ]]; then ngsCmd_RSYNC; fi
-if [[ "$COMMAND" = "stats" ]]; then ngsCmd_STATS; fi
-if [[ "$COMMAND" = "pipeline" ]]; then ngsCmd_PIPELINE; fi

@@ -23,19 +23,21 @@
 # USAGE
 ##########################################################################################
 
-ngsUsage_STATS="Usage: `basename $0` stats OPTIONS modules sampleID    --  print stats from user-specified list of modules\n"
+NGS_USAGE+="Usage: `basename $0` stats OPTIONS modules sampleID    --  print stats from user-specified list of modules\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_STATS="Usage:\n\t`basename $0` stats [-v] modules sampleID\n\n"
-ngsHelp_STATS+="Input:\n\tmodule specific\n"
-ngsHelp_STATS+="Output:\n\tprinting to console\n"
-ngsHelp_STATS+="Options:\n"
-ngsHelp_STATS+="\t-v - verbose printing of alignment stats (default: off).\n"
-ngsHelp_STATS+="\tmodules - comma separated, ordered list of modules to include for stats (must not include spaces).\n"
-ngsHelp_STATS+="Prints stats for user-specified list of modules. The stats will be tab delimited so they can be copy-pasted into an Excel table. This will not write to the analysis.log file."
+ngsHelp_STATS() {
+	echo -e "Usage:\n\t`basename $0` stats [-v] modules sampleID"
+	echo -e "Input:\n\tmodule specific"
+	echo -e "Output:\n\tprinting to console"
+	echo -e "Options:"
+	echo -e "\t-v - verbose printing of alignment stats (default: off)."
+	echo -e "\tmodules - comma separated, ordered list of modules to include for stats (must not include spaces).\n"
+	echo -e "Prints stats for user-specified list of modules. The stats will be tab delimited so they can be copy-pasted into an Excel table. This will not write to the analysis.log file."
+}
 
 ##########################################################################################
 # LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
@@ -52,6 +54,8 @@ ngsLocal_STATS_MODULES=""
 ##########################################################################################
 
 ngsArgs_STATS() {
+	if [ $# -lt 2 ]; then printHelp "STATS"; fi
+
 	# getopts doesn't allow for optional arguments so handle them manually
 	while true; do
 		case $1 in
@@ -65,12 +69,6 @@ ngsArgs_STATS() {
  			*) break ;;
 		esac
 	done
-
-	# we need to still have two parameters
-	if [ $# -lt 2 ]; then
-		printHelp $COMMAND
-		exit 0
-	fi
 
 	ngsLocal_STATS_MODULES=$1
 
@@ -104,7 +102,7 @@ ngsCmd_STATS() {
 	local IFS=" "
 	
 	# convert module names to upper case
-	ngsLocal_STATS_MODULES=$( echo $ngsLocal_STATS_MODULES | tr [a-z] [A-Z])
+	ngsLocal_STATS_MODULES=$( echo $ngsLocal_STATS_MODULES | tr "[a-z]" "[A-Z]" )
 
 	# step through each user-specified module and call the module's
 	# ngsStats_MODULE() function.

@@ -30,25 +30,27 @@
 # USAGE
 ##########################################################################################
 
-ngsUsage_TRIM="Usage: `basename $0` trim OPTIONS sampleID    --  trim adapter and poly A/T contamination\n"
+NGS_USAGE+="Usage: `basename $0` trim OPTIONS sampleID    --  trim adapter and poly A/T contamination\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
-ngsHelp_TRIM="Usage: `basename $0` trim [-i inputDir] [-o outputDir] [-c contaminantsFile] [-m minLen] [-kN] [-rAT numBases] [-se] sampleID\n"
-ngsHelp_TRIM+="Input:\n\t$REPO_LOCATION/trim/contaminants.fa (file containing contaminants)\n\tsampleID/inputDir/unaligned_1.fq\n\tsampleID/inputDir/unaligned_2.fq (paired-end reads)\n"
-ngsHelp_TRIM+="Output:\n\tsampleID/outputDir/unaligned_1.fq\n\tsampleID/outputDir/unaligned_2.fq (paired-end reads)\n\tsampleID/outputDir/stats.txt\n\tsampleID/outputDir/contaminants.fa (contaminants file)\n"
-ngsHelp_TRIM+="Requires:\n\ttrimReads.py ( https://github.com/safisher/ngs )\n"
-ngsHelp_TRIM+="Options:\n"
-ngsHelp_TRIM+="\t-i inputDir - location of source files (default: orig).\n"
-ngsHelp_TRIM+="\t-i outputDir - location of source files (default: trim).\n"
-ngsHelp_TRIM+="\t-c contaminantsFile - file containing contaminants to be trimmed (default: $REPO_LOCATION/trim/contaminants.fa).\n"
-ngsHelp_TRIM+="\t-m minLen - Minimum size of trimmed read. If trimmed beyond minLen, then read is discarded. If read is paired then read is replaced with N's, unless both reads in pair are smaller than minLen in which case the pair is discarded. (default: 20).\n"
-ngsHelp_TRIM+="\t-kN - do not trim N's from either end of the reads (default: remove N's).\n"
-ngsHelp_TRIM+="\t-rAT numBases - number of polyA/T bases to trim (default: 26). To disable polyA/T trimming, use '0' (eg '-rAT 0').\n"
-ngsHelp_TRIM+="\t-se - single-end reads (default: paired-end)\n\n"
-ngsHelp_TRIM+="Runs trimReads.py to trim data. Trimmed data is placed in 'sampleID/trim'. The contaminants file that was used is copied into the trim directory for future reference."
+ngsHelp_TRIM() {
+	echo -e "Usage: `basename $0` trim [-i inputDir] [-o outputDir] [-c contaminantsFile] [-m minLen] [-kN] [-rAT numBases] [-se] sampleID"
+	echo -e "Input:\n\t$REPO_LOCATION/trim/contaminants.fa (file containing contaminants)\n\tsampleID/inputDir/unaligned_1.fq\n\tsampleID/inputDir/unaligned_2.fq (paired-end reads)"
+	echo -e "Output:\n\tsampleID/outputDir/unaligned_1.fq\n\tsampleID/outputDir/unaligned_2.fq (paired-end reads)\n\tsampleID/outputDir/stats.txt\n\tsampleID/outputDir/contaminants.fa (contaminants file)"
+	echo -e "Requires:\n\ttrimReads.py ( https://github.com/safisher/ngs )"
+	echo -e "Options:"
+	echo -e "\t-i inputDir - location of source files (default: orig)."
+	echo -e "\t-i outputDir - location of source files (default: trim)."
+	echo -e "\t-c contaminantsFile - file containing contaminants to be trimmed (default: $REPO_LOCATION/trim/contaminants.fa)."
+	echo -e "\t-m minLen - Minimum size of trimmed read. If trimmed beyond minLen, then read is discarded. If read is paired then read is replaced with N's, unless both reads in pair are smaller than minLen in which case the pair is discarded. (default: 20)."
+	echo -e "\t-kN - do not trim N's from either end of the reads (default: remove N's)."
+	echo -e "\t-rAT numBases - number of polyA/T bases to trim (default: 26). To disable polyA/T trimming, use '0' (eg '-rAT 0')."
+	echo -e "\t-se - single-end reads (default: paired-end)\n"
+	echo -e "Runs trimReads.py to trim data. Trimmed data is placed in 'sampleID/trim'. The contaminants file that was used is copied into the trim directory for future reference."
+}
 
 ##########################################################################################
 # LOCAL VARIABLES WITH DEFAULT VALUES. Using the naming convention to
@@ -68,10 +70,7 @@ ngsLocal_TRIM_KN=false
 ##########################################################################################
 
 ngsArgs_TRIM() {
-	if [ $# -lt 1 ]; then
-		printHelp $COMMAND
-		exit 0
-	fi
+	if [ $# -lt 1 ]; then printHelp "TRIM"; fi
 
 	# getopts doesn't allow for optional arguments so handle them manually
 	while true; do
