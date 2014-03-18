@@ -33,7 +33,7 @@ NGS_USAGE+="Usage: `basename $0` blast OPTIONS sampleID    --  run blast on rand
 ngsHelp_BLAST() {
 	echo -e "Usage:\n\t`basename $0` blast -p numProc -s species sampleID"
 	echo -e "Input:\n\tsampleID/orig/unaligned_1.fq"
-	echo -e "Output:\n\tsampleID/blast/blast.txt (blast output)\n\tsampleID/blast/species.txt (species hit counts)"
+	echo -e "Output:\n\tsampleID/blast/blast.txt (blast output)\n\tsampleID/blast/sampleID.blast.stats.txt (species hit counts)"
 	echo -e "Requires:\n\tblastn ( ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/ )\n\trandomSample.py ( https://github.com/safisher/ngs )\n\tparseBlast.py ( https://github.com/safisher/ngs )"
 	echo -e "Options:"
 	echo -e "\t-p numProc - number of cpu to use"
@@ -124,6 +124,11 @@ ngsCmd_BLAST() {
 		parseBlast.py $SPECIES $SAMPLE/blast/raw.fa $SAMPLE/blast/blast.txt
 	fi
 	
+	prnCmd "mv $SAMPLE/blast/speciesCounts.txt $SAMPLE/blast/$SAMPLE.blast.stats.txt"
+	if ! $DEBUG; then 
+		mv $SAMPLE/blast/speciesCounts.txt $SAMPLE/blast/$SAMPLE.blast.stats.txt
+	fi
+	
 	# run error checking
 	if ! $DEBUG; then ngsErrorChk_BLAST $@; fi
 
@@ -138,7 +143,7 @@ ngsErrorChk_BLAST() {
 	prnCmd "# BLAST ERROR CHECKING: RUNNING"
 
 	inputFile="$SAMPLE/orig/unaligned_1.fq"
-	outputFile="$SAMPLE/blast/speciesCounts.txt"
+	outputFile="$SAMPLE/blast/$SAMPLE.blast.stats.txt"
 
 	# make sure expected output file exists
 	if [ ! -f $outputFile ]; then
