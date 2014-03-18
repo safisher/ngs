@@ -17,12 +17,12 @@
 ##########################################################################################
 # SINGLE-END READS:
 # INPUT: $SAMPLE/orig/unaligned_1.fq
-# OUTPUT: $SAMPLE/trim/unaligned_1.fq, $SAMPLE/trim/stats.txt
+# OUTPUT: $SAMPLE/trim/unaligned_1.fq, $SAMPLE/trim/$SAMPLE.trim.stats.txt
 # REQUIRES: trimReads.py, FastQC (if fastqc command previously run)
 #
 # PAIRED-END READS:
 # INPUT: $SAMPLE/orig/unaligned_1.fq and $SAMPLE/orig/unaligned_2.fq
-# OUTPUT: $SAMPLE/trim/unaligned_1.fq and $SAMPLE/trim/unaligned_2.fq, $SAMPLE/trim/stats.txt
+# OUTPUT: $SAMPLE/trim/unaligned_1.fq and $SAMPLE/trim/unaligned_2.fq, $SAMPLE/trim/$SAMPLE.trim.stats.txt
 # REQUIRES: trimReads.py, FastQC (if fastqc command previously run)
 ##########################################################################################
 
@@ -39,7 +39,7 @@ NGS_USAGE+="Usage: `basename $0` trim OPTIONS sampleID    --  trim adapter and p
 ngsHelp_TRIM() {
 	echo -e "Usage: `basename $0` trim [-i inputDir] [-o outputDir] [-c contaminantsFile] [-m minLen] [-kN] [-rAT numBases] [-se] sampleID"
 	echo -e "Input:\n\t$REPO_LOCATION/trim/contaminants.fa (file containing contaminants)\n\tsampleID/inputDir/unaligned_1.fq\n\tsampleID/inputDir/unaligned_2.fq (paired-end reads)"
-	echo -e "Output:\n\tsampleID/outputDir/unaligned_1.fq\n\tsampleID/outputDir/unaligned_2.fq (paired-end reads)\n\tsampleID/outputDir/stats.txt\n\tsampleID/outputDir/contaminants.fa (contaminants file)"
+	echo -e "Output:\n\tsampleID/outputDir/unaligned_1.fq\n\tsampleID/outputDir/unaligned_2.fq (paired-end reads)\n\tsampleID/outputDir/sampleID.trim.stats.txt\n\tsampleID/outputDir/contaminants.fa (contaminants file)"
 	echo -e "Requires:\n\ttrimReads.py ( https://github.com/safisher/ngs )"
 	echo -e "Options:"
 	echo -e "\t-i inputDir - location of source files (default: orig)."
@@ -143,16 +143,16 @@ ngsCmd_TRIM() {
 
 	if $SE; then
 		# single-end
-		prnCmd "trimReads.py -m $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/$ngsLocal_TRIM_OUT_DIR/unaligned > $SAMPLE/$ngsLocal_TRIM_OUT_DIR/stats.txt"
+		prnCmd "trimReads.py -m $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/$ngsLocal_TRIM_OUT_DIR/unaligned > $SAMPLE/$ngsLocal_TRIM_OUT_DIR/$SAMPLE.trim.stats.txt"
 		if ! $DEBUG; then 
-			trimReads.py -m $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/$ngsLocal_TRIM_OUT_DIR/unaligned > $SAMPLE/$ngsLocal_TRIM_OUT_DIR/stats.txt
+			trimReads.py -m $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/$ngsLocal_TRIM_OUT_DIR/unaligned > $SAMPLE/$ngsLocal_TRIM_OUT_DIR/$SAMPLE.trim.stats.txt
 		fi
 		
 	else
 		# paired-end
-		prnCmd "trimReads.py -p -m $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/$ngsLocal_TRIM_OUT_DIR/unaligned > $SAMPLE/$ngsLocal_TRIM_OUT_DIR/stats.txt"
+		prnCmd "trimReads.py -p -m $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/$ngsLocal_TRIM_OUT_DIR/unaligned > $SAMPLE/$ngsLocal_TRIM_OUT_DIR/$SAMPLE.trim.stats.txt"
 		if ! $DEBUG; then 
-			trimReads.py -p -m $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/orig/unaligned_2.fq -o $SAMPLE/$ngsLocal_TRIM_OUT_DIR/unaligned > $SAMPLE/$ngsLocal_TRIM_OUT_DIR/stats.txt
+			trimReads.py -p -m $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/orig/unaligned_2.fq -o $SAMPLE/$ngsLocal_TRIM_OUT_DIR/unaligned > $SAMPLE/$ngsLocal_TRIM_OUT_DIR/$SAMPLE.trim.stats.txt
 		fi
 	fi
 	
@@ -235,13 +235,13 @@ ngsStats_TRIM() {
 
 	case $1 in
 		header)
-			# the second to the last line of the stats.txt file is a tab-delimited lists of headers
-			echo `tail -2 $SAMPLE/trim/stats.txt | head -1`
+			# the second to the last line of the stats file is a tab-delimited lists of headers
+			echo `tail -2 $SAMPLE/trim/$SAMPLE.trim.stats.txt | head -1`
 			;;
 
 		values)
-			# the last line of the stats.txt file is a tab-delimited lists of values
-			echo `tail -1 $SAMPLE/trim/stats.txt`
+			# the last line of the stats file is a tab-delimited lists of values
+			echo `tail -1 $SAMPLE/trim/$SAMPLE.trim.stats.txt`
 			;;
 
 		keyvalue)
@@ -252,8 +252,8 @@ ngsStats_TRIM() {
 			local IFS=$'\t'
 			
 			# the last two lines of the stats.txt file are tab-delimited lists of headers and values
-			declare -a header=($(tail -2 $SAMPLE/trim/stats.txt | head -1))
-			declare -a values=($(tail -1 $SAMPLE/trim/stats.txt))
+			declare -a header=($(tail -2 $SAMPLE/trim/$SAMPLE.trim.stats.txt | head -1))
+			declare -a values=($(tail -1 $SAMPLE/trim/$SAMPLE.trim.stats.txt))
 			
 			# output a tab-delimited, key:value list
 			numFields=${#header[@]}

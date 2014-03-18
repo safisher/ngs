@@ -178,13 +178,13 @@ ngsStats_BLAST() {
 
 	case $1 in
 		header) 
-			# the second to the last line of the stats.txt file is a tab-delimited lists of headers
-			echo `tail -2 $SAMPLE/blast/speciesCounts.txt | head -1`
+			# the second to the last line of the stats file is a tab-delimited lists of headers
+			echo `tail -2 $SAMPLE/blast/$SAMPLE.blast.stats.txt | head -1`
 			;;
 
 		values) 
-			# the last line of the stats.txt file is a tab-delimited lists of values
-			echo `tail -1 $SAMPLE/blast/speciesCounts.txt`
+			# the last line of the stats file is a tab-delimited lists of values
+			echo `tail -1 $SAMPLE/blast/$SAMPLE.blast.stats.txt`
 			;;
 
 		keyvalue) 
@@ -196,8 +196,8 @@ ngsStats_BLAST() {
 			
 			# the last line of the speciesCounts.txt file is the following tab-delimited list of values:
 			# Total Hits	Hits Not Counted	Bacteria	Fish	Fly	Human	Mouse	Rat	Yeast
-			declare -a header=($(tail -2 $SAMPLE/blast/speciesCounts.txt | head -1))
-			declare -a values=($(tail -1 $SAMPLE/blast/speciesCounts.txt))
+			declare -a header=($(tail -2 $SAMPLE/blast/$SAMPLE.blast.stats.txt | head -1))
+			declare -a values=($(tail -1 $SAMPLE/blast/$SAMPLE.blast.stats.txt))
 			
 			# output a tab-delimited, key:value list
 			numFields=${#header[@]}
