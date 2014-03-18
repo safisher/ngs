@@ -198,6 +198,12 @@ starPostProcessing() {
 		rm STAR.bam Aligned.out.sam
 	fi
 	
+	# rename output stats file to conform to other modules
+	prnCmd "mv $SAMPLE/star/Log.final.out $SAMPLE/star/$SAMPLE.star.stats.txt"
+	if ! $DEBUG; then
+		mv $SAMPLE/star/Log.final.out $SAMPLE/star/$SAMPLE.star.stats.txt
+	fi
+	
 	# return to proper directory and restore $JOURNAL
 	prnCmd "cd $CUR_DIR"
 	if ! $DEBUG; then 
@@ -245,23 +251,23 @@ ngsStats_STAR() {
 		prnError "Incorrect number of parameters for ngsStats_STAR()."
 	fi
 
-	avgReadLen=`grep "Average input read length" $SAMPLE/star/Log.final.out | awk -F $'\t' '{print $2}'`
+	avgReadLen=`grep "Average input read length" $SAMPLE/star/$SAMPLE.star.stats.txt | awk -F $'\t' '{print $2}'`
 	STAR_HEADER="Avg Inp Read Len"
 	STAR_VALUES="$avgReadLen"
 
-	avgMapLen=`grep "Average mapped length" $SAMPLE/star/Log.final.out | awk -F $'\t' '{print $2}'`
+	avgMapLen=`grep "Average mapped length" $SAMPLE/star/$SAMPLE.star.stats.txt | awk -F $'\t' '{print $2}'`
 	STAR_HEADER="$STAR_HEADER\tAvg Uniq Map Len"
 	STAR_VALUES="$STAR_VALUES\t$avgMapLen"
 
-	uniqMap=`grep "Uniquely mapped reads %" $SAMPLE/star/Log.final.out | awk -F $'\t' '{print $2}'`
+	uniqMap=`grep "Uniquely mapped reads %" $SAMPLE/star/$SAMPLE.star.stats.txt | awk -F $'\t' '{print $2}'`
 	STAR_HEADER="$STAR_HEADER\tUniq Map"
 	STAR_VALUES="$STAR_VALUES\t$uniqMap"
 
-	multimapped=`grep "% of reads mapped to multiple loci" $SAMPLE/star/Log.final.out | awk -F $'\t' '{print $2}'`
+	multimapped=`grep "% of reads mapped to multiple loci" $SAMPLE/star/$SAMPLE.star.stats.txt | awk -F $'\t' '{print $2}'`
 	STAR_HEADER="$STAR_HEADER\tMultimapped"
 	STAR_VALUES="$STAR_VALUES\t$multimapped"
 
-	tooShort=`grep "% of reads unmapped: too short" $SAMPLE/star/Log.final.out | awk -F $'\t' '{print $2}'`
+	tooShort=`grep "% of reads unmapped: too short" $SAMPLE/star/$SAMPLE.star.stats.txt | awk -F $'\t' '{print $2}'`
 	STAR_HEADER="$STAR_HEADER\tToo Short"
 	STAR_VALUES="$STAR_VALUES\t$tooShort"
 

@@ -123,7 +123,8 @@ ngsCmd_BLAST() {
 	if ! $DEBUG; then 
 		parseBlast.py $SPECIES $SAMPLE/blast/raw.fa $SAMPLE/blast/blast.txt
 	fi
-	
+
+	# rename output stats file to conform to other modules
 	prnCmd "mv $SAMPLE/blast/speciesCounts.txt $SAMPLE/blast/$SAMPLE.blast.stats.txt"
 	if ! $DEBUG; then 
 		mv $SAMPLE/blast/speciesCounts.txt $SAMPLE/blast/$SAMPLE.blast.stats.txt
