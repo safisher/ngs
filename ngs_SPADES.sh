@@ -33,7 +33,7 @@ NGS_USAGE+="Usage: `basename $0` SPADES OPTIONS sampleID -- run SPADES on trimme
 ##########################################################################################
 
 ngsHelp_SPADES() {
-	echo -e "Usage:\n\t`basename $0` SPADES [-i inputDir] -p numProc -m maxRAM -k kmers [-se] sampleID"
+	echo -e "Usage:\n\t`basename $0` SPADES [-i inputDir] [-m maxRAM] [-k kmers] -p numProc [-se] sampleID"
 	echo -e "Input:\n\tsampleID/inputDir/notMapped_1.fq\n\tsampleID/inputDir/notMapped_2.fq (paired-end reads)"
 	echo -e "Output:\n\tsampleID/spades/SampleID.fasta "
 	echo -e "Requires:\n\tSPAdes ( http://bioinf.spbau.ru/spades )"
@@ -61,7 +61,7 @@ ngsLocal_SPADES_KMERS="33,49,83"
 ##########################################################################################
 
 ngsArgs_SPADES() {
-	if [ $# -lt 7 ]; then printHelp "SPADES"; fi
+	if [ $# -lt 3 ]; then printHelp "SPADES"; fi
 	
 	# getopts doesn't allow for optional arguments so handle them manually
 	while true; do
@@ -110,7 +110,10 @@ ngsCmd_SPADES() {
 	
 	# print version info in journal file
 	prnCmd "# SPAdes v2.2.1 (check SPAdes log file)"
-	
+	if ! $DEBUG; then 
+		prnVersion "spades" "spades_version" "2.2.1"
+	fi
+
 	if $SE; then
 		# single-end
 		prnCmd "spades.py -1 $SAMPLE/$ngsLocal_SPADES_INP_DIR/notMapped_1.fq -t $NUMCPU -m $ngsLocal_SPADES_MAX_RAM -k $ngsLocal_SPADES_KMERS -n $SAMPLE -o $SAMPLE/spades"
