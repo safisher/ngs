@@ -40,7 +40,7 @@ VERSION=2.0.0-alpha
 # prnVersion() command should be used to generate this file. This file
 # will live in the respective module subdirectory (ie
 # $SAMPLE/MODULE/VERSION)
-VERSION_FILE="VERSION"
+VERSION_FILE="versions"
 
 # all commands will be output to this file as a report of what was
 # done. The file will be located in the $SAMPLE directory.
@@ -121,7 +121,7 @@ prnVersion() {
 	outFile="$SAMPLE/$1/$VERSION_FILE"
 
 	# append pipeline version number
-	header="Pipeline\t$2"
+	header="pipeline\t$2"
 	values="$VERSION\t$3"
 
 	# we intentionally write over the previous file, if it exists
@@ -217,6 +217,8 @@ fi
 
 # adjust the location of the JOURNAL file, now that we know the SAMPLE
 JOURNAL="$SAMPLE/$JOURNAL"
+# adjust the name of the VERSION file, now that we know the SAMPLE
+VERSION_FILE="$SAMPLE.${VERSION_FILE}"
 
 # create output directory first. This needs to happen prior to using
 # the prnCmd() function, so we can create the output file ($JOURNAL)

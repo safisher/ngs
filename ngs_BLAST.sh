@@ -95,7 +95,7 @@ ngsCmd_BLAST() {
 		# gets this: "Package: blast 2.2.28, build Mar 12 2013 16:52:31"
 		# returns this: "2.2.28"
 		ver=$(blastn -version | tail -1 | awk '{print $3}' | sed s/,//)
-		prnVersion "blast" "blast_version\tblast_app\tspecies" "$ver\tblastn\t$SPECIES"
+		prnVersion "blast" "program\tversion\tspecies" "blastn\t$ver\t$SPECIES"
 	fi
 
     # Get ngsLocal_BLAST_NUM_READS (5,000) randomly sampled reads
