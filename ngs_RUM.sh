@@ -105,10 +105,15 @@ ngsCmd_RUM() {
 		prnCmd "mkdir $SAMPLE/rum"
 		if ! $DEBUG; then mkdir $SAMPLE/rum; fi
 	fi
-	
-	# print version info in journal file
-	prnCmd "# rum_runner version"
-	if ! $DEBUG; then prnCmd "# `rum_runner version`"; fi
+
+    # print version info in $SAMPLE directory
+	prnCmd "# rum_runner version | awk '{print $3}' | sed s/v// | sed s/,//"
+	if ! $DEBUG; then 
+		# gets this: "RUM version v2.0.3_04, released November 12, 2012"
+		# returns this: "2.0.3_04"
+		ver=$(rum_runner version | awk '{print $3}' | sed s/v// | sed s/,//)
+		prnVersion "rum" "rum_version\tspecies" "$ver\t$SPECIES"
+	fi
 	
 	if $SE; then
 		# single-end

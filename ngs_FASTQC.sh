@@ -91,9 +91,14 @@ ngsCmd_FASTQC() {
 		if ! $DEBUG; then mkdir $SAMPLE/$ngsLocal_FASTQC_OUT_DIR; fi
 	fi
 	
-    # output version of fastqc to journal
-	prnCmd "# fastqc version"
-	if ! $DEBUG; then prnCmd "# `fastqc -v`"; fi
+    # print version info in $SAMPLE directory
+	prnCmd "# `fastqc -v | awk '{print $2}' | sed s/v//`"
+	if ! $DEBUG; then 
+		# gets this: "-Xmx250m-Dfastqc.show_version=true-Djava.awt.headless=trueFastQC v0.10.1"
+		# returns this: "0.10.1"
+		ver=$(fastqc -v | awk '{print $2}' | sed s/v//)
+		prnVersion "fastqc" "fastqc_version" "$ver"
+	fi
 	
     # run fastqc
 	prnCmd "fastqc --OUTDIR=$SAMPLE/$ngsLocal_FASTQC_OUT_DIR $SAMPLE/$ngsLocal_FASTQC_INP_DIR/unaligned_1.fq"

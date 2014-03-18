@@ -86,16 +86,22 @@ ngsArgs_SNP() {
 ngsCmd_SNP() {
 	prnCmd "# BEGIN: SNP CALLING AND GENOME COVERAGE"
 	
-    # print version info in journal file
-	prnCmd "# freebayes version v9.9.2-46-gdfddc43"
-	#if ! $DEBUG; then prnCmd "# `freebayes --version | head -1`"; fi
-	
     # make relevant directory
 	if [ ! -d $SAMPLE/snp ]; then 
 		prnCmd "mkdir $SAMPLE/snp"
 		if ! $DEBUG; then mkdir $SAMPLE/snp; fi
 	fi
 	
+    # print version info in $SAMPLE directory
+	prnCmd "# freebayes | grep 'version:' | awk '{print $2}' | sed s/v//"
+	if ! $DEBUG; then 
+		# gets this: "version:  v9.9.2-46-gdfddc43"
+		# returns this: "9.9.2-46-gdfddc43"
+		ver=$(freebayes | grep 'version:' | awk '{print $2}' | sed s/v//)
+		bver=$(bedtools --version | awk '{print $2}' | sed s/v//)
+		prnVersion "snp" "snp_version\tsnp_app\tspecies" "$ver\tfreebayes\t$SPECIES"
+	fi
+
 	prnCmd "freebayes -f $SNP_REPO/$SPECIES.fa $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.bowtie.sorted.bam > $SAMPLE/snp/$SAMPLE.raw.vcf"
 	if ! $DEBUG; then freebayes -f $SNP_REPO/$SPECIES.fa $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.bowtie.sorted.bam > $SAMPLE/snp/$SAMPLE.raw.vcf; fi
 	prnCmd "vcffilter -f \"QUAL > 20\" $SAMPLE/snp/$SAMPLE.raw.vcf > $SAMPLE/snp/$SAMPLE.filtered.vcf"

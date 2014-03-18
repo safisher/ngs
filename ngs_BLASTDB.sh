@@ -85,6 +85,14 @@ ngsCmd_BLASTDB() {
 		if ! $DEBUG; then mkdir $SAMPLE/blast.db; fi
 	fi
 	
+	prnCmd "# blastn version: blastn -version | tail -1 | awk '{print \$3}' | sed s/,//"
+	if ! $DEBUG; then 
+		# gets this: "Package: blast 2.2.28, build Mar 12 2013 16:52:31"
+		# returns this: "2.2.28"
+		ver=$(blastn -version | tail -1 | awk '{print $3}' | sed s/,//)
+		prnVersion "blast" "blast_version\tblast_app" "$ver\tmakeblastdb"
+	fi
+
 	# Convert orig/fastq files into single fasta file (raw.fa)
 	prnCmd "awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,\">\");print}; if(P==4)P=0; P++}' $SAMPLE/orig/unaligned_1.fq > $SAMPLE/blast.db/raw.fa"
 	if ! $DEBUG; then 

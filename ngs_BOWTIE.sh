@@ -119,9 +119,14 @@ ngsCmd_BOWTIE() {
 	if $SE; then prnCmd "# BEGIN: BOWTIE SINGLE-END ALIGNMENT"
 	else prnCmd "# BEGIN: BOWTIE PAIRED-END ALIGNMENT"; fi
 	
-    # print version info in journal file
-	prnCmd "# bowtie version"
-	if ! $DEBUG; then prnCmd "# `bowtie --version | head -1`"; fi
+    # print version info in $SAMPLE directory
+	prnCmd "# `bowtie --version | head -1 | awk '{print $3}'`"
+	if ! $DEBUG; then 
+		# gets this: "bowtie version 0.12.7"
+		# returns this: "0.12.7"
+		ver=$(bowtie --version | head -1 | awk '{print $3}')
+		prnVersion "bowtie" "bowtie_version\tspecies" "$ver\t$SPECIES"
+	fi
 	
     # make relevant directory
 	if [ ! -d $SAMPLE/bowtie ]; then 

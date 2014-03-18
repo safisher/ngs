@@ -89,7 +89,7 @@ ngsCmd_BLAST() {
 		if ! $DEBUG; then mkdir $SAMPLE/blast; fi
 	fi
 		
-    # print version info in journal file
+    # print version info in $SAMPLE directory
 	prnCmd "# blastn version: blastn -version | tail -1 | awk '{print \$3}' | sed s/,//"
 	if ! $DEBUG; then 
 		# gets this: "Package: blast 2.2.28, build Mar 12 2013 16:52:31"

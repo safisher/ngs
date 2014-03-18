@@ -110,6 +110,9 @@ ngsCmd_STAR() {
 	
 	# print version info in journal file
 	prnCmd "# STAR v2.3.0.1 (check STAR log file)"
+	if ! $DEBUG; then 
+		prnVersion "star" "star_version" "2.3.0e_r291"
+	fi
 	
 	if $SE; then
 		# single-end
