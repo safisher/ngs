@@ -109,9 +109,9 @@ ngsCmd_SPADES() {
 	fi
 	
 	# print version info in journal file
-	prnCmd "# SPAdes v2.2.1 (check SPAdes log file)"
+	prnCmd "# SPAdes version: (check SPAdes log file)"
 	if ! $DEBUG; then 
-		prnVersion "spades" "spades_version" "2.2.1"
+		prnVersion "spades" "program\tversion" "spades.py\t2.2.1"
 	fi
 
 	if $SE; then

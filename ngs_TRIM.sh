@@ -122,11 +122,11 @@ ngsCmd_TRIM() {
 		if ! $DEBUG; then mkdir $SAMPLE/$ngsLocal_TRIM_OUT_DIR; fi
 	fi
 	
-	# print version info in journal file
-	prnCmd "# trimReads.py version"
+    # print version info in $SAMPLE directory
+	prnCmd "# trimReads.py version: trimReads.py -v"
 	if ! $DEBUG; then 
-		version=$((trimReads.py -v) 2>&1)
-		prnCmd "# $version"
+		ver=$(trimReads.py -v)
+		prnVersion "trim" "program\tversion" "trimReads.py\t$ver"
 	fi
 
 	# set argument for removing of N's from both ends of the reads

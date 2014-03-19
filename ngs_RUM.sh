@@ -107,12 +107,14 @@ ngsCmd_RUM() {
 	fi
 
     # print version info in $SAMPLE directory
-	prnCmd "# rum_runner version | awk '{print $3}' | sed s/v// | sed s/,//"
+	prnCmd "# rum_runner version: rum_runner version | awk '{print \$3}' | sed s/v// | sed s/,//"
+	prnCmd "# samtools version: samtools 2>&1 | grep 'Version:' | awk '{print \$2}'"
 	if ! $DEBUG; then 
 		# gets this: "RUM version v2.0.3_04, released November 12, 2012"
 		# returns this: "2.0.3_04"
 		ver=$(rum_runner version | awk '{print $3}' | sed s/v// | sed s/,//)
-		prnVersion "rum" "rum_version\tspecies" "$ver\t$SPECIES"
+		sver=$(samtools 2>&1 | grep 'Version:' | awk '{print $2}')
+		prnVersion "rum" "program\tversion\tprogram\tversion\tspecies" "rum_runner\t$ver\tsamtools\t$sver\t$SPECIES"
 	fi
 	
 	if $SE; then

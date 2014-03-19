@@ -85,12 +85,12 @@ ngsCmd_BLASTDB() {
 		if ! $DEBUG; then mkdir $SAMPLE/blast.db; fi
 	fi
 	
-	prnCmd "# blastn version: blastn -version | tail -1 | awk '{print \$3}' | sed s/,//"
+	prnCmd "# blastn version: makeblastdb -version | tail -1 | awk '{print \$3}' | sed s/,//"
 	if ! $DEBUG; then 
 		# gets this: "Package: blast 2.2.28, build Mar 12 2013 16:52:31"
 		# returns this: "2.2.28"
-		ver=$(blastn -version | tail -1 | awk '{print $3}' | sed s/,//)
-		prnVersion "blast" "blast_version\tblast_app" "$ver\tmakeblastdb"
+		ver=$(makeblastdb -version | tail -1 | awk '{print $3}' | sed s/,//)
+		prnVersion "blastdb" "program\tversion" "makeblastdb\t$ver"
 	fi
 
 	# Convert orig/fastq files into single fasta file (raw.fa)

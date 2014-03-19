@@ -108,12 +108,14 @@ ngsCmd_STAR() {
 		if ! $DEBUG; then mkdir $SAMPLE/star; fi
 	fi
 	
-	# print version info in journal file
-	prnCmd "# STAR v2.3.0.1 (check STAR log file)"
+    # print version info in $SAMPLE directory
+	prnCmd "# STAR version: (check STAR log file)"
+	prnCmd "# samtools version: samtools 2>&1 | grep 'Version:' | awk '{print \$2}'"
 	if ! $DEBUG; then 
-		prnVersion "star" "star_version" "2.3.0e_r291"
+		ver=$(samtools 2>&1 | grep 'Version:' | awk '{print $2}')
+		prnVersion "star" "program\tversion\tprogram\tversion\tspecies" "star\t2.3.0e_r291\tsamtools\t$ver\t$SPECIES"
 	fi
-	
+
 	if $SE; then
 		# single-end
 		prnCmd "STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx"

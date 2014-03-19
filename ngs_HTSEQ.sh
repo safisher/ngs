@@ -97,12 +97,12 @@ ngsCmd_HTSEQ() {
 		if ! $DEBUG; then mkdir $SAMPLE/htseq; fi
 	fi
 	
-    # print version info in journal file
-	prnCmd "# HTSeq version"
+    # print version info in $SAMPLE directory
+	prnCmd "# HTSeq version: python -c 'import HTSeq, pkg_resources; print pkg_resources.get_distribution(\"HTSeq\").version'"
 	if ! $DEBUG; then 
 		# returns: "0.5.4p5"
 		ver=$(python -c "import HTSeq, pkg_resources; print pkg_resources.get_distribution(\"HTSeq\").version")
-		prnVersion "htseq" "htseq_version\ttranscriptome" "$ver\t$HTSEQ_REPO/$SPECIES.gz"
+		prnVersion "htseq" "program\tversion\ttranscriptome" "htseq\t$ver\t$HTSEQ_REPO/$SPECIES.gz"
 	fi
 	
 	# We assume that the alignment file exists

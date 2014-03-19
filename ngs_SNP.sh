@@ -93,13 +93,14 @@ ngsCmd_SNP() {
 	fi
 	
     # print version info in $SAMPLE directory
-	prnCmd "# freebayes | grep 'version:' | awk '{print $2}' | sed s/v//"
+	prnCmd "# freebayes version: freebayes | grep 'version:' | awk '{print \$2}' | sed s/v//"
+	prnCmd "# bedtools version: bedtools --version | awk '{print \$2}' | sed s/v//"
 	if ! $DEBUG; then 
 		# gets this: "version:  v9.9.2-46-gdfddc43"
 		# returns this: "9.9.2-46-gdfddc43"
 		ver=$(freebayes | grep 'version:' | awk '{print $2}' | sed s/v//)
 		bver=$(bedtools --version | awk '{print $2}' | sed s/v//)
-		prnVersion "snp" "snp_version\tsnp_app\tspecies" "$ver\tfreebayes\t$SPECIES"
+		prnVersion "snp" "program\tversion\tprogram\tversion\tspecies" "freebayes\t$ver\tbedtools\t$bver\t$SPECIES"
 	fi
 
 	prnCmd "freebayes -f $SNP_REPO/$SPECIES.fa $SAMPLE/$ngsLocal_SNP_INP_DIR/$SAMPLE.bowtie.sorted.bam > $SAMPLE/snp/$SAMPLE.raw.vcf"

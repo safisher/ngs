@@ -120,12 +120,14 @@ ngsCmd_BOWTIE() {
 	else prnCmd "# BEGIN: BOWTIE PAIRED-END ALIGNMENT"; fi
 	
     # print version info in $SAMPLE directory
-	prnCmd "# `bowtie --version | head -1 | awk '{print $3}'`"
+	prnCmd "# bowtie version: bowtie --version | head -1 | awk '{print \$3}'"
+	prnCmd "# samtools version: samtools 2>&1 | grep 'Version:' | awk '{print \$2}'"
 	if ! $DEBUG; then 
 		# gets this: "bowtie version 0.12.7"
 		# returns this: "0.12.7"
 		ver=$(bowtie --version | head -1 | awk '{print $3}')
-		prnVersion "bowtie" "bowtie_version\tspecies" "$ver\t$SPECIES"
+		sver=$(samtools 2>&1 | grep 'Version:' | awk '{print $2}')
+		prnVersion "bowtie" "program\tversion\tprogram\tversion\tspecies" "bowtie\t$ver\tsamtools\t$sver\t$SPECIES"
 	fi
 	
     # make relevant directory
