@@ -206,8 +206,8 @@ ngsStats_BLAST() {
 		prnError "Incorrect number of parameters for ngsStats_BLAST()."
 	fi
 	
-	# get 
 	local statsFile="$SAMPLE/blast/$SAMPLE.blast.stats.txt"
+
 	# the second to the last line of the stats file is a tab-delimited lists of headers
 	# Total Hits	Hits Not Counted	Bacteria	Fish	Fly	Human	Mouse	Rat	Yeast
 	local header=$(tail -2 $statsFile | head -1)

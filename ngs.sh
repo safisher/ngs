@@ -206,7 +206,7 @@ ngsArgs_${COMMAND} $@
 
 # if we've gotten to this point and $SAMPLE is not set, then something
 # went wrong and abort
-if [ -z "$SAMPLE" ]; then
+if [[ -z "$SAMPLE" ]]; then
 	echo -e "\n************************************************"
 	echo -ne "ERROR: "
 	echo -e `date`
@@ -214,6 +214,9 @@ if [ -z "$SAMPLE" ]; then
 	echo -e $NGS_USAGE
 	exit 1
 fi
+
+# remove trailing "/" from $SAMPLE, if present
+SAMPLE="${SAMPLE%/}"
 
 # adjust the location of the JOURNAL file, now that we know the SAMPLE
 JOURNAL="$SAMPLE/$JOURNAL"
@@ -224,7 +227,7 @@ VERSION_FILE="$SAMPLE.${VERSION_FILE}"
 # the prnCmd() function, so we can create the output file ($JOURNAL)
 # that is used by prnCmd. This happens even during debugging because
 # this directory is where the $JOURNAL file is located by default.
-if [ ! -d $SAMPLE ]; then
+if [[ ! -d $SAMPLE ]]; then
 	mkdir $SAMPLE
 fi
 
