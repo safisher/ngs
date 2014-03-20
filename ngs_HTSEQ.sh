@@ -117,17 +117,17 @@ ngsCmd_HTSEQ() {
 	prnCmd "grep 'Warning' $SAMPLE/htseq/$SAMPLE.htseq.out > $SAMPLE/htseq/$SAMPLE.htseq.err.txt"
 	prnCmd "grep -v 'Warning' $SAMPLE/htseq/$SAMPLE.htseq.out > $SAMPLE/htseq/tmp.txt"
 	prnCmd "echo -e 'gene\tcount' > $SAMPLE/htseq/$SAMPLE.htseq.cnts.txt"
-	prnCmd "grep -P '\t' $SAMPLE/htseq/tmp.txt | grep -P -v 'no_feature|ambiguous|too_low_aQual|not_aligned|alignment_not_unique' >> $SAMPLE/htseq/$SAMPLE.htseq.cnts.txt"
-	prnCmd "grep -P -v '\t' $SAMPLE/htseq/tmp.txt > $SAMPLE/htseq/$SAMPLE.htseq.log.txt"
-	prnCmd "grep -P 'no_feature|ambiguous|too_low_aQual|not_aligned|alignment_not_unique' $SAMPLE/htseq/tmp.txt >> $SAMPLE/htseq/$SAMPLE.htseq.log.txt"
+	prnCmd "$GREPP '\t' $SAMPLE/htseq/tmp.txt | $GREPP -v 'no_feature|ambiguous|too_low_aQual|not_aligned|alignment_not_unique' >> $SAMPLE/htseq/$SAMPLE.htseq.cnts.txt"
+	prnCmd "$GREPP -v '\t' $SAMPLE/htseq/tmp.txt > $SAMPLE/htseq/$SAMPLE.htseq.log.txt"
+	prnCmd "$GREPP 'no_feature|ambiguous|too_low_aQual|not_aligned|alignment_not_unique' $SAMPLE/htseq/tmp.txt >> $SAMPLE/htseq/$SAMPLE.htseq.log.txt"
 	prnCmd "rm $SAMPLE/htseq/$SAMPLE.htseq.out $SAMPLE/htseq/tmp.txt"
 	if ! $DEBUG; then 
 		grep 'Warning' $SAMPLE/htseq/$SAMPLE.htseq.out > $SAMPLE/htseq/$SAMPLE.htseq.err.txt
 		grep -v 'Warning' $SAMPLE/htseq/$SAMPLE.htseq.out > $SAMPLE/htseq/tmp.txt
 		echo -e 'gene\tcount' > $SAMPLE/htseq/$SAMPLE.htseq.cnts.txt
-		grep -P '\t' $SAMPLE/htseq/tmp.txt | grep -P -v 'no_feature|ambiguous|too_low_aQual|not_aligned|alignment_not_unique' >> $SAMPLE/htseq/$SAMPLE.htseq.cnts.txt
-		grep -P -v '\t' $SAMPLE/htseq/tmp.txt > $SAMPLE/htseq/$SAMPLE.htseq.log.txt
-		grep -P 'no_feature|ambiguous|too_low_aQual|not_aligned|alignment_not_unique' $SAMPLE/htseq/tmp.txt >> $SAMPLE/htseq/$SAMPLE.htseq.log.txt
+		$GREPP '\t' $SAMPLE/htseq/tmp.txt | $GREPP -v 'no_feature|ambiguous|too_low_aQual|not_aligned|alignment_not_unique' >> $SAMPLE/htseq/$SAMPLE.htseq.cnts.txt
+		$GREPP -v '\t' $SAMPLE/htseq/tmp.txt > $SAMPLE/htseq/$SAMPLE.htseq.log.txt
+		$GREPP 'no_feature|ambiguous|too_low_aQual|not_aligned|alignment_not_unique' $SAMPLE/htseq/tmp.txt >> $SAMPLE/htseq/$SAMPLE.htseq.log.txt
 
 		rm $SAMPLE/htseq/$SAMPLE.htseq.out $SAMPLE/htseq/tmp.txt
 	fi
@@ -191,7 +191,7 @@ ngsStats_HTSEQ() {
 	fi
    
 	# number of genes with at least 1 read mapped
-	numGenes=$(grep -vP "\t0$" $SAMPLE/htseq/$SAMPLE.htseq.cnts.txt | grep -v "gene" | wc -l)
+	numGenes=$($GREPP -v "\t0$" $SAMPLE/htseq/$SAMPLE.htseq.cnts.txt | grep -v "gene" | wc -l)
 	header="$header\tAmbiguous"
 	values="$values\t$numGenes"
 

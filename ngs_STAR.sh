@@ -185,15 +185,15 @@ starPostProcessing() {
 	
 	# generate BAM file containing all uniquely mapped reads. This variant will
 	# remove mitochondrial genes:
-	#   samtools view -H -S Aligned.out.sam > header.sam; grep -Pv 'chrM\t' Aligned.out.sam | grep -P 'IH:i:1\t' | cat header.sam - | samtools view -bS - > STAR_Unique.bam
+	#   samtools view -H -S Aligned.out.sam > header.sam; $GREPP -v 'chrM\t' Aligned.out.sam | $GREPP 'IH:i:1\t' | cat header.sam - | samtools view -bS - > STAR_Unique.bam
 	prnCmd "# generating STAR_Unique.bam file"
 	prnCmd "samtools view -H -S Aligned.out.sam > header.sam"
 	# (1) extract all mapped reads from SAM file, (2) filter by number of mappings, (3) add header, (4) convert to BAM
-	prnCmd "samtools view -S -F 0x4 Aligned.out.sam | grep -P 'NH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.star.unique.bam"
+	prnCmd "samtools view -S -F 0x4 Aligned.out.sam | $GREPP 'NH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.star.unique.bam"
 	prnCmd "rm header.sam"
 	if ! $DEBUG; then 
 		samtools view -H -S Aligned.out.sam > header.sam
-		samtools view -S -F 0x4 Aligned.out.sam | grep -P 'NH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.star.unique.bam
+		samtools view -S -F 0x4 Aligned.out.sam | $GREPP 'NH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.star.unique.bam
 		rm header.sam
 	fi
 	

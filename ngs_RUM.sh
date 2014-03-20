@@ -188,18 +188,18 @@ rumPostProcessing() {
 	
 	# generate BAM file containing all uniquely mapped reads. This variant will
 	# remove mitochondrial genes:
-	#   samtools view -H -S RUM.sam > header.sam; grep -Pv 'chrM\t' RUM.sam | grep -P 'IH:i:1\t' | cat header.sam - | samtools view -bS - > RUM_Unique.bam
+	#   samtools view -H -S RUM.sam > header.sam; $GREPP -v 'chrM\t' RUM.sam | $GREPP 'IH:i:1\t' | cat header.sam - | samtools view -bS - > RUM_Unique.bam
 	prnCmd "# generating $SAMPLE.rum.unique.bam file"
 	prnCmd "samtools view -H -S RUM.sam > header.sam"
 	# (1) extract all mapped reads from SAM file, (2) filter by number of mappings, (3) add header, (4) convert to BAM
-	prnCmd "samtools view -S -F 0x4 RUM.sam | grep -P 'IH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.rum.unique.bam"
+	prnCmd "samtools view -S -F 0x4 RUM.sam | $GREPP 'IH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.rum.unique.bam"
 	#prnCmd "samtools sort RUM_Unique.bam RUM_Unique.sorted"
 	#prnCmd "samtools index RUM_Unique.sorted.bam"
 	#prnCmd "rm header.sam RUM_Unique.bam"
 	prnCmd "rm header.sam"
 	if ! $DEBUG; then 
 		samtools view -H -S RUM.sam > header.sam
-		samtools view -S -F 0x4 RUM.sam | grep -P 'IH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.rum.unique.bam
+		samtools view -S -F 0x4 RUM.sam | $GREPP 'IH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.rum.unique.bam
 		#samtools sort RUM_Unique.bam RUM_Unique.sorted
 		#samtools index RUM_Unique.sorted.bam
 		#rm header.sam RUM_Unique.bam

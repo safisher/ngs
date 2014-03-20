@@ -82,6 +82,21 @@ shopt -s nocasematch
 # bash initialization scripts to error.
 set -o nounset
 
+# get OS name. 
+OS_VERSION=$(uname)
+# If OS isn't "Darwin" (Mac) then assume "Linux" (RedHat /
+# Centos). Other OS versions could be added here. Grep on the Mac (and
+# likely BSD) does not have a "-P" option ("perl-regexp"). We use the
+# "-P" option on Linux at various places.
+case ${OS_VERSION} in
+	Darwin)
+		GREPP="grep"
+		;;
+	*)
+		GREPP="grep -P"
+		;;
+esac
+
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 # LOAD MODULES
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
