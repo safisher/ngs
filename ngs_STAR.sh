@@ -108,37 +108,34 @@ ngsCmd_STAR() {
 		if ! $DEBUG; then mkdir $SAMPLE/star; fi
 	fi
 	
-    # print version info in $SAMPLE directory
-	prnCmd "# STAR version: (check STAR log file)"
+	# single-end only has one input file
+	if $SE; then 
+		local STAR_INPUT_READS="$SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq"
+	else 
+		local STAR_INPUT_READS="$SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_2.fq"
+	fi
+
+	prnCmd "STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $STAR_INPUT_READS --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx"
+	if ! $DEBUG; then 
+		STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $STAR_INPUT_READS --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx
+	fi
+
+	# run post processing to generate necessary alignment files
+	starPostProcessing $@
+
+    # print version info in $SAMPLE directory. We do this AFTER STAR
+    # has run because we need to get the version number from the
+    # output file.
+	prnCmd "# STAR version: head -1 $SAMPLE/star/Log.out | awk -F= '{print \$2}'"
 	prnCmd "# samtools version: samtools 2>&1 | grep 'Version:' | awk '{print \$2}'"
 	if ! $DEBUG; then 
-		ver=$(samtools 2>&1 | grep 'Version:' | awk '{print $2}')
-		prnVersion "star" "program\tversion\tprogram\tversion\tspecies" "star\t2.3.0e_r291\tsamtools\t$ver\t$SPECIES"
+		ver=$(head -1 $SAMPLE/star/Log.out | awk -F= '{print $2}')
+		ver1=$(samtools 2>&1 | grep 'Version:' | awk '{print $2}')
+		prnVersion "star" "program\tversion\tprogram\tversion\tspecies" "star\t$ver\tsamtools\t$ver1\t$SPECIES"
 	fi
 
-	if $SE; then
-		# single-end
-		prnCmd "STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx"
-		if ! $DEBUG; then 
-			STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx
-		fi
-		
-		# run post processing to generate necessary alignment files
-		starPostProcessing $@
-
-		prnCmd "# FINISHED: STAR SINGLE-END ALIGNMENT"
-	else
-		# paired-end
-		prnCmd "STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_2.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx"
-		if ! $DEBUG; then 
-			STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_2.fq --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx
-		fi
-		
-		# run post processing to generate necessary alignment files
-		starPostProcessing $@
-
-		prnCmd "# FINISHED: STAR PAIRED-END ALIGNMENT"
-	fi
+	if $SE; then prnCmd "# FINISHED: STAR SINGLE-END ALIGNMENT"
+	else prnCmd "# FINISHED: STAR PAIRED-END ALIGNMENT"; fi
 }
 
 starPostProcessing() {
