@@ -144,7 +144,10 @@ prnVersion() {
 	echo -e $values >> $outFile
 }
 
-# this will uniformily format the output that is put into the JOURNAL file
+# this will uniformily format the output that is put into the JOURNAL
+# file. The following bash command can be used to strip off the time
+# stamp and generate a executable bash file:
+# cat analysis.log | awk -F\\t '{print \$2}'
 prnCmd() {
 	if [[ $1 == *"# BEGIN:"* ]]; then
 		# copy to console
