@@ -42,10 +42,6 @@ VERSION=2.0.0-alpha
 # $SAMPLE/MODULE/VERSION)
 VERSION_FILE="versions"
 
-# all commands will be output to this file as a report of what was
-# done. The file will be located in the $SAMPLE directory.
-JOURNAL="analysis.log"
-
 DEBUG=false   # disable commands when true, use to see what commands would be run.
 
 # output every line of code to the console when running
@@ -99,11 +95,10 @@ esac
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 # LOAD MODULES
-# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
 for module in "${MODULES[@]}"; do
 	source ngs_${module}.sh
 done
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 ###############################################################################################
 # HELPER FUNCTIONS
@@ -218,9 +213,8 @@ shift  # shift removes $1 (ie COMMAND) from the argument list
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 # PROCESS MODULE'S ARGUMENT FUNCTION
-# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
 ngsArgs_${COMMAND} $@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 # if we've gotten to this point and $SAMPLE is not set, then something
 # went wrong and abort
@@ -236,17 +230,33 @@ fi
 # remove trailing "/" from $SAMPLE, if present
 SAMPLE="${SAMPLE%/}"
 
-# adjust the location of the JOURNAL file, now that we know the SAMPLE
-JOURNAL="$SAMPLE/$JOURNAL"
 # adjust the name of the VERSION file, now that we know the SAMPLE
 VERSION_FILE="$SAMPLE.${VERSION_FILE}"
 
-# create output directory first. This needs to happen prior to using
-# the prnCmd() function, so we can create the output file ($JOURNAL)
-# that is used by prnCmd. This happens even during debugging because
-# this directory is where the $JOURNAL file is located by default.
+# create output directory
 if [[ ! -d $SAMPLE ]]; then
 	mkdir $SAMPLE
+fi
+
+# create log directory. This needs to happen prior to using the
+# prnCmd() function, so we can create the output file ($JOURNAL) that
+# is used by prnCmd. This happens even during debugging because this
+# directory is where the $JOURNAL file is located by default.
+if [[ ! -d $SAMPLE/log ]]; then
+	mkdir $SAMPLE/log
+fi
+
+# set the location of the JOURNAL file, now that we know the SAMPLE
+# and COMMAND. We use a date-time stamp plus the module name. The file
+# will be located in the $SAMPLE/log directory. We don't use a ":" in
+# the timestamp because Mac file systems don't allow colons in file
+# names.
+JOURNAL="$SAMPLE/log/$(date +%Y-%m-%d_%H-%M).$COMMAND.log"
+
+# If journal file already exists, then regenerate the filename using
+# seconds.
+if [ -f $JOURNAL ]; then
+	JOURNAL="$SAMPLE/log/$(date +%Y-%m-%d_%H-%M-%S).$COMMAND.log"
 fi
 
 # STATS shouldn't write anything to the log file
@@ -263,7 +273,6 @@ fi
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 # RUN MODULE'S COMMAND FUNCTION
-# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
 ngsCmd_${COMMAND}
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 

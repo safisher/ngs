@@ -163,7 +163,7 @@ ngsCmd_TRIM() {
 	fi
 
 	# run error checking
-	ngsErrorChk_TRIM $@
+	if ! $DEBUG; then ngsErrorChk_TRIM $@; fi
 
 	if $SE; then prnCmd "# FINISHED: TRIMMING SINGLE-END"
 	else prnCmd "# FINISHED: TRIMMING PAIRED-END"; fi

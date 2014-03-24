@@ -92,7 +92,7 @@ ngsCmd_FASTQC() {
 	fi
 	
     # print version info in $SAMPLE directory
-	prnCmd "# `fastqc -v | awk '{print \$2}' | sed s/v//`"
+	prnCmd "# fastqc -v | awk '{print \$2}' | sed s/v//"
 	if ! $DEBUG; then 
 		# gets this: "-Xmx250m-Dfastqc.show_version=true-Djava.awt.headless=trueFastQC v0.10.1"
 		# returns this: "0.10.1"
