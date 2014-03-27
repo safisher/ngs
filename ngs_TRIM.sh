@@ -123,9 +123,9 @@ ngsCmd_TRIM() {
 	fi
 	
     # print version info in $SAMPLE directory
-	prnCmd "# trimReads.py version: trimReads.py -v"
+	prnCmd "# trimReads.py version: trimReads.py -v 2>&1"
 	if ! $DEBUG; then 
-		ver=$(trimReads.py -v)
+		ver=$(trimReads.py -v 2>&1)
 		prnVersion "trim" "program\tversion" "trimReads.py\t$ver"
 	fi
 
