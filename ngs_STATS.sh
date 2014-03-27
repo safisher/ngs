@@ -30,11 +30,12 @@ NGS_USAGE+="Usage: `basename $0` stats OPTIONS modules sampleID    --  print sta
 ##########################################################################################
 
 ngsHelp_STATS() {
-	echo -e "Usage:\n\t`basename $0` stats [-v] modules sampleID"
+	echo -e "Usage:\n\t`basename $0` stats [-verbose] [-versions] modules sampleID"
 	echo -e "Input:\n\tmodule specific"
 	echo -e "Output:\n\tprinting to console"
 	echo -e "Options:"
-	echo -e "\t-v - verbose printing of alignment stats (default: off)."
+	echo -e "\t-verbose - print extra information to the terminal (default: off)."
+	echo -e "\t-versions - prepend each module's stats with program and pipeline version information (default: off)."
 	echo -e "\tmodules - comma separated, ordered list of modules to include for stats (must not include spaces).\n"
 	echo -e "Prints stats for user-specified list of modules. The stats will be tab delimited so they can be copy-pasted into an Excel table. This will not write to the analysis.log file."
 }
@@ -46,6 +47,7 @@ ngsHelp_STATS() {
 
 # we assume this should only print the essential data as tab-delimited key:value pairs
 ngsLocal_STATS_VERBOSE="false"
+ngsLocal_STATS_VERSIONS="false"
 ngsLocal_STATS_MODULES=""
 
 ##########################################################################################
@@ -59,7 +61,10 @@ ngsArgs_STATS() {
 	# getopts doesn't allow for optional arguments so handle them manually
 	while true; do
 		case $1 in
-			-v) ngsLocal_STATS_VERBOSE=true
+			-verbose) ngsLocal_STATS_VERBOSE=true
+				shift;
+				;;
+			-versions) ngsLocal_STATS_VERSIONS=true
 				shift;
 				;;
 			-*) printf "Illegal option: '%s'\n" "$1"
@@ -102,12 +107,26 @@ ngsCmd_STATS() {
 	local IFS=" "
 	
 	# convert module names to upper case
-	ngsLocal_STATS_MODULES=$( echo $ngsLocal_STATS_MODULES | tr "[a-z]" "[A-Z]" )
+	ngsLocal_STATS_MODULES=$(echo $ngsLocal_STATS_MODULES | tr "[a-z]" "[A-Z]")
 
 	# step through each user-specified module and call the module's
 	# ngsStats_MODULE() function.
 	for module in ${ngsLocal_STATS_MODULES//,/ }; do
 		if $ngsLocal_STATS_VERBOSE; then echo "# EXTRACTING $module STATS"; fi
+
+		# if required, include the contents of module.versions in the
+		# stats output
+		if $ngsLocal_STATS_VERSIONS; then
+			# need module name in lowercase 
+			local mod=$(echo $module | tr "[A-Z]" "[a-z]")
+			local vFile="$SAMPLE/$mod/$SAMPLE.versions"
+
+			vHeader=$(head -1 $vFile)
+			header="$header\t$vHeader"
+			vValues=$(tail -1 $vFile)
+			values="$values\t$vValues"
+		fi
+
 		header="$header\t$(ngsStats_$module 'header')"
 		values="$values\t$(ngsStats_$module 'values')"
 	done
