@@ -29,6 +29,8 @@ import sys, os
 DEBUG = False
 if DEBUG: print 'DEBUG MODE: ON'
 
+VERSION = '1.0'
+
 # expect 3 args
 if len(sys.argv) < 4:
     print 'Usage: python parseBlast.py targetSpecies readsFastaFile blastFile'
@@ -296,6 +298,7 @@ while True:
 # Output counts to species file
 #------------------------------------------------------------------------------------------
 
+speciesFile.write('parseBlast.py version: ' + VERSION + '\n')
 speciesFile.write('Target Species: ' + targetSpecies + '\n')
 speciesFile.write('Num reads: ' + str(numReads) + '\n')
 speciesFile.write('Num reads that did not align: ' + str(numFails) + '\n')

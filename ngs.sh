@@ -81,11 +81,12 @@ set -o nounset
 # get OS name. 
 OS_VERSION=$(uname)
 # If OS isn't "Darwin" (Mac) then assume "Linux" (RedHat /
-# Centos). Other OS versions could be added here. Grep on the Mac (and
-# likely BSD) does not have a "-P" option ("perl-regexp"). We use the
-# "-P" option on Linux at various places.
+# Centos). Other OS versions could be added here. 
 case ${OS_VERSION} in
 	Darwin)
+		# Grep on the Mac (and likely BSD) does not have a "-P" option
+		# ("perl-regexp"). We use the "-P" option on Linux at various
+		# places.
 		GREPP="grep"
 		;;
 	*)
