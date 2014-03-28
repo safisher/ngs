@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 
 # Copyright (c) 2012-2014 Stephen Fisher and Junhyong Kim, University of
 # Pennsylvania.  All Rights Reserved.
@@ -69,14 +69,18 @@ NGS_USAGE=""
 # default is paired-end.
 SE=false  
 
-# make comparisons case insensitive. Need to use [[ and ]] in if
-# conditionals, rather than [ and ].
-shopt -s nocasematch
+# cause the application to crash if any command generates an
+# error. This is equivalent to the "-e" flag.
+set -o errexit
 
 # cause an error to happen if trying to use an unset variable. We
 # don't use the -u option when launching bash above as that may cause
 # bash initialization scripts to error.
 set -o nounset
+
+# make comparisons case insensitive. Need to use [[ and ]] in if
+# conditionals, rather than [ and ].
+shopt -s nocasematch
 
 # get OS name. 
 OS_VERSION=$(uname)
@@ -87,7 +91,7 @@ case ${OS_VERSION} in
 		# Grep on the Mac (and likely BSD) does not have a "-P" option
 		# ("perl-regexp"). We use the "-P" option on Linux at various
 		# places.
-		GREPP="grep"
+		GREPP="egrep"
 		;;
 	*)
 		GREPP="grep -P"

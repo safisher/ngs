@@ -120,24 +120,39 @@ ngsCmd_HTSEQ() {
 		runHTSeq.py $SAMPLE/$ngsLocal_HTSEQ_INP_DIR/$ngsLocal_HTSEQ_INP_FILE $SAMPLE/htseq/$SAMPLE $HTSEQ_REPO/$SPECIES.gz
 	fi
 	
+	prnCmd "# splitting output file into counts, log, and error files"
 	# parse output into three files: gene counts ($SAMPLE.htseq.cnts.txt), 
 	# warnings ($SAMPLE.htseq.err.txt), log ($SAMPLE.htseq.log.txt)
-	prnCmd "# splitting output file into counts, log, and error files"
-	prnCmd "grep 'Warning' $SAMPLE/htseq/$SAMPLE.htseq.out > $SAMPLE/htseq/$SAMPLE.htseq.err.txt"
-	prnCmd "grep -v 'Warning' $SAMPLE/htseq/$SAMPLE.htseq.out > $SAMPLE/htseq/tmp.txt"
-	prnCmd "echo -e 'gene\tcount' > $SAMPLE/htseq/$SAMPLE.htseq.cnts.txt"
-	prnCmd "$GREPP '\t' $SAMPLE/htseq/tmp.txt | $GREPP -v 'no_feature|ambiguous|too_low_aQual|not_aligned|alignment_not_unique' >> $SAMPLE/htseq/$SAMPLE.htseq.cnts.txt"
-	prnCmd "$GREPP -v '\t' $SAMPLE/htseq/tmp.txt > $SAMPLE/htseq/$SAMPLE.htseq.log.txt"
-	prnCmd "$GREPP 'no_feature|ambiguous|too_low_aQual|not_aligned|alignment_not_unique' $SAMPLE/htseq/tmp.txt >> $SAMPLE/htseq/$SAMPLE.htseq.log.txt"
-	prnCmd "rm $SAMPLE/htseq/$SAMPLE.htseq.out $SAMPLE/htseq/tmp.txt"
 	if ! $DEBUG; then 
-		grep 'Warning' $SAMPLE/htseq/$SAMPLE.htseq.out > $SAMPLE/htseq/$SAMPLE.htseq.err.txt
-		grep -v 'Warning' $SAMPLE/htseq/$SAMPLE.htseq.out > $SAMPLE/htseq/tmp.txt
+		# only generate error file if Warnings exist. If we run grep
+		# and it doesn't find any matches then it will exit with an
+		# error code which would cause the program to crash since we
+		# use "set -o errexit"
+		local containsWarnings=$(grep -c 'Warning' $SAMPLE/htseq/$SAMPLE.htseq.out)
+		if [[ $containsWarnings -gt 0 ]]; then
+			prnCmd "grep 'Warning' $SAMPLE/htseq/$SAMPLE.htseq.out > $SAMPLE/htseq/$SAMPLE.htseq.err.txt"
+			grep 'Warning' $SAMPLE/htseq/$SAMPLE.htseq.out > $SAMPLE/htseq/$SAMPLE.htseq.err.txt
+
+			prnCmd "grep -v 'Warning' $SAMPLE/htseq/$SAMPLE.htseq.out > $SAMPLE/htseq/tmp.txt"
+			grep -v 'Warning' $SAMPLE/htseq/$SAMPLE.htseq.out > $SAMPLE/htseq/tmp.txt
+		else
+			prnCmd "mv $SAMPLE/htseq/$SAMPLE.htseq.out $SAMPLE/htseq/tmp.txt"
+			cp $SAMPLE/htseq/$SAMPLE.htseq.out $SAMPLE/htseq/tmp.txt
+		fi
+
+		prnCmd "echo -e 'gene\tcount' > $SAMPLE/htseq/$SAMPLE.htseq.cnts.txt"
 		echo -e 'gene\tcount' > $SAMPLE/htseq/$SAMPLE.htseq.cnts.txt
+
+		prnCmd "$GREPP '\t' $SAMPLE/htseq/tmp.txt | $GREPP -v 'no_feature|ambiguous|too_low_aQual|not_aligned|alignment_not_unique' >> $SAMPLE/htseq/$SAMPLE.htseq.cnts.txt"
 		$GREPP '\t' $SAMPLE/htseq/tmp.txt | $GREPP -v 'no_feature|ambiguous|too_low_aQual|not_aligned|alignment_not_unique' >> $SAMPLE/htseq/$SAMPLE.htseq.cnts.txt
+
+		prnCmd "$GREPP -v '\t' $SAMPLE/htseq/tmp.txt > $SAMPLE/htseq/$SAMPLE.htseq.log.txt"
 		$GREPP -v '\t' $SAMPLE/htseq/tmp.txt > $SAMPLE/htseq/$SAMPLE.htseq.log.txt
+
+		prnCmd "$GREPP 'no_feature|ambiguous|too_low_aQual|not_aligned|alignment_not_unique' $SAMPLE/htseq/tmp.txt >> $SAMPLE/htseq/$SAMPLE.htseq.log.txt"
 		$GREPP 'no_feature|ambiguous|too_low_aQual|not_aligned|alignment_not_unique' $SAMPLE/htseq/tmp.txt >> $SAMPLE/htseq/$SAMPLE.htseq.log.txt
 
+		prnCmd "rm $SAMPLE/htseq/$SAMPLE.htseq.out $SAMPLE/htseq/tmp.txt"
 		rm $SAMPLE/htseq/$SAMPLE.htseq.out $SAMPLE/htseq/tmp.txt
 	fi
 	
