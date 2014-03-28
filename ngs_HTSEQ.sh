@@ -50,7 +50,7 @@ ngsHelp_HTSEQ() {
 ##########################################################################################
 
 ngsLocal_HTSEQ_INP_DIR="star"
-ngsLocal_HTSEQ_INP_FILE="STAR_Unique.bam"
+ngsLocal_HTSEQ_INP_FILE="$SAMPLE.star.unique.bam"
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
