@@ -128,7 +128,7 @@ ngsCmd_PIPELINE() {
 		ngsCmd_TRIM
 		# Need different args to run FastQC on the trimmed data, so adjust
 		# args by calling ngsArgs_FASTQC() prior to running ngsCmd_FASTQC().
-		ngsArgs_FASTQC -i trim -o trim.fastqc $SAMPLE
+		ngsArgs_FASTQC -i trim -o fastqc.trim $SAMPLE
 		ngsCmd_FASTQC
 		ngsCmd_STAR
 		ngsCmd_HTSEQ
@@ -147,7 +147,7 @@ ngsCmd_PIPELINE() {
 		# disable poly-A/T trimming for WGS
 		ngsArgs_TRIM -rAT 0 -c $REPO_LOCATION/trim/contaminantsMITO.fa $SAMPLE
 		ngsCmd_TRIM
-		ngsArgs_FASTQC -i trim -o trim.fastqc $SAMPLE
+		ngsArgs_FASTQC -i trim -o fastqc.trim $SAMPLE
 		ngsCmd_FASTQC
 		ngsCmd_BOWTIE
 		ngsCmd_SNP

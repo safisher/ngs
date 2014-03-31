@@ -37,13 +37,12 @@ NGS_USAGE+="Usage: `basename $0` trim OPTIONS sampleID    --  trim adapter and p
 ##########################################################################################
 
 ngsHelp_TRIM() {
-	echo -e "Usage: `basename $0` trim [-i inputDir] [-o outputDir] [-c contaminantsFile] [-m minLen] [-kN] [-rAT numBases] [-se] sampleID"
+	echo -e "Usage: `basename $0` trim [-i inputDir] [-c contaminantsFile] [-m minLen] [-kN] [-rAT numBases] [-se] sampleID"
 	echo -e "Input:\n\t$REPO_LOCATION/trim/contaminants.fa (file containing contaminants)\n\tsampleID/inputDir/unaligned_1.fq\n\tsampleID/inputDir/unaligned_2.fq (paired-end reads)"
-	echo -e "Output:\n\tsampleID/outputDir/unaligned_1.fq\n\tsampleID/outputDir/unaligned_2.fq (paired-end reads)\n\tsampleID/outputDir/sampleID.trim.stats.txt\n\tsampleID/outputDir/contaminants.fa (contaminants file)"
+	echo -e "Output:\n\tsampleID/trim/unaligned_1.fq\n\tsampleID/trim/unaligned_2.fq (paired-end reads)\n\tsampleID/trim/sampleID.trim.stats.txt\n\tsampleID/trim/contaminants.fa (contaminants file)"
 	echo -e "Requires:\n\ttrimReads.py ( https://github.com/safisher/ngs )"
 	echo -e "Options:"
 	echo -e "\t-i inputDir - location of source files (default: orig)."
-	echo -e "\t-i outputDir - location of source files (default: trim)."
 	echo -e "\t-c contaminantsFile - file containing contaminants to be trimmed (default: $REPO_LOCATION/trim/contaminants.fa)."
 	echo -e "\t-m minLen - Minimum size of trimmed read. If trimmed beyond minLen, then read is discarded. If read is paired then read is replaced with N's, unless both reads in pair are smaller than minLen in which case the pair is discarded. (default: 20)."
 	echo -e "\t-kN - do not trim N's from either end of the reads (default: remove N's)."
@@ -58,7 +57,6 @@ ngsHelp_TRIM() {
 ##########################################################################################
 
 ngsLocal_TRIM_INP_DIR="orig"
-ngsLocal_TRIM_OUT_DIR="trim"
 ngsLocal_TRIM_CONTAMINANTS_FILE="$REPO_LOCATION/trim/contaminants.fa"
 ngsLocal_TRIM_MINLEN="20"
 ngsLocal_TRIM_POLYAT_BASES="26"
@@ -76,9 +74,6 @@ ngsArgs_TRIM() {
 	while true; do
 		case $1 in
 			-i) ngsLocal_TRIM_INP_DIR=$2
-				shift; shift;
-				;;
-			-o) ngsLocal_TRIM_OUT_DIR=$2
 				shift; shift;
 				;;
 			-c) ngsLocal_TRIM_CONTAMINANTS_FILE=$2
@@ -117,9 +112,9 @@ ngsCmd_TRIM() {
 	else prnCmd "# BEGIN: TRIMMING PAIRED-END"; fi
 		
 	# make relevant directory
-	if [ ! -d $SAMPLE/$ngsLocal_TRIM_OUT_DIR ]; then 
-		prnCmd "mkdir $SAMPLE/$ngsLocal_TRIM_OUT_DIR"
-		if ! $DEBUG; then mkdir $SAMPLE/$ngsLocal_TRIM_OUT_DIR; fi
+	if [ ! -d $SAMPLE/trim ]; then 
+		prnCmd "mkdir $SAMPLE/trim"
+		if ! $DEBUG; then mkdir $SAMPLE/trim; fi
 	fi
 	
     # print version info in $SAMPLE directory
@@ -143,23 +138,23 @@ ngsCmd_TRIM() {
 
 	if $SE; then
 		# single-end
-		prnCmd "trimReads.py -m $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/$ngsLocal_TRIM_OUT_DIR/unaligned > $SAMPLE/$ngsLocal_TRIM_OUT_DIR/$SAMPLE.trim.stats.txt"
+		prnCmd "trimReads.py -m $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt"
 		if ! $DEBUG; then 
-			trimReads.py -m $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/$ngsLocal_TRIM_OUT_DIR/unaligned > $SAMPLE/$ngsLocal_TRIM_OUT_DIR/$SAMPLE.trim.stats.txt
+			trimReads.py -m $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt
 		fi
 		
 	else
 		# paired-end
-		prnCmd "trimReads.py -p -m $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/$ngsLocal_TRIM_OUT_DIR/unaligned > $SAMPLE/$ngsLocal_TRIM_OUT_DIR/$SAMPLE.trim.stats.txt"
+		prnCmd "trimReads.py -p -m $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt"
 		if ! $DEBUG; then 
-			trimReads.py -p -m $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/orig/unaligned_2.fq -o $SAMPLE/$ngsLocal_TRIM_OUT_DIR/unaligned > $SAMPLE/$ngsLocal_TRIM_OUT_DIR/$SAMPLE.trim.stats.txt
+			trimReads.py -p -m $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/orig/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt
 		fi
 	fi
 	
 	# copy contaminants files into trim directory for future reference
-	prnCmd "cp $ngsLocal_TRIM_CONTAMINANTS_FILE $SAMPLE/$ngsLocal_TRIM_OUT_DIR/."
+	prnCmd "cp $ngsLocal_TRIM_CONTAMINANTS_FILE $SAMPLE/trim/."
 	if ! $DEBUG; then
-		cp $ngsLocal_TRIM_CONTAMINANTS_FILE $SAMPLE/$ngsLocal_TRIM_OUT_DIR/.
+		cp $ngsLocal_TRIM_CONTAMINANTS_FILE $SAMPLE/trim/.
 	fi
 
 	# run error checking
@@ -178,7 +173,7 @@ ngsErrorChk_TRIM() {
 	prnCmd "# TRIM ERROR CHECKING: RUNNING"
 
 	inputFile_1="$SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq"
-	outputFile_1="$SAMPLE/$ngsLocal_TRIM_OUT_DIR/unaligned_1.fq"
+	outputFile_1="$SAMPLE/trim/unaligned_1.fq"
 
 	if $SE; then
 		# make sure expected output file exists and is not empty
@@ -192,7 +187,7 @@ ngsErrorChk_TRIM() {
 	else
 		# paired-end
 		inputFile_2="$SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq"
-		outputFile_2="$SAMPLE/$ngsLocal_TRIM_OUT_DIR/unaligned_2.fq"
+		outputFile_2="$SAMPLE/trim/unaligned_2.fq"
 
 		# make sure expected output files exists
 		if [[ ! -s $outputFile_1 || ! -s $outputFile_2 ]]; then

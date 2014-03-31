@@ -37,7 +37,7 @@ ngsHelp_FASTQC() {
 	echo -e "Requires:\n\tFastQC ( http://www.bioinformatics.babraham.ac.uk/projects/fastqc/ )"
 	echo -e "Options:"
 	echo -e "\t-i inputDir - location of source file (default: orig)."
-	echo -e "\t-i outputDir - location of output files (default: orig.fastqc).\n"
+	echo -e "\t-i outputDir - location of output files (default: fastqc). If this is changed from the default, then it will not be accessible by the STATS module.\n"
 	echo -e "Run FastQC on sampleID/inputDir/unaligned_1.fq file. FastQC only uses one input file so the unaligned_1.fq file is used whether the data is single- or pair-end."
 }
 
@@ -47,7 +47,7 @@ ngsHelp_FASTQC() {
 ##########################################################################################
 
 ngsLocal_FASTQC_INP_DIR="orig"
-ngsLocal_FASTQC_OUT_DIR="orig.fastqc"
+ngsLocal_FASTQC_OUT_DIR="fastqc"
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -97,7 +97,7 @@ ngsCmd_FASTQC() {
 		# gets this: "-Xmx250m-Dfastqc.show_version=true-Djava.awt.headless=trueFastQC v0.10.1"
 		# returns this: "0.10.1"
 		ver=$(fastqc -v | awk '{print $2}' | sed s/v//)
-		prnVersion "fastqc" "program\tversion" "fastqc\t$ver"
+		prnVersion "$ngsLocal_FASTQC_OUT_DIR" "program\tversion" "fastqc\t$ver"
 	fi
 	
     # run fastqc
