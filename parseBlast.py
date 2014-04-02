@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright (c) 2011,2012,2013, Stephen Fisher and Junhyong Kim, University of
+# Copyright (c) 2011-2014, Stephen Fisher and Junhyong Kim, University of
 # Pennsylvania.  All Rights Reserved.
 #
 # You may not use this file except in compliance with the Kim Lab License
@@ -15,7 +15,7 @@
 # under the License.
 
 """
-by: S. Fisher, 2011
+by: S. Fisher, 2011,2014
 
 Usage: python parseBlast.py targetSpecies readsFastaFile blastFile
 """
@@ -29,14 +29,15 @@ import sys, os
 DEBUG = False
 if DEBUG: print 'DEBUG MODE: ON'
 
-VERSION = '1.0'
+VERSION = '1.1'
 
 # expect 3 args
 if len(sys.argv) < 4:
     print 'Usage: python parseBlast.py targetSpecies readsFastaFile blastFile'
     print '\ttargetSpecies - reads mapped to this species will not be counted for other species. Target species must be one of the following species: bact, fish, fly, human, mouse, rat, yeast'
     print '\tblast.csv - list of each hit per read and count of total number of hits per read'
-    print '\tblast.hits - the alignments, when there is more than one alignment for a read'
+    print '\treads.counted.txt - all alignments for reads that mapped to at least one of the target species'
+    print '\treads.notCounted.txt - all alignments for reads that did not map to any target species'
     print '\tfailed.fa - fasta file with reads that did not align'
     print '\tfailed.tsv - blast results for read that did not map to any of the counted species'
     print '\tspeciesCounts.txt - species counts'
@@ -55,7 +56,8 @@ if len(BLAST_PATH) > 0:
 rawFile = open(RAW_FILE, 'r')
 blastFile = open(BLAST_FILE, 'r')
 csvFile = open(BLAST_PATH+'blast.csv', 'w')
-hitFile = open(BLAST_PATH+'blast.hits', 'w')
+hitFile = open(BLAST_PATH+'reads.counted.txt', 'w')
+missFile = open(BLAST_PATH+'reads.notCounted.txt', 'w')
 failedFile = open(BLAST_PATH+'failed.fa', 'w')
 uncountedFile = open(BLAST_PATH+'uncounted.tsv', 'w')
 speciesFile = open(BLAST_PATH+'speciesCounts.txt', 'w')
@@ -83,6 +85,7 @@ def error(line):
     blastFile.close()
     csvFile.close()
     hitFile.close()
+    missFile.close()
     failedFile.close()
     uncountedFile.close()
     speciesFile.close()
@@ -102,6 +105,65 @@ def getRaw():
     line1 = rawFile.readline()
     if not line1: error(line1)
     return line1.rstrip(), line0.rstrip()
+
+def writeAlignments(outputFile):
+    # output alignment info to outputFile
+    outputFile.write('------------------------------------------------------------------------------------\n' )
+    outputFile.write(query)
+    for hit in range(0, hits):
+        # step through until we find an alignment
+        while True:
+            line = getLine()
+
+            # stop when we get to the alignment
+            if '>' in line: break
+
+            # if we don't find any alignments, then there's a problem with the blast file
+            if 'Effective search space used' in line: error(line)
+
+        # get alignement descriptor. It might be multiple lines and
+        # will always begin with a '>' and end with a line with the length
+        desc = ''
+        while not 'Length=' in line:
+            desc += line + ' '
+            line = getLine()
+        if len(desc) > 80: desc = desc[:77] + '...'
+        outputFile.write('\n   ' + desc + '\n')
+
+        # skip blank line
+        getLine()
+
+        # print line with E value
+        line = getLine()
+        outputFile.write('  ' + line + '\n')
+
+        # print line with Identities and Gaps
+        line = getLine()
+        line = line.replace('(', '')
+        line = line.replace('%)', ' ')
+        line = line.replace('/', ' ')
+        vals = line.split()
+
+        # skip next 2 lines
+        for cnt in range(0, 2): getLine()
+
+        # an alignment has 3 lines
+        for cnt in range(0, 3): 
+            line = getLine()
+            outputFile.write('      ' + line + '\n')
+        
+        # skip blank line
+        line = getLine()
+
+        # test if the alignment continues
+        line = getLine()
+        if 'Query' in line:
+            outputFile.write('\n')
+            for cnt in range(0, 3): 
+                outputFile.write('      ' + line + '\n')
+                line = getLine()
+
+    outputFile.write('\n')
 
 #------------------------------------------------------------------------------------------
 # Do counts
@@ -166,6 +228,9 @@ while True:
     # count number of hits for the read
     hits = 0
 
+    # flag if we didn't count the read mapping
+    hitNotCounted = False
+
     # when species is found then save the line so we can output to
     # targetFile (in the case of the target species). This also
     # servers to flag when a species has already been counted, so we
@@ -186,7 +251,7 @@ while True:
         lLine = line.lower() # test lowercase version of line
 
         # keep first mapping as that will be the best mapping
-        if 'bacter' in lLine: 
+        if ('bacter' in lLine) or ('coli' in lLine): 
             if 'bact' not in found: found['bact'] = line
         elif ('zebrafish' in lLine) or ('danio' in lLine) or ('rerio' in lLine):
             if 'fish' not in found: found['fish'] = line
@@ -219,9 +284,9 @@ while True:
                 counts[species] += 1
         else:
             numNotCounted += 1
+            hitNotCounted = True
             uncountedFile.write(line + '\t' + rawSeq + '\t' + seqHeader + '\n')
             
-
     if DEBUG: print '  Hits:', hits
     csvFile.write(str(hits) + ', ' + rawSeq + ', ' + seqHeader + '\n')
 
@@ -229,70 +294,17 @@ while True:
     if hits > 0: numHits += 1
 
     ###############################################
+    # process multiple alignments
+
     # XXX If this is set to '<2' then only multiple alignments will be included in hits file
     # if no alignments, then start on next query
     if hits == 0: continue
+    
+    if hitNotCounted: 
+        writeAlignments(missFile)
+    else: 
+        writeAlignments(hitFile)
 
-    ###############################################
-    # process multiple alignments
-
-    # output alignment info to hitFile
-    hitFile.write('------------------------------------------------------------------------------------\n' )
-    hitFile.write(query)
-    for hit in range(0, hits):
-        # step through until we find an alignment
-        while True:
-            line = getLine()
-
-            # stop when we get to the alignment
-            if '>' in line: break
-
-            # if we don't find any alignments, then there's a problem with the blast file
-            if 'Effective search space used' in line: error(line)
-
-        # get alignement descriptor. It might be multiple lines and
-        # will always begin with a '>' and end with a line with the length
-        desc = ''
-        while not 'Length=' in line:
-            desc += line + ' '
-            line = getLine()
-        if len(desc) > 80: desc = desc[:77] + '...'
-        hitFile.write('\n   ' + desc + '\n')
-
-        # skip blank line
-        getLine()
-
-        # print line with E value
-        line = getLine()
-        hitFile.write('  ' + line + '\n')
-
-        # print line with Identities and Gaps
-        line = getLine()
-        line = line.replace('(', '')
-        line = line.replace('%)', ' ')
-        line = line.replace('/', ' ')
-        vals = line.split()
-
-        # skip next 2 lines
-        for cnt in range(0, 2): getLine()
-
-        # an alignment has 3 lines
-        for cnt in range(0, 3): 
-            line = getLine()
-            hitFile.write('      ' + line + '\n')
-        
-        # skip blank line
-        line = getLine()
-
-        # test if the alignment continues
-        line = getLine()
-        if 'Query' in line:
-            hitFile.write('\n')
-            for cnt in range(0, 3): 
-                hitFile.write('      ' + line + '\n')
-                line = getLine()
-
-    hitFile.write('\n')
 
 #------------------------------------------------------------------------------------------
 # Output counts to species file
@@ -329,6 +341,7 @@ rawFile.close()
 blastFile.close()
 csvFile.close()
 hitFile.close()
+missFile.close()
 failedFile.close()
 uncountedFile.close()
 speciesFile.close()
