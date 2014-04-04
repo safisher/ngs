@@ -201,9 +201,9 @@ starPostProcessing() {
 	fi
 	
 	# rename output stats file to conform to other modules
-	prnCmd "mv $SAMPLE/star/Log.final.out $SAMPLE/star/$SAMPLE.star.stats.txt"
+	prnCmd "mv Log.final.out $SAMPLE.star.stats.txt"
 	if ! $DEBUG; then
-		mv $SAMPLE/star/Log.final.out $SAMPLE/star/$SAMPLE.star.stats.txt
+		mv Log.final.out $SAMPLE.star.stats.txt
 	fi
 	
 	# return to proper directory and restore $JOURNAL
