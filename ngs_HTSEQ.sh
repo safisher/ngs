@@ -111,7 +111,7 @@ ngsCmd_HTSEQ() {
 	# if the user didn't provide an input file then set it to the
 	# default
 	if [[ -z "$ngsLocal_HTSEQ_INP_FILE" ]]; then 
-		$ngsLocal_HTSEQ_INP_FILE="$SAMPLE.star.unique.bam"
+		ngsLocal_HTSEQ_INP_FILE="$SAMPLE.star.unique.bam"
 	fi
 
 	# We assume that the alignment file exists
