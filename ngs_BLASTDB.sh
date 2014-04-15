@@ -80,9 +80,9 @@ ngsCmd_BLASTDB() {
 	else prnCmd "# BEGIN: CREATE BLAST DATABASE PAIRED-END"; fi
 	
 	# make relevant directory
-	if [ ! -d $SAMPLE/blast.db ]; then 
-		prnCmd "mkdir $SAMPLE/blast.db"
-		if ! $DEBUG; then mkdir $SAMPLE/blast.db; fi
+	if [ ! -d $SAMPLE/blastdb ]; then 
+		prnCmd "mkdir $SAMPLE/blastdb"
+		if ! $DEBUG; then mkdir $SAMPLE/blastdb; fi
 	fi
 	
 	prnCmd "# blastn version: makeblastdb -version | tail -1 | awk '{print \$3}' | sed s/,//"
@@ -94,15 +94,15 @@ ngsCmd_BLASTDB() {
 	fi
 
 	# Convert orig/fastq files into single fasta file (raw.fa)
-	prnCmd "awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,\">\");print}; if(P==4)P=0; P++}' $SAMPLE/orig/unaligned_1.fq > $SAMPLE/blast.db/raw.fa"
+	prnCmd "awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,\">\");print}; if(P==4)P=0; P++}' $SAMPLE/orig/unaligned_1.fq > $SAMPLE/blastdb/raw.fa"
 	if ! $DEBUG; then 
-		awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,">");print}; if(P==4)P=0; P++}' $SAMPLE/orig/unaligned_1.fq > $SAMPLE/blast.db/raw.fa
+		awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,">");print}; if(P==4)P=0; P++}' $SAMPLE/orig/unaligned_1.fq > $SAMPLE/blastdb/raw.fa
 	fi
 	if ! $SE; then
 		# only necessary for paired-end
-		prnCmd "awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,\">\");print}; if(P==4)P=0; P++}' $SAMPLE/orig/unaligned_2.fq >> $SAMPLE/blast.db/raw.fa"
+		prnCmd "awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,\">\");print}; if(P==4)P=0; P++}' $SAMPLE/orig/unaligned_2.fq >> $SAMPLE/blastdb/raw.fa"
 		if ! $DEBUG; then 
-			awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,">");print}; if(P==4)P=0; P++}' $SAMPLE/orig/unaligned_2.fq >> $SAMPLE/blast.db/raw.fa
+			awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,">");print}; if(P==4)P=0; P++}' $SAMPLE/orig/unaligned_2.fq >> $SAMPLE/blastdb/raw.fa
 		fi
 	fi
 	
@@ -115,9 +115,9 @@ ngsCmd_BLASTDB() {
 	prnCmd "JOURNAL_SAV=$JOURNAL"
 	JOURNAL_SAV=$JOURNAL
 	
-	prnCmd "cd $SAMPLE/blast.db"
+	prnCmd "cd $SAMPLE/blastdb"
 	if ! $DEBUG; then 
-		cd $SAMPLE/blast.db
+		cd $SAMPLE/blastdb
 		
 		JOURNAL=../../$JOURNAL
 		prnCmd "JOURNAL=../../$JOURNAL"
