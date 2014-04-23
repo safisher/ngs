@@ -1,6 +1,6 @@
-## ngs: Next Generation Sequencing Pipeline
+## PennSCAP-T Pipeline
 
-ngs is designed to automate the processing of next generation sequencing data. See Wiki for documentation.
+PennSCAP-T Pipeline is designed to automate the processing of next generation sequencing data. See Wiki for documentation.
 
 https://github.com/safisher/ngs/wiki
 
