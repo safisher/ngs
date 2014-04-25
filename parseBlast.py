@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Copyright (c) 2011-2014, Stephen Fisher and Junhyong Kim, University of
 # Pennsylvania.  All Rights Reserved.
