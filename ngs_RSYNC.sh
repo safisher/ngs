@@ -16,7 +16,7 @@
 
 ##########################################################################################
 # INPUT: n/a
-# OUTPUT: all subdirectories and files in $SAMPLE except 'orig' are copied to $outputDir\$SAMPLE
+# OUTPUT: all subdirectories and files in $SAMPLE except 'init' are copied to $outputDir\$SAMPLE
 ##########################################################################################
 
 ##########################################################################################
@@ -31,10 +31,10 @@ NGS_USAGE+="Usage: `basename $0` rsync OPTIONS sampleID    --  copy data to anal
 
 ngsHelp_RSYNC() {
 	echo -e "Usage:\n\t`basename $0` rsync [-o outputDir] sampleID"
-	echo -e "Output\n\tall subdirectories in sampleID except 'orig' are copied to $ANALYZED\sampleID"
+	echo -e "Output\n\tall subdirectories in sampleID except 'init' are copied to $ANALYZED\sampleID"
 	echo -e "Options:"
 	echo -e "\t-o - directory containing subdirectory with analysis files (default: ./analyzed). This is the parent directory of the sample-specific directory. The sampleID will be used to complete the directory path (ie outputDir/sampleID).\n"
-	echo -e "Copies all data to 'outputDir/sampleID' directory. This will not copy the files in the sampleID/orig directory. Rsync is run twice as a consistency check."
+	echo -e "Copies all data to 'outputDir/sampleID' directory. This will not copy the files in the sampleID/init directory. Rsync is run twice as a consistency check."
 }
 
 ##########################################################################################
@@ -77,10 +77,10 @@ ngsArgs_RSYNC() {
 ngsCmd_RSYNC() {
 	prnCmd "# BEGIN: COPYING TO REPO"
 	
-    # we exclude orig since that's the unaligned data which is already in the repo. Note that $JOURNAL contains the name of the log file as well as the sample directory
-	prnCmd "rsync -avh --stats --exclude orig --exclude $JOURNAL $SAMPLE $ngsLocal_RSYNC_OUT_DIR/."
+    # we exclude init since that's the unaligned data which is already in the repo. Note that $JOURNAL contains the name of the log file as well as the sample directory
+	prnCmd "rsync -avh --stats --exclude init --exclude $JOURNAL $SAMPLE $ngsLocal_RSYNC_OUT_DIR/."
 	if ! $DEBUG; then 
-		rsync -avh --stats --exclude orig --exclude $JOURNAL $SAMPLE $ngsLocal_RSYNC_OUT_DIR/.
+		rsync -avh --stats --exclude init --exclude $JOURNAL $SAMPLE $ngsLocal_RSYNC_OUT_DIR/.
 	fi
 	
 	# the prnCmd is here for proper annotation in the log file. The
@@ -92,7 +92,7 @@ ngsCmd_RSYNC() {
 	
 	# we run rsync again here to make sure everything copied
 	if ! $DEBUG; then 
-		rsync -avh --stats --exclude orig --exclude $JOURNAL $SAMPLE $ngsLocal_RSYNC_OUT_DIR/.
+		rsync -avh --stats --exclude init --exclude $JOURNAL $SAMPLE $ngsLocal_RSYNC_OUT_DIR/.
 	fi
 
 	# don't squash existing journal file, so cat onto existing file

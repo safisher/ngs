@@ -37,12 +37,12 @@ NGS_USAGE+="Usage: `basename $0` init OPTIONS sampleID    --  prepare read file(
 ngsHelp_INIT() {
 	echo -e "Usage:\n\t`basename $0` init [-i inputDir] [-se] sampleID"
 	echo -e "Input:\n\tinputDir/sampleID/*_R1_*.gz\n\tinputDir/sampleID/*_R2_*.gz (paired-end reads)"
-	echo -e "Output:\n\tsampleID/orig/unaligned_1.fq\n\tsampleID/orig/unaligned_2.fq (paired-end reads)"
+	echo -e "Output:\n\tsampleID/init/unaligned_1.fq\n\tsampleID/init/unaligned_2.fq (paired-end reads)"
 	echo -e "Options:"
 	echo -e "\t-i - parent directory containing subdirectory with compressed fastq files (default: ./raw). This is the parent directory of the sample-specific directory. The sampleID will be used to complete the directory path (ie inputDir/sampleID)."
 	echo -e "\t-se - single-end reads (default: paired-end)\n"
 	echo -e "By default this expects the directory './raw/sampleID' that contains the demultiplexed reads. The demultiplexed reads need to be gzipped. The files containing the first reads need to include '_R1_' in their filenames and the second read files need to contain '_R2_' in the filenames. If inputDir is used then the read files are expected to reside in 'inputDir/sampleID'. \n"
-	echo -e "This will uncompress the raw files and place them in the directory './sampleID/orig'. Output files are named 'unaligned_1.fq' (first reads) and 'unaligned_2.fq' (second reads). Only unaligned_1.fq will be generated in the case of single-end reads."
+	echo -e "This will uncompress the raw files and place them in the directory './sampleID/init'. Output files are named 'unaligned_1.fq' (first reads) and 'unaligned_2.fq' (second reads). Only unaligned_1.fq will be generated in the case of single-end reads."
 }
 
 ##########################################################################################
@@ -89,23 +89,23 @@ ngsCmd_INIT() {
 	else prnCmd "# BEGIN: INIT PAIRED-END"; fi
 	
     # make relevant directory
-	if [ ! -d $SAMPLE/orig ]; then 
-		prnCmd "mkdir $SAMPLE/orig"
-		if ! $DEBUG; then mkdir $SAMPLE/orig; fi 
+	if [ ! -d $SAMPLE/init ]; then 
+		prnCmd "mkdir $SAMPLE/init"
+		if ! $DEBUG; then mkdir $SAMPLE/init; fi 
 	fi
 	
-    # unzip raw files to orig subdirectory. Assumes contains
+    # unzip raw files to init subdirectory. Assumes contains
     # the original compressed raw files
-	prnCmd "zcat $ngsLocal_INIT_INP_DIR/$SAMPLE/*_R1_* > $SAMPLE/orig/unaligned_1.fq"
+	prnCmd "zcat $ngsLocal_INIT_INP_DIR/$SAMPLE/*_R1_* > $SAMPLE/init/unaligned_1.fq"
 	if ! $DEBUG; then 
-		zcat $ngsLocal_INIT_INP_DIR/$SAMPLE/*_R1_* > $SAMPLE/orig/unaligned_1.fq
+		zcat $ngsLocal_INIT_INP_DIR/$SAMPLE/*_R1_* > $SAMPLE/init/unaligned_1.fq
 	fi
 	
 	if ! $SE; then 
         # paired-end
-		prnCmd "zcat $ngsLocal_INIT_INP_DIR/$SAMPLE/*_R2_* > $SAMPLE/orig/unaligned_2.fq;"
+		prnCmd "zcat $ngsLocal_INIT_INP_DIR/$SAMPLE/*_R2_* > $SAMPLE/init/unaligned_2.fq;"
 		if ! $DEBUG; then 
-			zcat $ngsLocal_INIT_INP_DIR/$SAMPLE/*_R2_* > $SAMPLE/orig/unaligned_2.fq
+			zcat $ngsLocal_INIT_INP_DIR/$SAMPLE/*_R2_* > $SAMPLE/init/unaligned_2.fq
 		fi
 	fi
 	
@@ -125,7 +125,7 @@ ngsErrorChk_INIT() {
 	prnCmd "# INIT ERROR CHECKING: RUNNING"
 
 	inputFile_1="$ngsLocal_INIT_INP_DIR/$SAMPLE/*_R1_*"
-	outputFile_1="$SAMPLE/orig/unaligned_1.fq"
+	outputFile_1="$SAMPLE/init/unaligned_1.fq"
 
 	# make sure expected output file exists
 	if [ ! -f $outputFile_1 ]; then
@@ -159,7 +159,7 @@ ngsErrorChk_INIT() {
 	if ! $SE; then
 		# paired-end
 		inputFile_2="$ngsLocal_INIT_INP_DIR/$SAMPLE/*_R2_*"
-		outputFile_2="$SAMPLE/orig/unaligned_2.fq"
+		outputFile_2="$SAMPLE/init/unaligned_2.fq"
 
 		# make sure expected output file exists
 		if [ ! -f $outputFile_2 ]; then

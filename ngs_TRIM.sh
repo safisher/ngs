@@ -16,12 +16,12 @@
 
 ##########################################################################################
 # SINGLE-END READS:
-# INPUT: $SAMPLE/orig/unaligned_1.fq
+# INPUT: $SAMPLE/init/unaligned_1.fq
 # OUTPUT: $SAMPLE/trim/unaligned_1.fq, $SAMPLE/trim/$SAMPLE.trim.stats.txt
 # REQUIRES: trimReads.py, FastQC (if fastqc command previously run)
 #
 # PAIRED-END READS:
-# INPUT: $SAMPLE/orig/unaligned_1.fq and $SAMPLE/orig/unaligned_2.fq
+# INPUT: $SAMPLE/init/unaligned_1.fq and $SAMPLE/init/unaligned_2.fq
 # OUTPUT: $SAMPLE/trim/unaligned_1.fq and $SAMPLE/trim/unaligned_2.fq, $SAMPLE/trim/$SAMPLE.trim.stats.txt
 # REQUIRES: trimReads.py, FastQC (if fastqc command previously run)
 ##########################################################################################
@@ -42,7 +42,7 @@ ngsHelp_TRIM() {
 	echo -e "Output:\n\tsampleID/trim/unaligned_1.fq\n\tsampleID/trim/unaligned_2.fq (paired-end reads)\n\tsampleID/trim/sampleID.trim.stats.txt\n\tsampleID/trim/contaminants.fa (contaminants file)"
 	echo -e "Requires:\n\ttrimReads.py ( https://github.com/safisher/ngs )"
 	echo -e "Options:"
-	echo -e "\t-i inputDir - location of source files (default: orig)."
+	echo -e "\t-i inputDir - location of source files (default: init)."
 	echo -e "\t-c contaminantsFile - file containing contaminants to be trimmed (default: $REPO_LOCATION/trim/contaminants.fa)."
 	echo -e "\t-m minLen - Minimum size of trimmed read. If trimmed beyond minLen, then read is discarded. If read is paired then read is replaced with N's, unless both reads in pair are smaller than minLen in which case the pair is discarded. (default: 20)."
 	echo -e "\t-kN - do not trim N's from either end of the reads (default: remove N's)."
@@ -56,7 +56,7 @@ ngsHelp_TRIM() {
 # make sure these variables don't collide with the other modules.
 ##########################################################################################
 
-ngsLocal_TRIM_INP_DIR="orig"
+ngsLocal_TRIM_INP_DIR="init"
 ngsLocal_TRIM_CONTAMINANTS_FILE="$REPO_LOCATION/trim/contaminants.fa"
 ngsLocal_TRIM_MINLEN="20"
 ngsLocal_TRIM_POLYAT_BASES="26"
@@ -147,7 +147,7 @@ ngsCmd_TRIM() {
 		# paired-end
 		prnCmd "trimReads.py -p -m $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt"
 		if ! $DEBUG; then 
-			trimReads.py -p -m $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/orig/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt
+			trimReads.py -p -m $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt
 		fi
 	fi
 	

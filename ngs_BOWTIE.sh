@@ -20,7 +20,7 @@
 # OUTPUT: $SAMPLE/bowtie/$SAMPLE.bowtie.sorted.bam
 #
 # PAIRED-END READS:
-# INPUT: $SAMPLE/trim/unaligned_1.fq and $SAMPLE/orig/unaligned_2.fq
+# INPUT: $SAMPLE/trim/unaligned_1.fq and $SAMPLE/trim/unaligned_2.fq
 # OUTPUT: $SAMPLE/bowtie/$SAMPLE.bowtie.sorted.bam and $SAMPLE/bowtie/SE_mapping
 #
 # REQUIRES: bowtie, samtools

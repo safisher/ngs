@@ -15,7 +15,7 @@
 # under the License.
 
 ##########################################################################################
-# INPUT: $SAMPLE/orig/unaligned_1.fq
+# INPUT: $SAMPLE/init/unaligned_1.fq
 # OUTPUT: $SAMPLE/blast/blast.txt (blast output), $SAMPLE/blast/species.txt (species hit counts)
 # REQUIRES: blastn (provided with Blast version 2), randomSample.py, parseBlast.py
 ##########################################################################################
@@ -32,7 +32,7 @@ NGS_USAGE+="Usage: `basename $0` blast OPTIONS sampleID    --  run blast on rand
 
 ngsHelp_BLAST() {
 	echo -e "Usage:\n\t`basename $0` blast [-r numReads] [-k kmer] -p numProc -s species sampleID"
-	echo -e "Input:\n\tsampleID/orig/unaligned_1.fq"
+	echo -e "Input:\n\tsampleID/init/unaligned_1.fq"
 	echo -e "Output:\n\tsampleID/blast/blast.txt (blast output)\n\tsampleID/blast/sampleID.blast.stats.txt (species hit counts)"
 	echo -e "Requires:\n\tblastn ( ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/ )\n\trandomSample.py ( https://github.com/safisher/ngs )\n\tparseBlast.py ( https://github.com/safisher/ngs )"
 	echo -e "Options:"
@@ -40,7 +40,7 @@ ngsHelp_BLAST() {
 	echo -e "\t-k kmer - check for presence of k-mer in reads that failed to align"
 	echo -e "\t-p numProc - number of cpu to use"
 	echo -e "\t-s species - expected species\n"
-	echo -e "Run blast on 5000 reads randomly sampled from orig/unaligned_1.fq. Blast paramters used are 'num_descriptions: 10 num_alignments: 10 word_size: 15 gapopen: 3 gapextend: 1 evalue: 1e-15'. The output is put in a directory called 'blast'. The species.txt file contains number of reads mapping to each species (mouse, rat, human, bacteria)."
+	echo -e "Run blast on 5000 reads randomly sampled from init/unaligned_1.fq. Blast paramters used are 'num_descriptions: 10 num_alignments: 10 word_size: 15 gapopen: 3 gapextend: 1 evalue: 1e-15'. The output is put in a directory called 'blast'. The species.txt file contains number of reads mapping to each species (mouse, rat, human, bacteria)."
 }
 
 ##########################################################################################
@@ -103,9 +103,9 @@ ngsCmd_BLAST() {
 		
     # Get ngsLocal_BLAST_NUM_READS (5,000) randomly sampled reads
     # Usage: randomSample.py <num lines> <lines grouped> <input> <output>
-	prnCmd "randomSample.py $ngsLocal_BLAST_NUM_READS 4 $SAMPLE/orig/unaligned_1.fq $SAMPLE/blast/raw.fq > $SAMPLE/blast/sampling.out.txt"
+	prnCmd "randomSample.py $ngsLocal_BLAST_NUM_READS 4 $SAMPLE/init/unaligned_1.fq $SAMPLE/blast/raw.fq > $SAMPLE/blast/sampling.out.txt"
 	if ! $DEBUG; then 
-		randomSample.py $ngsLocal_BLAST_NUM_READS 4 $SAMPLE/orig/unaligned_1.fq $SAMPLE/blast/raw.fq > $SAMPLE/blast/sampling.out.txt
+		randomSample.py $ngsLocal_BLAST_NUM_READS 4 $SAMPLE/init/unaligned_1.fq $SAMPLE/blast/raw.fq > $SAMPLE/blast/sampling.out.txt
 	fi
 	
     # Convert fastq file to fasta file
@@ -191,7 +191,7 @@ ngsCmd_BLAST() {
 ngsErrorChk_BLAST() {
 	prnCmd "# BLAST ERROR CHECKING: RUNNING"
 
-	inputFile="$SAMPLE/orig/unaligned_1.fq"
+	inputFile="$SAMPLE/init/unaligned_1.fq"
 	outputFile="$SAMPLE/blast/$SAMPLE.blast.stats.txt"
 
 	# make sure expected output file exists

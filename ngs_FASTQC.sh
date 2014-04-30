@@ -15,8 +15,8 @@
 # under the License.
 
 ##########################################################################################
-# INPUT: $SAMPLE/orig/unaligned_1.fq
-# OUTPUT: $SAMPLE/fastqc.orig/*
+# INPUT: $SAMPLE/init/unaligned_1.fq
+# OUTPUT: $SAMPLE/fastqc.init/*
 # REQUIRES: FastQC
 ##########################################################################################
 
@@ -36,7 +36,7 @@ ngsHelp_FASTQC() {
 	echo -e "Output:\n\tsampleID/outputDir/*"
 	echo -e "Requires:\n\tFastQC ( http://www.bioinformatics.babraham.ac.uk/projects/fastqc/ )"
 	echo -e "Options:"
-	echo -e "\t-i inputDir - location of source file (default: orig)."
+	echo -e "\t-i inputDir - location of source file (default: init)."
 	echo -e "\t-i outputDir - location of output files (default: fastqc). If this is changed from the default, then it will not be accessible by the STATS module.\n"
 	echo -e "Run FastQC on sampleID/inputDir/unaligned_1.fq file. FastQC only uses one input file so the unaligned_1.fq file is used whether the data is single- or pair-end."
 }
@@ -46,7 +46,7 @@ ngsHelp_FASTQC() {
 # make sure these variables don't collide with the other modules.
 ##########################################################################################
 
-ngsLocal_FASTQC_INP_DIR="orig"
+ngsLocal_FASTQC_INP_DIR="init"
 ngsLocal_FASTQC_OUT_DIR="fastqc"
 
 ##########################################################################################
