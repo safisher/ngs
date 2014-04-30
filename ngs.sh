@@ -47,10 +47,18 @@ DEBUG=false   # disable commands when true, use to see what commands would be ru
 # output every line of code to the console when running
 #if "$DEBUG"; then set -x
 
-# this is the location of the demultiplexed files, with each sample in a separate subdirectory named with the sample ID.
+###############################################################################################
+# ****************************** BEGIN USER DEFINED VARIABLES ******************************
+
+# this is the location of the demultiplexed files, with each sample in
+# a separate subdirectory named with the sample ID. This is often a
+# symbolic link to the appropriate raw directory in the data
+# repository.
 RAW=raw
 
-# this is the place where analyzed data will be stored. Each sample will be put into a separate subdirectory
+# this is the place where analyzed data will be stored. Each sample
+# will be put into a separate subdirectory. This is often a symbolic
+# link to the appropriate analysis directory in the data repository.
 ANALYZED=analyzed
 
 # location of genomic databases and library files
@@ -61,7 +69,11 @@ STAR_REPO=$REPO_LOCATION/star
 HTSEQ_REPO=$REPO_LOCATION/htseq
 SNP_REPO=$REPO_LOCATION/snp
 
+# list of all modules to load
 MODULES=( "HELP" "INIT" "FASTQC" "BLAST" "BOWTIE" "TRIM" "STAR" "RUM" "RUMSTATUS" "POST" "BLASTDB" "HTSEQ" "SNP" "SPAdes" "RSYNC" "STATS" "PIPELINE" "VERSION" )
+
+# ****************************** END USER DEFINED VARIABLES ******************************
+###############################################################################################
 
 # when modules are loaded, the add their usage to this variable.
 NGS_USAGE=""
