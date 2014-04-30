@@ -69,7 +69,7 @@ STAR_REPO=$REPO_LOCATION/star
 HTSEQ_REPO=$REPO_LOCATION/htseq
 SNP_REPO=$REPO_LOCATION/snp
 
-# list of all modules to load
+# list of all modules available to be run.
 MODULES=( "HELP" "INIT" "FASTQC" "BLAST" "BOWTIE" "TRIM" "STAR" "RUM" "RUMSTATUS" "POST" "BLASTDB" "HTSEQ" "SNP" "SPAdes" "RSYNC" "STATS" "PIPELINE" "VERSION" )
 
 # ****************************** END USER DEFINED VARIABLES ******************************
