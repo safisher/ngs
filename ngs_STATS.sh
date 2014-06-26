@@ -75,6 +75,9 @@ ngsArgs_STATS() {
 		esac
 	done
 
+	# make sure we still have sufficient arguments
+	if [ $# -lt 2 ]; then printHelp "STATS"; fi
+
 	ngsLocal_STATS_MODULES=$1
 
 	SAMPLE=$2
