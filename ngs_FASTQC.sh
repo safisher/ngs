@@ -108,14 +108,19 @@ ngsCmd_FASTQC() {
 		fastqc --OUTDIR=$SAMPLE/$ngsLocal_FASTQC_OUT_DIR $SAMPLE/$ngsLocal_FASTQC_INP_DIR/unaligned_1.fq
 		
 	    # do some cleanup of the output files
-		prnCmd "rm $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc.zip"
-		rm $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc.zip
+		# THE FOLLOWING CLEANUP IS ONLY RELEVANT TO FASTQC VERSION 0.11.1 AND LATER
+		prnCmd "mv $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc.html $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/$SAMPLE.$ngsLocal_FASTQC_OUT_DIR.html"
+		mv $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc.html $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/$SAMPLE.$ngsLocal_FASTQC_OUT_DIR.html
 		
-		prnCmd "mv $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc/* $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/."
-		mv $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc/* $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/.
+		# THE FOLLOWING CLEANUP IS ONLY RELEVANT TO FASTQC VERSION 0.10.1 AND EARLIER
+		#prnCmd "rm $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc.zip"
+		#rm $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc.zip
 		
-		prnCmd "rmdir $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc"
-		rmdir $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc
+		#prnCmd "mv $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc/* $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/."
+		#mv $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc/* $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/.
+		
+		#prnCmd "rmdir $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc"
+		#rmdir $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc
 	fi
 	
 	prnCmd "# FINISHED: FASTQC"
