@@ -17,7 +17,7 @@
 """
 by: S. Fisher, 2013
 
-usage: trimReads.py [-h] [-v] [-p] [-m MIN_LEN] [-c3 NUM_CUT_3] [-c5 NUM_CUT_5] [-rN] [-rAT REMOVE_AT] [-c CONTAMINANTS_FA] -f FIRST_FQ [-r SECOND_FQ] -o OUTPUT_PREFIX
+usage: trimReads.py [-h] [-v] [-p] [-m MIN_LEN] [-c3 NUM_CUT_3] [-c5 NUM_CUT_5] [-q PHRED] [-rN] [-rAT REMOVE_AT] [-c CONTAMINANTS_FA] -f FIRST_FQ [-r SECOND_FQ] -o OUTPUT_PREFIX
 
 Contaminants file:
 1. Sequences must be on a single line (ie can't contain line breaks)
@@ -72,12 +72,13 @@ argParser = argparse.ArgumentParser(version=VERSION,
 'Trimming will happen in the following order depending on which options are selected:\n' + 
 '\t1. Cut 3\' end of read.\n' + 
 '\t2. Cut 5\' end of read.\n' + 
-'\t3. Remove N\'s from both ends.\n' +
-'\t4. Process contaminants file, removing contaminants based on their order in the contaminants file.\n' +
-'\t5a. Single-end: discard read if shorter than the minimum length.\n' + 
-'\t5b. Paired-end: if only one of the paired reads is shorter than the minimum length, then replace that read\'s sequence with N\'s and replace that read\'s quality scores with #. If both paired reads are shorter than the minimum length, then discard the read pair.\n' + 
-'\t6. Pad paired reads with N\'s so that they are both the same length. For every N that is added, also add a # to the quality score.\n' + 
-'\t7. Add "L:X" to the read header with X being the new length of the sequence (including any N\'s that were added to the sequence).\n\n' + 
+'\t3. Replace any base with N if the quality score is below the Phred threshold. Quality score is not changed.\n' + 
+'\t4. Remove N\'s from both ends.\n' +
+'\t5. Process contaminants file, removing contaminants based on their order in the contaminants file.\n' +
+'\t6a. Single-end: discard read if shorter than the minimum length.\n' + 
+'\t6b. Paired-end: if only one of the paired reads is shorter than the minimum length, then replace that read\'s sequence with N\'s and replace that read\'s quality scores with #. If both paired reads are shorter than the minimum length, then discard the read pair.\n' + 
+'\t7. Pad paired reads with N\'s so that they are both the same length. For every N that is added, also add a # to the quality score.\n' + 
+'\t8. Add "L:X" to the read header with X being the new length of the sequence (including any N\'s that were added to the sequence).\n\n' + 
 
 'Contaminants file (fasta-like file):\n' + 
 '\t1. Sequences must be on a single line (ie can\'t contain line breaks).\n' +
@@ -100,9 +101,11 @@ argParser.add_argument( '-p', '--padPaired', dest='padPaired', action='store_tru
 argParser.add_argument( '-m', '--minLen', dest='min_len', action='store', default=0, type=int,
                         help='Minimum size of trimmed read. If trimmed beyond minLen, then read is discarded. If read is paired then read is replaced with N\'s, unless both reads in pair are smaller than minLen in which case the pair is discarded. (default: no minimum length)' )
 argParser.add_argument( '-c3', '--cut3', dest='num_cut_3', action='store', default=0, type=int, 
-                        help='number of bases to remove from 3\' end of read. Truncating reads does not count toward trimming totals. This happens prior to the removing of N\'s and hence prior to contaminant trimming. (default: 0)' )
+                        help='number of bases to remove from 3\' end of read. TRUNCATING READS DOES NOT COUNT TOWARD TRIMMING TOTALS. This happens prior to the removing of N\'s and hence prior to contaminant trimming. (default: 0)' )
 argParser.add_argument( '-c5', '--cut5', dest='num_cut_5', action='store', default=0, type=int, 
-                        help='number of bases to remove from 5\' end of read. Truncating reads does not count toward trimming totals. This happens prior to the removing of N\'s and hence prior to contaminant trimming. (default: 0)' )
+                        help='number of bases to remove from 5\' end of read. TRUNCATING READS DOES NOT COUNT TOWARD TRIMMING TOTALS. This happens prior to the removing of N\'s and hence prior to contaminant trimming. (default: 0)' )
+argParser.add_argument( '-q', dest='phred_threshold', action='store', default=0, type=int, 
+                        help='threshold for Phred score below which the base will be changed to an N. This happens prior to the removing of N\'s and hence low quality bases at the ends of the read will be removed if this is used in conjunction with the -rN flag. QUALITY SCORES ARE NOT SCALED BASED ON ENCODING SCHEME. For example, use a threshold of 53 to filter Illumina 1.8 fastq files (Phred+33) based on a Phred score of 20. REPLACING BASES WITH N DOES NOT COUNT TOWARD TRIMMING TOTAL. (default: 0)' )
 argParser.add_argument( '-rN', '--removeNs', dest='removeN', action='store_true', default=False,
                         help='remove N\'s from both ends of the read. This trimming happens before contaminant trimming. (default: no)' )
 argParser.add_argument( '-rAT', '--removePolyAT', dest='remove_AT', action='store', default=-1, type=int,
@@ -244,6 +247,41 @@ def cut5(read, nCut):
     read[SEQUENCE] = seq
     read[QUALS] = quals
     read[LENGTH] = len(seq)
+    return read
+
+# Replace base with N if quality score is below the user-specified
+# phredThreshold. Low quality bases at the ends of the read will be
+# removed if -rN flag is set. We do not change the quality score, just
+# the base.
+def qualityScoreThreshold(read, phredThreshold, isFirstRead):
+    """
+    Replace low quality bases with N.
+    """
+    seq = read[SEQUENCE]
+    quals = read[QUALS]
+    length = read[LENGTH]
+
+    wasTrimmed = False # local flag for trimming
+
+    # check quality scores
+    i = 0
+    newSeq = ""
+    for qualityScore in quals:
+        if ord(qualityScore) < phredThreshold:
+            newSeq += "N"
+            wasTrimmed = True
+        else:
+            newSeq += seq[i]
+        i += 1
+
+    if wasTrimmed:
+        # track number of reads that have a base swap
+        if isFirstRead: nFirstContaminantsTrim['qualityScoreThreshold'] += 1
+        else: nSecondContaminantsTrim['qualityScoreThreshold'] += 1
+
+        if DEBUG: debugTrimOutput(read[SEQUENCE], length, newSeq, length, 'qualityScoreThreshold', '')
+
+        read[SEQUENCE] = newSeq
     return read
 
 # remove N's on either end of the read
@@ -770,11 +808,13 @@ nFirstContaminantsTrim['remove5N'] = 0
 nFirstContaminantsTrim['remove3N'] = 0
 nFirstContaminantsTrim['polyA'] = 0
 nFirstContaminantsTrim['polyT'] = 0
+nFirstContaminantsTrim['qualityScoreThreshold'] = 0
 if PAIRED: 
     nSecondContaminantsTrim['remove5N'] = 0
     nSecondContaminantsTrim['remove3N'] = 0
     nSecondContaminantsTrim['polyA'] = 0
     nSecondContaminantsTrim['polyT'] = 0
+    nSecondContaminantsTrim['qualityScoreThreshold'] = 0
     
 #------------------------------------------------------------------------------------------
 # OPEN READ INPUT AND OUTPUT FILES
@@ -860,6 +900,12 @@ while 1:
     if clArgs.num_cut_5 > 0:
         firstRead = cut5(firstRead, clArgs.num_cut_5)
         if PAIRED: secondRead = cut5(secondRead, clArgs.num_cut_5)
+
+    #--------------------------------------------------------------------------------------
+    # threhold quality scores 
+    if clArgs.phred_threshold > 0:
+        firstRead = qualityScoreThreshold(firstRead, clArgs.phred_threshold, True)
+        if PAIRED: secondRead = qualityScoreThreshold(secondRead, clArgs.phred_threshold, False)
 
     #--------------------------------------------------------------------------------------
     # remove N's
@@ -991,6 +1037,16 @@ print
 fields = '\nnTotalReadPairs\tnBothTrimmed\tnFirstTrimmed\tnSecondTrimmed\tnBothDiscarded\tnFirstDiscarded\tnSecondDiscarded'
 counts = '%d\t%d\t%d\t%d\t%d\t%d\t%d' % (nTotalReadPairs, nBothTrimmed, nFirstTrimmed, nSecondTrimmed, nBothDiscarded, nFirstDiscarded, nSecondDiscarded)
 
+if clArgs.phred_threshold:
+    print 'Phred Threshold'
+    print '\tFirst reads trimmed', nFirstContaminantsTrim['qualityScoreThreshold']
+    fields += '\tPhred Threshold (first)'
+    counts += '\t' + str(nFirstContaminantsTrim['qualityScoreThreshold'])
+    if PAIRED: 
+        print '\tSecond reads trimmed', nSecondContaminantsTrim['qualityScoreThreshold']
+        fields += '\tPhred Threshold (second)'
+        counts += '\t' + str(nSecondContaminantsTrim['qualityScoreThreshold'])
+    
 if clArgs.removeN:
     print '5\' N Removed'
     print '\tFirst reads trimmed', nFirstContaminantsTrim['remove5N']
