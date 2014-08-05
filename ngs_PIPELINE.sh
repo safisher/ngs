@@ -125,7 +125,7 @@ ngsCmd_PIPELINE() {
 		ngsCmd_INIT
 		ngsCmd_FASTQC
 		ngsCmd_BLAST
-		ngsCmd_TRIM
+		ngsCmd_TRIM -m 20 -rAT 26 -rN -c $REPO_LOCATION/trim/contaminants.fa $SAMPLE
 		# Need different args to run FastQC on the trimmed data, so adjust
 		# args by calling ngsArgs_FASTQC() prior to running ngsCmd_FASTQC().
 		ngsArgs_FASTQC -i trim -o fastqc.trim $SAMPLE
@@ -145,7 +145,7 @@ ngsCmd_PIPELINE() {
 		ngsCmd_FASTQC
 		ngsCmd_BLAST
 		# disable poly-A/T trimming for WGS
-		ngsArgs_TRIM -rAT 0 -c $REPO_LOCATION/trim/contaminantsMITO.fa $SAMPLE
+		ngsArgs_TRIM -m 20 -rAT 0 -rN -c $REPO_LOCATION/trim/contaminantsMITO.fa $SAMPLE
 		ngsCmd_TRIM
 		ngsArgs_FASTQC -i trim -o fastqc.trim $SAMPLE
 		ngsCmd_FASTQC

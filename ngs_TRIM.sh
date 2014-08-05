@@ -37,16 +37,17 @@ NGS_USAGE+="Usage: `basename $0` trim OPTIONS sampleID    --  trim adapter and p
 ##########################################################################################
 
 ngsHelp_TRIM() {
-	echo -e "Usage: `basename $0` trim [-i inputDir] [-c contaminantsFile] [-m minLen] [-kN] [-rAT numBases] [-se] sampleID"
+	echo -e "Usage: `basename $0` trim [-i inputDir] [-c contaminantsFile] [-m minLen] [-q phredThreshold] [-rN] [-rAT numBases] [-se] sampleID"
 	echo -e "Input:\n\t$REPO_LOCATION/trim/contaminants.fa (file containing contaminants)\n\tsampleID/inputDir/unaligned_1.fq\n\tsampleID/inputDir/unaligned_2.fq (paired-end reads)"
 	echo -e "Output:\n\tsampleID/trim/unaligned_1.fq\n\tsampleID/trim/unaligned_2.fq (paired-end reads)\n\tsampleID/trim/sampleID.trim.stats.txt\n\tsampleID/trim/contaminants.fa (contaminants file)"
 	echo -e "Requires:\n\ttrimReads.py ( https://github.com/safisher/ngs )"
 	echo -e "Options:"
 	echo -e "\t-i inputDir - location of source files (default: init)."
-	echo -e "\t-c contaminantsFile - file containing contaminants to be trimmed (default: $REPO_LOCATION/trim/contaminants.fa)."
-	echo -e "\t-m minLen - Minimum size of trimmed read. If trimmed beyond minLen, then read is discarded. If read is paired then read is replaced with N's, unless both reads in pair are smaller than minLen in which case the pair is discarded. (default: 20)."
-	echo -e "\t-kN - do not trim N's from either end of the reads (default: remove N's)."
-	echo -e "\t-rAT numBases - number of polyA/T bases to trim (default: 26). To disable polyA/T trimming, use '0' (eg '-rAT 0')."
+	echo -e "\t-c contaminantsFile - file containing contaminants to be trimmed."
+	echo -e "\t-m minLen - Minimum size of trimmed read. If trimmed beyond minLen, then read is discarded. If read is paired then read is replaced with N's, unless both reads in pair are smaller than minLen in which case the pair is discarded. (default: 0)."
+	echo -e "\t-q phredThreshold - replace base with 'N' if Phred score less than phredThrehold (default: 0). Quality scores are NOT scaled based on encoding scheme. So threshold value should be unscaled. For example, use a threshold of 53 to filter Illumina 1.8 fastq files (Phred+33) based on a Phred score of 20. The quality scores are not changed when low-quality bases are replaced."
+	echo -e "\t-rN - trim N's from both ends of reads (default: do not trim)."
+	echo -e "\t-rAT numBases - number of polyA/T bases to trim (default: 0)."
 	echo -e "\t-se - single-end reads (default: paired-end)\n"
 	echo -e "Runs trimReads.py to trim data. Trimmed data is placed in 'sampleID/trim'. The contaminants file that was used is copied into the trim directory for future reference."
 }
@@ -57,10 +58,11 @@ ngsHelp_TRIM() {
 ##########################################################################################
 
 ngsLocal_TRIM_INP_DIR="init"
-ngsLocal_TRIM_CONTAMINANTS_FILE="$REPO_LOCATION/trim/contaminants.fa"
-ngsLocal_TRIM_MINLEN="20"
-ngsLocal_TRIM_POLYAT_BASES="26"
-ngsLocal_TRIM_KN=false
+ngsLocal_TRIM_CONTAMINANTS_FILE=""
+ngsLocal_TRIM_MINLEN_VALUE="0"
+ngsLocal_TRIM_POLYAT_VALUE="0"
+ngsLocal_TRIM_RN_VALUE=false
+ngsLocal_TRIM_PHRED_THRESHOLD_VALUE="0"
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -79,13 +81,16 @@ ngsArgs_TRIM() {
 			-c) ngsLocal_TRIM_CONTAMINANTS_FILE=$2
 				shift; shift;
 				;;
-			-m) ngsLocal_TRIM_MINLEN=$2
+			-m) ngsLocal_TRIM_MINLEN_VALUE=$2
 				shift; shift;
 				;;
-			-kN) ngsLocal_TRIM_KN=true
+			-q) ngsLocal_TRIM_PHRED_THRESHOLD_VALUE=$2
+				shift; shift;
+				;;
+			-rN) ngsLocal_TRIM_RN_VALUE=true
 				shift;
 				;;
-			-rAT) ngsLocal_TRIM_POLYAT_BASES=$2
+			-rAT) ngsLocal_TRIM_POLYAT_VALUE=$2
 				shift; shift;
 				;;
 			-se) SE=true
@@ -124,37 +129,57 @@ ngsCmd_TRIM() {
 		prnVersion "trim" "program\tversion" "trimReads.py\t$ver"
 	fi
 
+	# set minimum read length
+	ngsLocal_TRIM_MINLEN=""
+	if [[ $ngsLocal_TRIM_MINLEN_VALUE -gt 0 ]]; then
+		ngsLocal_TRIM_MINLEN="-m $ngsLocal_TRIM_MINLEN_VALUE"
+	fi
+
+	# set Phred threshold
+	ngsLocal_TRIM_PHRED_THRESHOLD=""
+	if [[ $ngsLocal_TRIM_PHRED_THRESHOLD_VALUE -gt 0 ]]; then
+		ngsLocal_TRIM_PHRED_THRESHOLD="-q $ngsLocal_TRIM_PHRED_THRESHOLD_VALUE"
+	fi
+
 	# set argument for removing of N's from both ends of the reads
-	ngsLocal_TRIM_RN="-rN"
-	if $ngsLocal_TRIM_KN; then
-		ngsLocal_TRIM_RN=""
+	ngsLocal_TRIM_RN=""
+	if $ngsLocal_TRIM_RN_VALUE; then
+		ngsLocal_TRIM_RN="-rN"
 	fi
 
 	# set polyA/T trimming argument
 	ngsLocal_TRIM_POLYAT=""
-	if [[ $ngsLocal_TRIM_POLYAT_BASES -gt 0 ]]; then
-		ngsLocal_TRIM_POLYAT="-rAT $ngsLocal_TRIM_POLYAT_BASES"
+	if [[ $ngsLocal_TRIM_POLYAT_VALUE -gt 0 ]]; then
+		ngsLocal_TRIM_POLYAT="-rAT $ngsLocal_TRIM_POLYAT_VALUE"
+	fi
+
+	# set contaminants file, if being used
+	ngsLocal_TRIM_CONTAMINANTS=""
+	if [[ -n $ngsLocal_TRIM_CONTAMINANTS_FILE ]]; then
+		ngsLocal_TRIM_CONTAMINANTS="-c $ngsLocal_TRIM_CONTAMINANTS_FILE"
 	fi
 
 	if $SE; then
 		# single-end
-		prnCmd "trimReads.py -m $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt"
+		prnCmd "trimReads.py $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_PHRED_THRESHOLD $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT $ngsLocal_TRIM_CONTAMINANTS -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt"
 		if ! $DEBUG; then 
-			trimReads.py -m $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt
+			trimReads.py $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_PHRED_THRESHOLD $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT $ngsLocal_TRIM_CONTAMINANTS -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt
 		fi
 		
 	else
 		# paired-end
-		prnCmd "trimReads.py -p -m $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt"
+		prnCmd "trimReads.py -p $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_PHRED_THRESHOLD $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT $ngsLocal_TRIM_CONTAMINANTS -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt"
 		if ! $DEBUG; then 
-			trimReads.py -p -m $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT -c $ngsLocal_TRIM_CONTAMINANTS_FILE -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt
+			trimReads.py -p $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_PHRED_THRESHOLD $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT $ngsLocal_TRIM_CONTAMINANTS -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt
 		fi
 	fi
 	
 	# copy contaminants files into trim directory for future reference
-	prnCmd "cp $ngsLocal_TRIM_CONTAMINANTS_FILE $SAMPLE/trim/."
-	if ! $DEBUG; then
-		cp $ngsLocal_TRIM_CONTAMINANTS_FILE $SAMPLE/trim/.
+	if [[ -n $ngsLocal_TRIM_CONTAMINANTS_FILE ]]; then
+		prnCmd "cp $ngsLocal_TRIM_CONTAMINANTS_FILE $SAMPLE/trim/."
+		if ! $DEBUG; then
+			cp $ngsLocal_TRIM_CONTAMINANTS_FILE $SAMPLE/trim/.
+		fi
 	fi
 
 	# run error checking
