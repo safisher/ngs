@@ -37,12 +37,13 @@ NGS_USAGE+="Usage: `basename $0` trim OPTIONS sampleID    --  trim adapter and p
 ##########################################################################################
 
 ngsHelp_TRIM() {
-	echo -e "Usage: `basename $0` trim [-i inputDir] [-c contaminantsFile] [-m minLen] [-q phredThreshold] [-rN] [-rAT numBases] [-se] sampleID"
+	echo -e "Usage: `basename $0` trim [-i inputDir] [-p] [-c contaminantsFile] [-m minLen] [-q phredThreshold] [-rN] [-rAT numBases] [-se] sampleID"
 	echo -e "Input:\n\t$REPO_LOCATION/trim/contaminants.fa (file containing contaminants)\n\tsampleID/inputDir/unaligned_1.fq\n\tsampleID/inputDir/unaligned_2.fq (paired-end reads)"
 	echo -e "Output:\n\tsampleID/trim/unaligned_1.fq\n\tsampleID/trim/unaligned_2.fq (paired-end reads)\n\tsampleID/trim/sampleID.trim.stats.txt\n\tsampleID/trim/contaminants.fa (contaminants file)"
 	echo -e "Requires:\n\ttrimReads.py ( https://github.com/safisher/ngs )"
 	echo -e "Options:"
 	echo -e "\t-i inputDir - location of source files (default: init)."
+	echo -e "\t-p - Pad paired reads so that they are the same length after all trimming has occured. N's will be added to the 3' end with '#' added to the quality score for each N that is added. This will not do anything for single-end reads. (default: no padding)."
 	echo -e "\t-c contaminantsFile - file containing contaminants to be trimmed."
 	echo -e "\t-m minLen - Minimum size of trimmed read. If trimmed beyond minLen, then read is discarded. If read is paired then read is replaced with N's, unless both reads in pair are smaller than minLen in which case the pair is discarded. (default: 0)."
 	echo -e "\t-q phredThreshold - replace base with 'N' if Phred score less than phredThrehold (default: 0). Quality scores are NOT scaled based on encoding scheme. So threshold value should be unscaled. For example, use a threshold of 53 to filter Illumina 1.8 fastq files (Phred+33) based on a Phred score of 20. The quality scores are not changed when low-quality bases are replaced."
@@ -58,6 +59,7 @@ ngsHelp_TRIM() {
 ##########################################################################################
 
 ngsLocal_TRIM_INP_DIR="init"
+ngsLocal_TRIM_PAD_VALUE=false
 ngsLocal_TRIM_CONTAMINANTS_FILE=""
 ngsLocal_TRIM_MINLEN_VALUE="0"
 ngsLocal_TRIM_POLYAT_VALUE="0"
@@ -77,6 +79,9 @@ ngsArgs_TRIM() {
 		case $1 in
 			-i) ngsLocal_TRIM_INP_DIR=$2
 				shift; shift;
+				;;
+			-p) ngsLocal_TRIM_PAD_VALUE=true
+				shift;
 				;;
 			-c) ngsLocal_TRIM_CONTAMINANTS_FILE=$2
 				shift; shift;
@@ -129,6 +134,12 @@ ngsCmd_TRIM() {
 		prnVersion "trim" "program\tversion" "trimReads.py\t$ver"
 	fi
 
+	# set argument for padding reads
+	ngsLocal_TRIM_PAD=""
+	if $ngsLocal_TRIM_PAD_VALUE; then
+		ngsLocal_TRIM_PAD="-p"
+	fi
+
 	# set minimum read length
 	ngsLocal_TRIM_MINLEN=""
 	if [[ $ngsLocal_TRIM_MINLEN_VALUE -gt 0 ]]; then
@@ -168,9 +179,9 @@ ngsCmd_TRIM() {
 		
 	else
 		# paired-end
-		prnCmd "trimReads.py -p $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_PHRED_THRESHOLD $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT $ngsLocal_TRIM_CONTAMINANTS -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt"
+		prnCmd "trimReads.py $ngsLocal_TRIM_PAD $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_PHRED_THRESHOLD $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT $ngsLocal_TRIM_CONTAMINANTS -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt"
 		if ! $DEBUG; then 
-			trimReads.py -p $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_PHRED_THRESHOLD $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT $ngsLocal_TRIM_CONTAMINANTS -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt
+			trimReads.py $ngsLocal_TRIM_PAD $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_PHRED_THRESHOLD $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT $ngsLocal_TRIM_CONTAMINANTS -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt
 		fi
 	fi
 	
