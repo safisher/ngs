@@ -26,14 +26,14 @@
 # USAGE 
 ##########################################################################################
 
-NGS_USAGE+="Usage: `basename $0` SPADES OPTIONS sampleID -- run SPADES on trimmed reads.\n"
+NGS_USAGE+="Usage: `basename $0` spades OPTIONS sampleID -- run SPADES on trimmed reads.\n"
 
 ##########################################################################################
 # HELP TEXT
 ##########################################################################################
 
 ngsHelp_SPADES() {
-	echo -e "Usage:\n\t`basename $0` SPADES [-i inputDir] [-m maxRAM] [-k kmers] -p numProc [-se] sampleID"
+	echo -e "Usage:\n\t`basename $0` spades [-i inputDir] [-m maxRAM] [-k kmers] -p numProc [-se] sampleID"
 	echo -e "Input:\n\tsampleID/inputDir/notMapped_1.fq\n\tsampleID/inputDir/notMapped_2.fq (paired-end reads)"
 	echo -e "Output:\n\tsampleID/spades/SampleID.fasta "
 	echo -e "Requires:\n\tSPAdes ( http://bioinf.spbau.ru/spades )"

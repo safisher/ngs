@@ -32,7 +32,7 @@
 #    section: ADD MODULE COMMAND FUNCTIONS HERE
 ##########################################################################################
 
-VERSION=2.0.0-alpha
+VERSION=2.0.1-alpha
 
 # each module should output a tab-delimited list of file and program
 # version information. This file should have two lines, the first line
@@ -70,7 +70,7 @@ HTSEQ_REPO=$REPO_LOCATION/htseq
 SNP_REPO=$REPO_LOCATION/snp
 
 # list of all modules available to be run.
-MODULES=( "HELP" "INIT" "FASTQC" "BLAST" "BOWTIE" "TRIM" "STAR" "RUM" "RUMSTATUS" "POST" "BLASTDB" "HTSEQ" "SNP" "SPADES" "RSYNC" "STATS" "PIPELINE" "VERSION" )
+MODULES=( "HELP" "INIT" "FASTQC" "BLAST" "RMDUP" "BOWTIE" "TRIM" "STAR" "RUM" "RUMSTATUS" "POST" "BLASTDB" "HTSEQ" "SNP" "SPADES" "RSYNC" "STATS" "PIPELINE" "VERSION" )
 
 # ****************************** END USER DEFINED VARIABLES ******************************
 ###############################################################################################
