@@ -42,7 +42,6 @@ VERSION = '0.1'
 HEADER = 'header'
 SEQUENCE = 'seq'
 QUALS = 'quals'
-LENGTH = 'length'
 
 argParser = argparse.ArgumentParser(version=VERSION, 
                                     description='Remove duplicate reads.',
@@ -54,7 +53,7 @@ argParser.add_argument( '-f', dest='first_fq', action='store', required=True,
 argParser.add_argument( '-r', dest='second_fq', 
                         help='fastq file with mate pairs for paired-end reads. This file is not present for single-end reads.' )
 argParser.add_argument( '-o', dest='output_prefix', action='store', required=True,
-                        help='prefix for output file(s). A \'_1\' will be appended to the first reads output file and if paired reads then a \'_2\' will be appended to the second reads file. Output files similarly named and with the suffix \'.disc.txt\' will be created to store a copy of all duplicate reads.' )
+                        help='prefix for output file(s). A \'_1\' will be appended to the first reads output file and if paired reads then a \'_2\' will be appended to the second reads file. Output files similarly named and with the suffix \'.dupl.txt\' will be created to store a copy of all duplicate reads.' )
 
 clArgs = argParser.parse_args()
 if DEBUG: print clArgs
@@ -66,7 +65,8 @@ if clArgs.second_fq:
 
 # print error and quit
 def quitOnError(msg):
-    print 'ERROR:', msg
+    # XXX may not be compatible with Python v3
+    sys.stderr.write('ERROR:' + msg + '\n')
     sys.exit(0)
 
 # track stats
@@ -86,8 +86,7 @@ cntDupl = {} # dictionary containing a duplicates count for all reads
 
 def nextRead(inFile):
     """
-    Returns a set consisting of each line from the read and the length
-    of the read. Returns empty set if no more reads.
+    Returns a set consisting of each line from the read. Returns empty set if no more reads.
     """
     line = inFile.readline().rstrip()
     if len(line) == 0:
@@ -101,14 +100,11 @@ def nextRead(inFile):
         read[SEQUENCE] = inFile.readline().rstrip().upper()
         # this is the + which we can ignore for now
 
-        # XXX CONFIRM THAT THE + IN THE FASTQ FILE IS A CONSTANT.
+        # Ignore the + in the fastq file
         inFile.readline()
 
         read[QUALS] = inFile.readline().rstrip()
         
-        # store additional read information in read set
-        read[LENGTH] = len(read[SEQUENCE])
-
         return read
     except:
         msg = 'Problem loading read:', line
@@ -144,12 +140,12 @@ except:
     msg = 'Unable to open output file ' + clArgs.output_prefix + "_1.fq"
     quitOnError(msg)
 
-# open file that will store discarded reads
-firstReadDiscardedOut = ''
+# open file that will store one copy of all duplicate reads
+firstReadDuplicateOut = ''
 try: 
-    firstReadDiscardedOut = open(clArgs.output_prefix + "_1.disc.txt", 'w')
+    firstReadDuplicateOut = open(clArgs.output_prefix + "_1.dupl.fq", 'w')
 except: 
-    msg = 'Unable to open output file ' + clArgs.output_prefix + "_1.disc.txt"
+    msg = 'Unable to open output file ' + clArgs.output_prefix + "_1.dupl.fq"
     quitOnError(msg)
 
 if PAIRED:
@@ -167,11 +163,22 @@ if PAIRED:
         msg = 'Unable to open output file ' + clArgs.output_prefix + "_2.fq"
         quitOnError(msg)
 
-    secondReadDiscardedOut = ''
+    secondReadDuplicateOut = ''
     try: 
-        secondReadDiscardedOut = open(clArgs.output_prefix + "_2.disc.txt", 'w')
+        secondReadDuplicateOut = open(clArgs.output_prefix + "_2.dupl.fq", 'w')
     except: 
-        msg = 'Unable to open output file ' + clArgs.output_prefix + "_2.disc.txt"
+        msg = 'Unable to open output file ' + clArgs.output_prefix + "_2.dupl.fq"
+        quitOnError(msg)
+
+# generate tsv file with number of duplicates per read.
+if DEBUG:
+    readCountsOut = ''
+    try:
+        print clArgs.output_prefix + ".debug.tsv"
+        exit 0
+        readCountsOut = open(clArgs.output_prefix + ".debug.tsv", 'w')
+    except: 
+        msg = 'Unable to open output file ' + clArgs.output_prefix + '.debug.tsv'
         quitOnError(msg)
 
 #------------------------------------------------------------------------------------------
@@ -182,27 +189,27 @@ if PAIRED:
 while 1:
     firstRead = nextRead(firstReadIn)
     if firstRead == {}: break
-    read = firstRead[SEQUENCE]
+    readSeq = firstRead[SEQUENCE]
     if PAIRED: 
         secondRead = nextRead(secondReadIn)
-        read += secondRead[SEQUENCE]
+        readSeq += secondRead[SEQUENCE]
     else:
         # create empty dict so don't have to keep testing PAIRED below
         secondRead = {}
 
     nInitialReadPairs += 1
 
-    if read in uniqReads:
+    if readSeq in uniqReads:
         # found a duplicate
-        if read not in duplReads:
+        if readSeq not in duplReads:
             # new duplicate, so add to duplRead and cntDupl
-            duplReads[read] = [firstRead, secondRead]
-            cntDupl[read] = 1
+            duplReads[readSeq] = [firstRead, secondRead]
+            cntDupl[readSeq] = 1
         else:
             # already found a duplicate so just increment cntDupl
-            cntDupl[read] += 1
+            cntDupl[readSeq] += 1
     else:
-        uniqReads[read] = [firstRead, secondRead]
+        uniqReads[readSeq] = [firstRead, secondRead]
 
 # we've completed the hash tables at this point so now we need to write the data
 if PAIRED:
@@ -211,20 +218,28 @@ if PAIRED:
         writeRead(value[1], secondReadOut)
 
     for value in duplReads.itervalues():
-        writeRead(value[0], firstReadDiscardedOut)
-        writeRead(value[1], secondReadDiscardedOut)
+        writeRead(value[0], firstReadDuplicateOut)
+        writeRead(value[1], secondReadDuplicateOut)
 else:
     for value in uniqReads.itervalues():
         writeRead(value[0], firstReadOut)
 
     for value in duplReads.itervalues():
-        writeRead(value[0], firstReadDiscardedOut)
+        writeRead(value[0], firstReadDuplicateOut)
 
 firstReadIn.close()
 firstReadOut.close()
+firstReadDuplicateOut.close()
 if PAIRED:
     secondReadIn.close()
     secondReadOut.close()
+    secondReadDuplicateOut.close()
+
+if DEBUG:
+    readCountsOut.write('numDupl\theader\tmate1\tmate2\n')
+    for key in cntDupl:
+        readCountsOut.write(str(cntDupl[key]) + '\t' + duplReads[key][0][HEADER] + '\t' + duplReads[key][0][SEQUENCE] + '\t' + duplReads[key][1][SEQUENCE] + '\n')
+    readCountsOut.close()
 
 # compute stats
 nUniqueReadPairs = len(uniqReads)
