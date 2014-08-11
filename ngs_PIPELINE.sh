@@ -125,7 +125,8 @@ ngsCmd_PIPELINE() {
 		ngsCmd_INIT
 		ngsCmd_FASTQC
 		ngsCmd_BLAST
-		ngsCmd_TRIM -m 20 -rAT 26 -rN -c $REPO_LOCATION/trim/contaminants.fa $SAMPLE
+		ngsArgs_TRIM -m 20 -rAT 26 -rN -c $REPO_LOCATION/trim/contaminants.fa $SAMPLE
+		ngsCmd_TRIM
 		# Need different args to run FastQC on the trimmed data, so adjust
 		# args by calling ngsArgs_FASTQC() prior to running ngsCmd_FASTQC().
 		ngsArgs_FASTQC -i trim -o fastqc.trim $SAMPLE
