@@ -175,7 +175,6 @@ if DEBUG:
     readCountsOut = ''
     try:
         print clArgs.output_prefix + ".debug.tsv"
-        exit 0
         readCountsOut = open(clArgs.output_prefix + ".debug.tsv", 'w')
     except: 
         msg = 'Unable to open output file ' + clArgs.output_prefix + '.debug.tsv'
