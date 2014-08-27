@@ -53,7 +53,7 @@ argParser.add_argument( '-f', dest='first_fq', action='store', required=True,
 argParser.add_argument( '-r', dest='second_fq', 
                         help='fastq file with mate pairs for paired-end reads. This file is not present for single-end reads.' )
 argParser.add_argument( '-o', dest='output_prefix', action='store', required=True,
-                        help='prefix for output file(s). A \'_1\' will be appended to the first reads output file and if paired reads then a \'_2\' will be appended to the second reads file. Output files similarly named and with the suffix \'.dupl.txt\' will be created to store a copy of all duplicate reads.' )
+                        help='prefix for output file(s). A \'_1\' will be appended to the first reads output file and if paired reads then a \'_2\' will be appended to the second reads file. Output files similarly named and with the suffix \'.dupl.txt\' will be created to store a copy of all duplicate reads. The number of duplicates for a read is stored in the read header as "D:XX" where XX is the duplicate count.' )
 
 clArgs = argParser.parse_args()
 if DEBUG: print clArgs
@@ -110,12 +110,15 @@ def nextRead(inFile):
         msg = 'Problem loading read:', line
         quitOnError(msg)
 
-def writeRead(read, outFile):
+def writeRead(read, count, outFile):
     """
     Writes a read to the read file. Read is expected to be a 4-item
-    list as returned by nextRead().
+    list as returned by nextRead(). Any spaces in the header are
+    replaced with a '-' because STAR truncates header strings at the
+    first space.
     """
-    outFile.write(read[HEADER] + '\n') # header
+    header = read[HEADER].replace(' ','-') + "::D:" + str(count)
+    outFile.write(header + '\n') # header
     outFile.write(read[SEQUENCE] + '\n') # sequence
     outFile.write('+\n') # +
     outFile.write(read[QUALS] + '\n') # quals
@@ -211,19 +214,26 @@ while 1:
 
 # we've completed the hash tables at this point so now we need to write the data
 if PAIRED:
-    for value in uniqReads.itervalues():
-        writeRead(value[0], firstReadOut)
-        writeRead(value[1], secondReadOut)
+    for key in uniqReads:
+        if key in cntDupl:
+            writeRead(uniqReads[key][0], cntDupl[key], firstReadOut)
+            writeRead(uniqReads[key][1], cntDupl[key], secondReadOut)
+        else:
+            writeRead(uniqReads[key][0], 0, firstReadOut)
+            writeRead(uniqReads[key][1], 0, secondReadOut)
 
-    for value in duplReads.itervalues():
-        writeRead(value[0], firstReadDuplicateOut)
-        writeRead(value[1], secondReadDuplicateOut)
+    for key in duplReads:
+        writeRead(duplReads[key][0], cntDupl[key], firstReadDuplicateOut)
+        writeRead(duplReads[key][1], cntDupl[key], secondReadDuplicateOut)
 else:
-    for value in uniqReads.itervalues():
-        writeRead(value[0], firstReadOut)
+    for key in uniqReads:
+        if key in cntDupl:
+            writeRead(uniqReads[key][0], cntDupl[key], firstReadOut)
+        else:
+            writeRead(uniqReads[key][0], 0, firstReadOut)
 
-    for value in duplReads.itervalues():
-        writeRead(value[0], firstReadDuplicateOut)
+    for key in duplReads:
+        writeRead(duplReads[key][0], cntDupl[key], firstReadDuplicateOut)
 
 firstReadIn.close()
 firstReadOut.close()
