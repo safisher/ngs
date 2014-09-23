@@ -77,10 +77,10 @@ ngsArgs_RSYNC() {
 ngsCmd_RSYNC() {
 	prnCmd "# BEGIN: COPYING TO REPO"
 	
-    # we exclude init since that's the unaligned data which is already in the repo. Note that $JOURNAL contains the name of the log file as well as the sample directory
-	prnCmd "rsync -avh --stats --exclude init --exclude $JOURNAL $SAMPLE $ngsLocal_RSYNC_OUT_DIR/."
+    # we exclude init since that's the unaligned data which is already in the repo. Note that $JOURNAL contains the name of the log file as well as the sample directory. Excluding the '.' from the output directory location will cause the creating of the output directory, if relevant.
+	prnCmd "rsync -avh --stats --exclude init --exclude $JOURNAL $SAMPLE $ngsLocal_RSYNC_OUT_DIR/"
 	if ! $DEBUG; then 
-		rsync -avh --stats --exclude init --exclude $JOURNAL $SAMPLE $ngsLocal_RSYNC_OUT_DIR/.
+		rsync -avh --stats --exclude init --exclude $JOURNAL $SAMPLE $ngsLocal_RSYNC_OUT_DIR/
 	fi
 	
 	# the prnCmd is here for proper annotation in the log file. The
