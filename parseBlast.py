@@ -68,6 +68,7 @@ if 'mm9' in TARGET or 'mm10' in TARGET: targetSpecies = 'mouse'
 if 'rn5' in TARGET: targetSpecies = 'rat'
 if 'drosophila' in TARGET or 'dmel5' in TARGET: targetSpecies = 'fly'
 if 'hg19' in TARGET: targetSpecies = 'human'
+if 'hg38' in TARGET: targetSpecies = 'human'
 if 'saccer3' in TARGET: targetSpecies = 'yeast'
 if 'zebrafish' in TARGET or 'zv9' in TARGET: targetSpecies = 'fish'
 
