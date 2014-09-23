@@ -58,7 +58,8 @@ def count_features(sortedSam):
     if DEBUG: update('Counting.')
 
     try:
-        counts = run_cmd('python -m HTSeq.scripts.count --mode=intersection-nonempty --stranded=no --type=exon --idattr=gene_id ' + sortedSam + ' ' + GENE_MODEL)
+	##MK: added the option --order=pos which runs HTseq on position sorted file
+        counts = run_cmd('python -m HTSeq.scripts.count --order=pos --mode=intersection-nonempty --stranded=no --type=exon --idattr=gene_id ' + sortedSam + ' ' + GENE_MODEL)
     except:
         print 'Error during counting process: '
         print sys.exc_info()
@@ -73,21 +74,6 @@ def count_features(sortedSam):
 	
     if DEBUG: update('Completed counting: ' + countsFile)
 
-def sort_by_readname(bamToSort):
-    # Given a path to a bam file, saves a bam file sorted by read name as outpath_name_sorted.bam.
-    if DEBUG: update('Sorting by read name.')
-
-    # sort by read name. note that samtools will add ".bam" to output file name
-    sortedBam = SAMPLE + '.sorted'
-    run_cmd('samtools sort -n ' + bamToSort + ' ' + sortedBam)
-
-    # samtools adds '.bam' to the file name
-    sortedBam = SAMPLE + '.sorted.bam'
-    
-    if DEBUG: update('Completed sorting: ' + sortedBam)
-    
-    return sortedBam
-
 def update(message):
     print message
     print datetime.datetime.now()
@@ -97,22 +83,12 @@ def run_cmd(cmd):
     return p.communicate()[0]
 
 try:
-    # sort BAM by read name
-    sortedBam = sort_by_readname(SOURCE_BAM)
-
-    # run fixmate on sorted BAM
-    fixedBam = SAMPLE + '.fixed.bam'
-    run_cmd('samtools fixmate ' + sortedBam + ' ' + fixedBam)
-
-    # convert sorted and fixed BAM to SAM
+    # convert source BAM to SAM
     sortedSam = SAMPLE + '.sorted.sam'
-    run_cmd('samtools view -h -o ' + sortedSam + ' ' + fixedBam)
-
+    run_cmd('samtools view -h -o ' + sortedSam + ' ' + SOURCE_BAM)
     count_features(sortedSam)
 
-    # remove temporary files
-    if not DEBUG: os.remove(sortedBam)
-    if not DEBUG: os.remove(fixedBam)
+    # remove temporary file
     if not DEBUG: os.remove(sortedSam)
     
     if DEBUG: update('Finished.')
