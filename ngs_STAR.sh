@@ -57,6 +57,12 @@ ngsHelp_STAR() {
 ##########################################################################################
 
 ngsLocal_STAR_INP_DIR="trim"
+# arguments that pertain to both SE and PE samples
+ngsLocal_STAR_ARGS="--outFilterScoreMin 0 --outFilterScoreMinOverLread 0 --outFilterMatchNmin 30 --outFilterMismatchNmax 100 --outFilterMismatchNoverLmax 0.3 --outReadsUnmapped Fastx --genomeLoad LoadAndRemove"
+# SE specific arguments
+ngsLocal_STAR_SE_ARGS="--outFilterMatchNminOverLread 0.6"
+# PE specific arguments
+ngsLocal_STAR_PE_ARGS="--outFilterMatchNminOverLread 0.4"
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -110,14 +116,14 @@ ngsCmd_STAR() {
 	
 	# single-end only has one input file
 	if $SE; then 
-		local STAR_INPUT_READS="$SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq"
+		ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS $ngsLocal_STAR_SE_ARGS --readFilesIn $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq"
 	else 
-		local STAR_INPUT_READS="$SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_2.fq"
+		ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS $ngsLocal_STAR_PE_ARGS --readFilesIn $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_2.fq"
 	fi
 
-	prnCmd "STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $STAR_INPUT_READS --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx"
+	prnCmd "STAR --genomeDir $STAR_REPO/$SPECIES $ngsLocal_STAR_ARGS --runThreadN $NUMCPU --outFileNamePrefix $SAMPLE/star/ "
 	if ! $DEBUG; then 
-		STAR --genomeDir $STAR_REPO/$SPECIES --readFilesIn $STAR_INPUT_READS --runThreadN $NUMCPU  --genomeLoad LoadAndRemove --outFileNamePrefix $SAMPLE/star/ --outReadsUnmapped Fastx
+		STAR --genomeDir $STAR_REPO/$SPECIES $ngsLocal_STAR_ARGS --runThreadN $NUMCPU --outFileNamePrefix $SAMPLE/star/
 	fi
 
 	# run post processing to generate necessary alignment files
