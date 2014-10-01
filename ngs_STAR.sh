@@ -57,12 +57,47 @@ ngsHelp_STAR() {
 ##########################################################################################
 
 ngsLocal_STAR_INP_DIR="trim"
-# arguments that pertain to both SE and PE samples
-ngsLocal_STAR_ARGS="--outFilterScoreMin 0 --outFilterScoreMinOverLread 0 --outFilterMatchNmin 30 --outFilterMismatchNmax 100 --outFilterMismatchNoverLmax 0.3 --outReadsUnmapped Fastx --genomeLoad LoadAndRemove"
-# SE specific arguments
-ngsLocal_STAR_SE_ARGS="--outFilterMatchNminOverLread 0.6"
-# PE specific arguments
-ngsLocal_STAR_PE_ARGS="--outFilterMatchNminOverLread 0.4"
+
+# STAR PARAMETERS. These are included here for easy documenting and
+# editing. The default STAR parameters are included in the comments below.
+ngsLocal_STAR_ARGS=""  # arguments that pertain to both SE and PE samples
+ngsLocal_STAR_SE_ARGS="" # SE specific arguments
+ngsLocal_STAR_PE_ARGS="" # PE specific arguments
+
+# outFilterScoreMin               0
+# int: alignment will be output only if its score is higher than this value
+ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS --outFilterScoreMin 0"
+
+# outFilterScoreMinOverLread      0.66
+# float: outFilterScoreMin normalized to read length (sum of mates lengths for paired-end reads)
+ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS --outFilterScoreMinOverLread 0"
+
+# outFilterMatchNmin              0
+# int: alignment will be output only if the number of matched bases is higher than this value
+ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS --outFilterMatchNmin 30"
+
+# outFilterMismatchNmax           10
+# int: alignment will be output only if it has fewer mismatches than this value
+ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS --outFilterMismatchNmax 100"
+
+# outFilterMismatchNoverLmax      0.3
+# int: alignment will be output only if its ratio of mismatches to mapped length is less than this value
+ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS --outFilterMismatchNoverLmax 0.3"
+
+# outReadsUnmapped                None
+# string: output of unmapped reads (besides SAM)
+#                                 None    : no output
+#                                 Fastx   : output in separate fasta/fastq files, Unmapped.out.mate1/2
+ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS --outReadsUnmapped Fastx"
+
+# genomeLoad                      NoSharedMemory
+# mode of shared memory usage for the genome files
+ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS --genomeLoad LoadAndRemove"
+
+# outFilterMatchNminOverLread     0.66
+# float: outFilterMatchNmin normalized to read length (sum of mates lengths for paired-end reads)
+ngsLocal_STAR_SE_ARGS="$ngsLocal_STAR_SE_ARGS --outFilterMatchNminOverLread 0.6"
+ngsLocal_STAR_PE_ARGS="$ngsLocal_STAR_PE_ARGS --outFilterMatchNminOverLread 0.4"
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
