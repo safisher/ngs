@@ -19,7 +19,7 @@ by: H. Dueck, S. Fisher, 2013
 
 usage: python runHTSeq.py <SOURCE BAM> <OUTPUT FILE PREFIX> <GENE MODEL GTF>
 
-HTSeq requires a SAM file that is sorted by read names and had reads fixed with samtools 'fixmate'. This script handles the conversion from an unsorted BAM file.
+Requires HTSeq version 0.6 or later as runHTSeq.py uses the --order flag and a position sorted SAM file.
 
 HTSeq parameters: --mode=intersection-nonempty --stranded=no --type=exon --idattr=gene_id
 

@@ -34,7 +34,7 @@ ngsHelp_HTSEQ() {
 	echo -e "Usage:\n\t`basename $0` htseq [-i inputDir] [-f inputFile] -s species sampleID"
 	echo -e "Input:\n\tsampleID/inputDir/inputFile"
 	echo -e "Output:\n\tsampleID/htseq/sampleID.htseq.cnts.txt\n\tsampleID/htseq/sampleID.htseq.log.txt\n\tsampleID/htseq/sampleID.htseq.err.txt"
-	echo -e "Requires:\n\tHTSeq ( http://www-huber.embl.de/users/anders/HTSeq/ )\n\tPysam ( https://pypi.python.org/pypi/pysam )\n\trunHTSeq.py ( https://github.com/safisher/ngs )\n\tdynamicRange.py ( https://github.com/safisher/ngs )"
+	echo -e "Requires:\n\tHTSeq version 0.6 or later ( http://www-huber.embl.de/users/anders/HTSeq/ )\n\tPysam ( https://pypi.python.org/pypi/pysam )\n\trunHTSeq.py ( https://github.com/safisher/ngs )\n\tdynamicRange.py ( https://github.com/safisher/ngs )"
 	echo -e "Options:"
 	echo -e "\t-i inputDir - location of source file (default: star)."
 	echo -e "\t-f inputFile - source file (default: sampleID.star.unique.bam)."
