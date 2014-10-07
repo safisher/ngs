@@ -214,15 +214,15 @@ ngsStats_HTSEQ() {
 		prnError "Incorrect number of parameters for ngsStats_HTSEQ()."
 	fi
    
-	# number of genes with at least 1 read mapped
-	numGenes=$($GREPP -v "\t0$" $SAMPLE/htseq/$SAMPLE.htseq.cnts.txt | grep -v "gene" | wc -l)
-	header="$header\tAmbiguous"
-	values="$values\t$numGenes"
-
 	# total number of reads that mapped unambigously to genes
 	readsCounted=$(cat $SAMPLE/htseq/$SAMPLE.htseq.cnts.txt | awk '{sum += $2} END {print sum}')
 	header="Reads Counted"
 	values="$readsCounted"
+
+	# number of genes with at least 1 read mapped
+	numGenes=$($GREPP -v "\t0$" $SAMPLE/htseq/$SAMPLE.htseq.cnts.txt | grep -v "gene" | wc -l)
+	header="$header\tNum Genes"
+	values="$values\t$numGenes"
 
 	# average number of reads that mapped unambigously to genes
 	avgReadPerGene=$(($readsCounted/$numGenes))
