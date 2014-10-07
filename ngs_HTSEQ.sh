@@ -34,7 +34,7 @@ ngsHelp_HTSEQ() {
 	echo -e "Usage:\n\t`basename $0` htseq [-i inputDir] [-f inputFile] -s species sampleID"
 	echo -e "Input:\n\tsampleID/inputDir/inputFile"
 	echo -e "Output:\n\tsampleID/htseq/sampleID.htseq.cnts.txt\n\tsampleID/htseq/sampleID.htseq.log.txt\n\tsampleID/htseq/sampleID.htseq.err.txt"
-	echo -e "Requires:\n\tHTSeq version 0.6 or later ( http://www-huber.embl.de/users/anders/HTSeq/ )\n\tPysam ( https://pypi.python.org/pypi/pysam )\n\trunHTSeq.py ( https://github.com/safisher/ngs )\n\tdynamicRange.py ( https://github.com/safisher/ngs )"
+	echo -e "Requires:\n\tHTSeq version 0.6 or later ( http://www-huber.embl.de/users/anders/HTSeq/ )\n\tPysam ( https://pypi.python.org/pypi/pysam )\n\tdynamicRange.py ( https://github.com/safisher/ngs )"
 	echo -e "Options:"
 	echo -e "\t-i inputDir - location of source file (default: star)."
 	echo -e "\t-f inputFile - source file (default: sampleID.star.unique.bam)."
@@ -115,9 +115,9 @@ ngsCmd_HTSEQ() {
 	fi
 
 	# We assume that the alignment file exists
-	prnCmd "runHTSeq.py $SAMPLE/$ngsLocal_HTSEQ_INP_DIR/$ngsLocal_HTSEQ_INP_FILE $SAMPLE/htseq/$SAMPLE $HTSEQ_REPO/$SPECIES.gz"
+	prnCmd "python -m HTSeq.scripts.count --format=bam --order=pos --mode=intersection-nonempty --stranded=no --type=exon --idattr=gene_id $SAMPLE/$ngsLocal_HTSEQ_INP_DIR/$ngsLocal_HTSEQ_INP_FILE $HTSEQ_REPO/$SPECIES.gz > $SAMPLE/htseq/$SAMPLE.htseq.out 2>&1"
 	if ! $DEBUG; then 
-		runHTSeq.py $SAMPLE/$ngsLocal_HTSEQ_INP_DIR/$ngsLocal_HTSEQ_INP_FILE $SAMPLE/htseq/$SAMPLE $HTSEQ_REPO/$SPECIES.gz
+        python -m HTSeq.scripts.count --format=bam --order=pos --mode=intersection-nonempty --stranded=no --type=exon --idattr=gene_id $SAMPLE/$ngsLocal_HTSEQ_INP_DIR/$ngsLocal_HTSEQ_INP_FILE $HTSEQ_REPO/$SPECIES.gz > $SAMPLE/htseq/$SAMPLE.htseq.out 2>&1
 	fi
 	
 	prnCmd "# splitting output file into counts, log, and error files"
