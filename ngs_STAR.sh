@@ -94,6 +94,21 @@ ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS --outReadsUnmapped Fastx"
 # mode of shared memory usage for the genome files
 ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS --genomeLoad LoadAndRemove"
 
+# outSAMtype                      SAM
+# output sorted by coordinate Aligned.sortedByCoord.out.bam file, similar to samtools sort command.
+#                                 strings: type of SAM/BAM output
+#                                 1st word:
+#                                   BAM - output BAM without sorting
+#                                   SAM - output SAM without sorting
+#                                   None - no SAM/BAM output 
+#                                 2nd, 3rd:
+#                                   Unsorted - standard unsorted
+#                                   SortedByCoordinate - sorted by coordinate 
+
+# genomeLoad                      NoSharedMemory
+# mode of shared memory usage for the genome files
+ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS --genomeLoad LoadAndRemove"
+
 # outFilterMatchNminOverLread     0.66
 # float: outFilterMatchNmin normalized to read length (sum of mates lengths for paired-end reads)
 ngsLocal_STAR_SE_ARGS="$ngsLocal_STAR_SE_ARGS --outFilterMatchNminOverLread 0.6"
@@ -205,15 +220,9 @@ starPostProcessing() {
 		gzip Unmapped.out.*
 	fi
 	
-	prnCmd "# converting SAM output to sorted BAM file"
-	prnCmd "samtools view -h -b -S -o STAR.bam Aligned.out.sam"
+	prnCmd "mv Aligned.out.bam $SAMPLE.star.sorted.bam"
 	if ! $DEBUG; then 
-		samtools view -h -b -S -o STAR.bam Aligned.out.sam
-	fi
-	
-	prnCmd "samtools sort STAR.bam $SAMPLE.star.sorted"
-	if ! $DEBUG; then 
-		samtools sort STAR.bam $SAMPLE.star.sorted
+	        mv Aligned.out.bam $SAMPLE.star.sorted.bam
 	fi
 	
 	prnCmd "samtools index $SAMPLE.star.sorted.bam"
@@ -223,22 +232,22 @@ starPostProcessing() {
 	
 	# generate BAM file containing all uniquely mapped reads. This variant will
 	# remove mitochondrial genes:
-	#   samtools view -H -S Aligned.out.sam > header.sam; $GREPP -v 'chrM\t' Aligned.out.sam | $GREPP 'IH:i:1\t' | cat header.sam - | samtools view -bS - > STAR_Unique.bam
+	#   samtools view -H -S $SAMPLE.star.sorted.bam > header.sam; $GREPP -v 'chrM\t' $SAMPLE.star.sorted.bam | $GREPP 'IH:i:1\t' | cat header.sam - | samtools view -bS - > STAR_Unique.bam
 	prnCmd "# generating STAR_Unique.bam file"
-	prnCmd "samtools view -H -S Aligned.out.sam > header.sam"
+	prnCmd "samtools view -H $SAMPLE.star.sorted.bam > header.sam"
 	# (1) extract all mapped reads from SAM file, (2) filter by number of mappings, (3) add header, (4) convert to BAM
-	prnCmd "samtools view -S -F 0x4 Aligned.out.sam | $GREPP 'NH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.star.unique.bam"
+	prnCmd "samtools view -F 0x4 $SAMPLE.star.sorted.bam | $GREPP 'NH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.star.unique.bam"
 	prnCmd "rm header.sam"
 	if ! $DEBUG; then 
-		samtools view -H -S Aligned.out.sam > header.sam
-		samtools view -S -F 0x4 Aligned.out.sam | $GREPP 'NH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.star.unique.bam
+		samtools view -H $SAMPLE.star.sorted.bam > header.sam
+		samtools view -F 0x4 $SAMPLE.star.sorted.bam | $GREPP 'NH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.star.unique.bam
 		rm header.sam
 	fi
 	
 	# this might be problematic if the sorting doesn't work.
-	prnCmd "rm STAR.bam Aligned.out.sam"
+	prnCmd "rm STAR.bam"
 	if ! $DEBUG; then 
-		rm STAR.bam Aligned.out.sam
+		rm STAR.bam
 	fi
 	
 	# rename output stats file to conform to other modules
