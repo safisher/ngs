@@ -303,23 +303,25 @@ ngsStats_STAR() {
 		prnError "Incorrect number of parameters for ngsStats_STAR()."
 	fi
 
-	avgReadLen=`grep "Average input read length" $SAMPLE/star/$SAMPLE.star.stats.txt | awk -F $'\t' '{print $2}'`
+	statsFile="$SAMPLE.star.stats.txt"
+
+	avgReadLen=`grep "Average input read length" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}'`
 	STAR_HEADER="Avg Inp Read Len"
 	STAR_VALUES="$avgReadLen"
 
-	avgMapLen=`grep "Average mapped length" $SAMPLE/star/$SAMPLE.star.stats.txt | awk -F $'\t' '{print $2}'`
+	avgMapLen=`grep "Average mapped length" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}'`
 	STAR_HEADER="$STAR_HEADER\tAvg Uniq Map Len"
 	STAR_VALUES="$STAR_VALUES\t$avgMapLen"
 
-	uniqMap=`grep "Uniquely mapped reads %" $SAMPLE/star/$SAMPLE.star.stats.txt | awk -F $'\t' '{print $2}'`
+	uniqMap=`grep "Uniquely mapped reads %" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}'`
 	STAR_HEADER="$STAR_HEADER\tUniq Map"
 	STAR_VALUES="$STAR_VALUES\t$uniqMap"
 
-	multimapped=`grep "% of reads mapped to multiple loci" $SAMPLE/star/$SAMPLE.star.stats.txt | awk -F $'\t' '{print $2}'`
+	multimapped=`grep "% of reads mapped to multiple loci" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}'`
 	STAR_HEADER="$STAR_HEADER\tMultimapped"
 	STAR_VALUES="$STAR_VALUES\t$multimapped"
 
-	tooShort=`grep "% of reads unmapped: too short" $SAMPLE/star/$SAMPLE.star.stats.txt | awk -F $'\t' '{print $2}'`
+	tooShort=`grep "% of reads unmapped: too short" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}'`
 	STAR_HEADER="$STAR_HEADER\tToo Short"
 	STAR_VALUES="$STAR_VALUES\t$tooShort"
 
