@@ -325,7 +325,8 @@ speciesFile.write('Hits not accounted for: ' + str(numNotCounted) + '\n')
 # need to include ERCC in target counts when computing hits not target species.
 targetCounts = counts[targetSpecies]
 if 'ercc' not in 'targetSpecies': targetCounts += counts['ercc']
-speciesFile.write('Hits not target species or ERCC: %.1f%%\n\n' % (100.0 * float(numHits - targetCounts)/float(numHits)))
+hitsNotTargetOrERCC = 100.0 * float(numHits - targetCounts)/float(numHits))
+speciesFile.write('Hits not target species or ERCC: %.1f%%\n\n' % (hitsNotTargetOrERCC)
 
 # print out species counts
 keyList = sorted(counts.keys())
@@ -334,7 +335,7 @@ for species in keyList:
 
 speciesFile.write('\nTotal Hits\tHits Not Counted\tHits Not Target or ERCC\tBacteria\tFish\tFly\tHuman\tMouse\tRat\tYeast\tERCC\n')
 speciesFile.write(str(numHits) + '\t' + str(numNotCounted))
-speciesFile.write('\t%.1f%%' % (100.0 * float(numHits - counts[targetSpecies])/float(numHits)))
+speciesFile.write('\t%.1f%%' % (hitsNotTargetOrERCC)
 speciesFile.write('\t' + str(counts['bact']))
 speciesFile.write('\t' + str(counts['fish']))
 speciesFile.write('\t' + str(counts['fly']))
