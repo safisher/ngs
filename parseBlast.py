@@ -325,7 +325,7 @@ speciesFile.write('Hits not accounted for: ' + str(numNotCounted) + '\n')
 # need to include ERCC in target counts when computing hits not target species.
 targetCounts = counts[targetSpecies]
 if 'ercc' not in 'targetSpecies': targetCounts += counts['ercc']
-hitsNotTargetOrERCC = 100.0 * float(numHits - targetCounts)/float(numHits))
+hitsNotTargetOrERCC = 100.0 * float(numHits - targetCounts)/float(numHits)
 speciesFile.write('Hits not target species or ERCC: %.1f%%\n\n' % (hitsNotTargetOrERCC)
 
 # print out species counts
