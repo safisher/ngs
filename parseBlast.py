@@ -335,7 +335,7 @@ for species in keyList:
 
 speciesFile.write('\nTotal Hits\tHits Not Counted\tHits Not Target or ERCC\tBacteria\tFish\tFly\tHuman\tMouse\tRat\tYeast\tERCC\n')
 speciesFile.write(str(numHits) + '\t' + str(numNotCounted))
-speciesFile.write('\t%.1f%%' % (hitsNotTargetOrERCC)
+speciesFile.write('\t%.1f%%' % (hitsNotTargetOrERCC))
 speciesFile.write('\t' + str(counts['bact']))
 speciesFile.write('\t' + str(counts['fish']))
 speciesFile.write('\t' + str(counts['fly']))
