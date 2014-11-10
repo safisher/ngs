@@ -40,7 +40,8 @@ ngsHelp_BLAST() {
 	echo -e "\t-k kmer - check for presence of k-mer in reads that failed to align"
 	echo -e "\t-p numProc - number of cpu to use"
 	echo -e "\t-s species - expected species\n"
-	echo -e "Run blast on 5000 reads randomly sampled from init/unaligned_1.fq. Blast paramters used are 'num_descriptions: 10 num_alignments: 10 word_size: 15 gapopen: 3 gapextend: 1 evalue: 1e-15'. The output is put in a directory called 'blast'. The species.txt file contains number of reads mapping to each species (mouse, rat, human, bacteria)."
+	echo -e "Run blast on 5000 reads randomly sampled from init/unaligned_1.fq. Blast paramters used are 'num_descriptions: 10 num_alignments: 10 word_size: 15 gapopen: 3 gapextend: 1 evalue: 1e-15'. The output is put in a directory called 'blast'. The species.txt file contains number of reads mapping to each species (mouse, rat, human, bacteria).\n"
+	echo -e "The blast mappings are split into two files: reads.counted.txt and reads.notCounted.txt. Reads.notCounted.txt contains all reads that mapped to something that wasn’t one of the species we track (i.e. mouse, rat, human, bacteria, fly, zebra fish, yeast, ERCC). Browsing this file should elucidate the species of the uncounted mappings."
 }
 
 ##########################################################################################
