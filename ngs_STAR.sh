@@ -104,10 +104,12 @@ ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS --genomeLoad LoadAndRemove"
 #                                 2nd, 3rd:
 #                                   Unsorted - standard unsorted
 #                                   SortedByCoordinate - sorted by coordinate 
+# WARNING: when changing ngsLocal_STAR_ARGS, be sure to update
+# ngsLocal_STAR_ALIGN_OUTPUT else you will break starPostProcessing()
+ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS --outSAMtype BAM SortedByCoordinate"
 
-# genomeLoad                      NoSharedMemory
-# mode of shared memory usage for the genome files
-ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS --genomeLoad LoadAndRemove"
+# this is the output file that STAR generates based on "--outSAMtype"
+ngsLocal_STAR_ALIGN_OUTPUT="Aligned.sortedByCorrd.out.bam"
 
 # outFilterMatchNminOverLread     0.66
 # float: outFilterMatchNmin normalized to read length (sum of mates lengths for paired-end reads)
@@ -220,9 +222,9 @@ starPostProcessing() {
 		gzip Unmapped.out.*
 	fi
 	
-	prnCmd "mv Aligned.out.bam $SAMPLE.star.sorted.bam"
+	prnCmd "mv $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.sorted.bam"
 	if ! $DEBUG; then 
-	        mv Aligned.out.bam $SAMPLE.star.sorted.bam
+	    mv $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.sorted.bam
 	fi
 	
 	prnCmd "samtools index $SAMPLE.star.sorted.bam"
