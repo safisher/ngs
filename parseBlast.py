@@ -315,6 +315,7 @@ while True:
 # Output counts to species file
 #------------------------------------------------------------------------------------------
 
+
 speciesFile.write('parseBlast.py version: ' + VERSION + '\n')
 speciesFile.write('Target Species: ' + targetSpecies + '\n')
 speciesFile.write('Num reads: ' + str(numReads) + '\n')
@@ -325,7 +326,10 @@ speciesFile.write('Hits not accounted for: ' + str(numNotCounted) + '\n')
 # need to include ERCC in target counts when computing hits not target species.
 targetCounts = counts[targetSpecies]
 if 'ercc' not in 'targetSpecies': targetCounts += counts['ercc']
-hitsNotTargetOrERCC = 100.0 * float(numHits - targetCounts)/float(numHits)
+if numHits > 0:
+    hitsNotTargetOrERCC = 100.0 * float(numHits - targetCounts)/float(numHits)
+else:
+    hitsNotTargetOrERCC = 0
 speciesFile.write('Hits not target species or ERCC: %.1f%%\n\n' % (hitsNotTargetOrERCC))
 
 # print out species counts
