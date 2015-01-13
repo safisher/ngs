@@ -31,14 +31,15 @@ NGS_USAGE+="Usage: `basename $0` fastqc OPTIONS sampleID    --  run FastQC\n"
 ##########################################################################################
 
 ngsHelp_FASTQC() {
-	echo -e "Usage:\n\t`basename $0` fastqc [-i inputDir] [-o outputDir] sampleID"
+	echo -e "Usage:\n\t`basename $0` fastqc [-i inputDir] [-o outputDir] [-se] sampleID"
 	echo -e "Input:\n\tsampleID/inputDir/unaligned_1.fq"
 	echo -e "Output:\n\tsampleID/outputDir/*"
 	echo -e "Requires:\n\tFastQC ( http://www.bioinformatics.babraham.ac.uk/projects/fastqc/ )"
 	echo -e "Options:"
 	echo -e "\t-i inputDir - location of source file (default: init)."
 	echo -e "\t-i outputDir - location of output files (default: fastqc). If this is changed from the default, then it will not be accessible by the STATS module.\n"
-	echo -e "Run FastQC on sampleID/inputDir/unaligned_1.fq file. FastQC only uses one input file so the unaligned_1.fq file is used whether the data is single- or pair-end."
+	echo -e "\t-se - single-end reads (default: paired-end)\n"
+	echo -e "Run FastQC on sampleID/inputDir/unaligned_1.fq and if PE also on sampleID/inputDir/unaligned_2.fq. FastQC only uses one input file so it is run twice in the case of pair-end reads."
 }
 
 ##########################################################################################
@@ -65,6 +66,9 @@ ngsArgs_FASTQC() {
 				;;
 			-o) ngsLocal_FASTQC_OUT_DIR=$2
 				shift; shift;
+				;;
+			-se) SE=true
+				shift;
 				;;
 			-*) printf "Illegal option: '%s'\n" "$1"
 				printHelp $COMMAND
@@ -103,24 +107,22 @@ ngsCmd_FASTQC() {
     # run fastqc
 	prnCmd "fastqc --OUTDIR=$SAMPLE/$ngsLocal_FASTQC_OUT_DIR $SAMPLE/$ngsLocal_FASTQC_INP_DIR/unaligned_1.fq"
 	if ! $DEBUG; then
-	    # fastqc hangs when extracting the zip file, so we do the
-	    # extraction manually
-		fastqc --OUTDIR=$SAMPLE/$ngsLocal_FASTQC_OUT_DIR $SAMPLE/$ngsLocal_FASTQC_INP_DIR/unaligned_1.fq
-		
+	    # run fastqc on first reads
+	    fastqc --OUTDIR=$SAMPLE/$ngsLocal_FASTQC_OUT_DIR $SAMPLE/$ngsLocal_FASTQC_INP_DIR/unaligned_1.fq
+	    
 	    # do some cleanup of the output files
+	    # THE FOLLOWING CLEANUP IS ONLY RELEVANT TO FASTQC VERSION 0.11.1 AND LATER
+	    prnCmd "mv $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc.html $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/$SAMPLE.read_1.$ngsLocal_FASTQC_OUT_DIR.html"
+	    mv $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc.html $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/$SAMPLE.read_1.$ngsLocal_FASTQC_OUT_DIR.html
+	    
+	    if ! $SE; then
+		# run fastqc on second reads
+		fastqc --OUTDIR=$SAMPLE/$ngsLocal_FASTQC_OUT_DIR $SAMPLE/$ngsLocal_FASTQC_INP_DIR/unaligned_2.fq
+		
+		# do some cleanup of the output files
 		# THE FOLLOWING CLEANUP IS ONLY RELEVANT TO FASTQC VERSION 0.11.1 AND LATER
-		prnCmd "mv $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc.html $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/$SAMPLE.$ngsLocal_FASTQC_OUT_DIR.html"
-		mv $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc.html $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/$SAMPLE.$ngsLocal_FASTQC_OUT_DIR.html
-		
-		# THE FOLLOWING CLEANUP IS ONLY RELEVANT TO FASTQC VERSION 0.10.1 AND EARLIER
-		#prnCmd "rm $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc.zip"
-		#rm $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc.zip
-		
-		#prnCmd "mv $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc/* $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/."
-		#mv $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc/* $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/.
-		
-		#prnCmd "rmdir $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc"
-		#rmdir $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_1.fq_fastqc
+		prnCmd "mv $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_2.fq_fastqc.html $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/$SAMPLE.read_2.$ngsLocal_FASTQC_OUT_DIR.html"
+		mv $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_2.fq_fastqc.html $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/$SAMPLE.read_2.$ngsLocal_FASTQC_OUT_DIR.html
 	fi
 	
 	prnCmd "# FINISHED: FASTQC"
