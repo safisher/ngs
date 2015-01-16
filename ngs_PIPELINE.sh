@@ -132,6 +132,9 @@ ngsCmd_PIPELINE() {
 		ngsArgs_FASTQC -i trim -o fastqc.trim $SAMPLE
 		ngsCmd_FASTQC
 		ngsCmd_STAR
+		if [[ $SPECIES = "hg38.gencode21.stranded" ]]; then
+		    ngsArgs_HTSEQ -stranded -introns $SAMPLE
+		fi
 		ngsCmd_HTSEQ
 		ngsCmd_POST
 		ngsCmd_BLASTDB
