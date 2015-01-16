@@ -106,10 +106,14 @@ ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS --genomeLoad LoadAndRemove"
 #                                   SortedByCoordinate - sorted by coordinate 
 # WARNING: when changing ngsLocal_STAR_ARGS, be sure to update
 # ngsLocal_STAR_ALIGN_OUTPUT else you will break starPostProcessing()
-ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS --outSAMtype BAM SortedByCoordinate"
+ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS --outSAMtype BAM Unsorted"
+
+#max 50GB of RAM for sorting 
+#ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS --limitBAMsortRAM 65000000000"
+
 
 # this is the output file that STAR generates based on "--outSAMtype"
-ngsLocal_STAR_ALIGN_OUTPUT="Aligned.sortedByCorrd.out.bam"
+ngsLocal_STAR_ALIGN_OUTPUT="Aligned.out.bam"
 
 # outFilterMatchNminOverLread     0.66
 # float: outFilterMatchNmin normalized to read length (sum of mates lengths for paired-end reads)
@@ -217,20 +221,25 @@ starPostProcessing() {
 	fi
 
 	prnCmd "# compress unmapped reads files that SAM created"
-	prnCmd "gzip Unmapped.out.*"
+	prnCmd "gzip -f Unmapped.out.*"
 	if ! $DEBUG; then 
-		gzip Unmapped.out.*
+		gzip -f Unmapped.out.*
 	fi
+
+	prnCmd "samtools sort -n -@ $NUMCPU -m 32G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.sorted"
+	if ! $DEBUG; then
+	        samtools sort -n -@ $NUMCPU -m 32G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.sorted
+	fi
+
+	#prnCmd "mv $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.sorted.bam"
+	#if ! $DEBUG; then 
+	#    mv $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.sorted.bam
+	#fi
 	
-	prnCmd "mv $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.sorted.bam"
-	if ! $DEBUG; then 
-	    mv $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.sorted.bam
-	fi
-	
-	prnCmd "samtools index $SAMPLE.star.sorted.bam"
-	if ! $DEBUG; then 
-		samtools index $SAMPLE.star.sorted.bam
-	fi
+	#prnCmd "samtools index $SAMPLE.star.sorted.bam"
+	#if ! $DEBUG; then 
+	#	samtools index $SAMPLE.star.sorted.bam
+	#fi
 	
 	# generate BAM file containing all uniquely mapped reads. This variant will
 	# remove mitochondrial genes:
@@ -247,10 +256,10 @@ starPostProcessing() {
 	fi
 	
 	# this might be problematic if the sorting doesn't work.
-	prnCmd "rm STAR.bam"
-	if ! $DEBUG; then 
-		rm STAR.bam
-	fi
+	#prnCmd "rm STAR.bam"
+	#if ! $DEBUG; then 
+	#	rm STAR.bam
+	#fi
 	
 	# rename output stats file to conform to other modules
 	prnCmd "mv Log.final.out $SAMPLE.star.stats.txt"
