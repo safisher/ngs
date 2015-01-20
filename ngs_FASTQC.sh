@@ -123,6 +123,7 @@ ngsCmd_FASTQC() {
 		# THE FOLLOWING CLEANUP IS ONLY RELEVANT TO FASTQC VERSION 0.11.1 AND LATER
 		prnCmd "mv $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_2.fq_fastqc.html $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/$SAMPLE.read_2.$ngsLocal_FASTQC_OUT_DIR.html"
 		mv $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/unaligned_2.fq_fastqc.html $SAMPLE/$ngsLocal_FASTQC_OUT_DIR/$SAMPLE.read_2.$ngsLocal_FASTQC_OUT_DIR.html
+	    fi
 	fi
 	
 	prnCmd "# FINISHED: FASTQC"
