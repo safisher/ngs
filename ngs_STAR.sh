@@ -47,8 +47,7 @@ ngsHelp_STAR() {
 	echo -e "\t-p numProc - number of cpu to use."
 	echo -e "\t-s species - species from repository: $STAR_REPO."
 	echo -e "\t-se - single-end reads (default: paired-end)\n"
-	echo -e "Runs STAR using the trimmed files from sampleID/trim. Output is stored in sampleID/star."
-	echo -e "STAR options used: --genomeLoad LoadAndRemove --outReadsUnmapped Fastx"
+	echo -e "Runs STAR using the trimmed files from sampleID/trim. Output is stored in sampleID/star. The STAR stats file (Log.final.out) is renamed sampleID.star.stats.txt. STAR is run on a single machine using numProc number of cores on that machine. Depending on the size of the genome, it is recommended that the machine have at least 32 GB RAM. See ngs_STAR.sh for STAR options used."
 }
 
 ##########################################################################################
