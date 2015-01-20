@@ -37,7 +37,7 @@ ngsHelp_FASTQC() {
 	echo -e "Requires:\n\tFastQC ( http://www.bioinformatics.babraham.ac.uk/projects/fastqc/ )"
 	echo -e "Options:"
 	echo -e "\t-i inputDir - location of source file (default: init)."
-	echo -e "\t-i outputDir - location of output files (default: fastqc). If this is changed from the default, then it will not be accessible by the STATS module.\n"
+	echo -e "\t-i outputDir - location of output files (default: fastqc). If this is changed from the default, then it will not be accessible by the STATS module."
 	echo -e "\t-se - single-end reads (default: paired-end)\n"
 	echo -e "Run FastQC on sampleID/inputDir/unaligned_1.fq and if PE also on sampleID/inputDir/unaligned_2.fq. FastQC only uses one input file so it is run twice in the case of pair-end reads."
 }
