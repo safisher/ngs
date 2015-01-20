@@ -37,7 +37,9 @@ NGS_USAGE+="Usage: `basename $0` post OPTIONS sampleID    --  clean up RUM and t
 ngsHelp_POST() {
 	echo -e "Usage:\n\t`basename $0` post [-i inputDir] sampleID"
 	echo -e "Input:\n\tsampleID/INPUTDIR/*.fq"
-	echo -e "Output:\n\tsampleID/INPUTDIR/*.fq.gz\n"
+	echo -e "Output:\n\tsampleID/INPUTDIR/*.fq.gz"
+	echo -e "OPTIONS:"
+	echo -e "\t-i - directory containing fastq files to be compressed with gzip (default: sampleID/trim).\n" 
 	echo -e "Compresses all files that end with 'fq'. For example the unaligned_1.fq file in the trim directory will be compressed with gzip and renamed unaligned_1.fq.gz."
 }
 
