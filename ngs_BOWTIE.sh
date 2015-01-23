@@ -119,6 +119,16 @@ ngsCmd_BOWTIE() {
 	if $SE; then prnCmd "# BEGIN: BOWTIE SINGLE-END ALIGNMENT"
 	else prnCmd "# BEGIN: BOWTIE PAIRED-END ALIGNMENT"; fi
 	
+    # make relevant directory
+	if [ ! -d $SAMPLE/bowtie ]; then 
+		prnCmd "mkdir $SAMPLE/bowtie"
+		if ! $DEBUG; then mkdir $SAMPLE/bowtie; fi
+
+		if ! $SE; then
+			prnCmd "mkdir $SAMPLE/bowtie/SE_mapping"
+			if ! $DEBUG; then mkdir $SAMPLE/bowtie/SE_mapping; fi
+		fi
+	fi
     # print version info in $SAMPLE directory
 	prnCmd "# bowtie version: bowtie --version | head -1 | awk '{print \$3}'"
 	prnCmd "# samtools version: samtools 2>&1 | grep 'Version:' | awk '{print \$2}'"
@@ -130,16 +140,6 @@ ngsCmd_BOWTIE() {
 		prnVersion "bowtie" "program\tversion\tprogram\tversion\tspecies" "bowtie\t$ver\tsamtools\t$sver\t$SPECIES"
 	fi
 	
-    # make relevant directory
-	if [ ! -d $SAMPLE/bowtie ]; then 
-		prnCmd "mkdir $SAMPLE/bowtie"
-		if ! $DEBUG; then mkdir $SAMPLE/bowtie; fi
-
-		if ! $SE; then
-			prnCmd "mkdir $SAMPLE/bowtie/SE_mapping"
-			if ! $DEBUG; then mkdir $SAMPLE/bowtie/SE_mapping; fi
-		fi
-	fi
 	
 	if $SE; then 
         # single-end
@@ -257,4 +257,50 @@ ngsErrorChk_BOWTIE() {
 	fi
 
 	prnCmd "# BOWTIE ERROR CHECKING: DONE"
+}
+
+
+ngsStats_BOWTIE() {
+	if [ $# -ne 1 ]; then
+		prnError "Incorrect number of parameters for ngsStats_STAR()."
+	fi
+
+	statsFile="$SAMPLE.stats.txt"
+
+	allNumReads=`grep "processed" $SAMPLE/bowtie/$SAMPLE.stats.txt | awk -F $' ' '{print $4}'`
+	PENumReads=`echo $allNumReads | awk -F $' ' '{if(NR==1){print $1}}'`
+	BOWTIE_HEADER="Number of PE reads"
+	BOWTIE_VALUES="$PENumReads"
+
+	uniqMap=`grep "reported" $SAMPLE/bowtie/$SAMPLE.stats.txt | awk -F $' ' '{print $9}'`
+	uniqPEmap=`echo $uniqMap | awk -F $' ' '{if(NR==1){print $1}}'`
+	BOWTIE_HEADER="$BOWTIE_HEADER\tUniq PE Map"
+	BOWTIE_VALUES="$BOWTIE_VALUES\t$uniqPEmap"
+
+	uniqSEmap1=`echo $uniqMap | awk '{if(NR==2){print $1}}'`
+	uniqSEmap2=`echo $uniqMap | awk '{if(NR==3){print $1}}'`
+	uniqSEmap=$((uniqSEmap1+uniqSEmap2))
+	BOWTIE_HEADER="$BOWTIE_HEADER\tUniq SE Map"
+	BOWTIE_VALUES="$BOWTIE_VALUES\t$uniqSEmap"
+
+	percentMap=$(bc <<<"scale=5;($uniqPEmap+($uniqSEmap/2))/$PENumReads")
+	BOWTIE_HEADER="$BOWTIE_HEADER\tPercent Mapped"
+	BOWTIE_VALUES="$BOWTIE_VALUES\t$percentMap"
+
+	case $1 in
+		header)
+			# the second to the last line of the stats.txt file is a tab-delimited lists of headers
+			echo "$BOWTIE_HEADER"
+			;;
+
+		values)
+			# the last line of the stats.txt file is a tab-delimited lists of values
+			echo "$BOWTIE_VALUES"
+			;;
+
+		*) 
+			# incorrect argument
+			prnError "Invalid parameter for ngsStats_BOWTIE() (got $1, expected: 'header|values')."
+			;;
+	esac
 }
