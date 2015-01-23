@@ -1034,7 +1034,7 @@ print '\tSecond reads discarded:', nSecondDiscarded
 print 
 
 # tab delimited output to facilitate adding stats to compilation file
-fields = '\nnTotalReadPairs\tnBothTrimmed\tnFirstTrimmed\tnSecondTrimmed\tnBothDiscarded\tnFirstDiscarded\tnSecondDiscarded'
+fields = '\nnTotalReadsBeforeTrim\tnBothTrimmed\tnFirstTrimmed\tnSecondTrimmed\tnBothDiscarded\tnFirstDiscarded\tnSecondDiscarded'
 counts = '%d\t%d\t%d\t%d\t%d\t%d\t%d' % (nTotalReadPairs, nBothTrimmed, nFirstTrimmed, nSecondTrimmed, nBothDiscarded, nFirstDiscarded, nSecondDiscarded)
 
 if clArgs.phred_threshold:

@@ -315,25 +315,44 @@ ngsStats_STAR() {
 
 	statsFile="$SAMPLE.star.stats.txt"
 
+	totalReads=`grep "Number of input reads" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}'`
+	STAR_HEADER="Tot Reads After Trim"
+	STAR_VALUES="$totalReads"
+
 	avgReadLen=`grep "Average input read length" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}'`
-	STAR_HEADER="Avg Inp Read Len"
-	STAR_VALUES="$avgReadLen"
+	STAR_HEADER="$STAR_HEADER\tAvg Inp Read Len"
+	STAR_VALUES="$STAR_VALUES\t$avgReadLen"
 
 	avgMapLen=`grep "Average mapped length" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}'`
 	STAR_HEADER="$STAR_HEADER\tAvg Uniq Map Len"
 	STAR_VALUES="$STAR_VALUES\t$avgMapLen"
 
-	uniqMap=`grep "Uniquely mapped reads %" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}'`
-	STAR_HEADER="$STAR_HEADER\tUniq Map"
-	STAR_VALUES="$STAR_VALUES\t$uniqMap"
+	uniqMapNum=`grep "Uniquely mapped reads number" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}'`
+	STAR_HEADER="$STAR_HEADER\tUniq-mapped Reads"
+	STAR_VALUES="$STAR_VALUES\t$uniqMapNum"
 
-	multimapped=`grep "% of reads mapped to multiple loci" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}'`
-	STAR_HEADER="$STAR_HEADER\tMultimapped"
-	STAR_VALUES="$STAR_VALUES\t$multimapped"
+	multimappedNum=`grep "Number of reads mapped to multiple loci" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}'`
+	totalMapped=`echo "$uniqMapNum+$multimappedNum" | bc`
+	STAR_HEADER="$STAR_HEADER\tTotal-mapped Reads"
+	STAR_VALUES="$STAR_VALUES\t$totalMapped"
 
-	tooShort=`grep "% of reads unmapped: too short" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}'`
-	STAR_HEADER="$STAR_HEADER\tToo Short"
-	STAR_VALUES="$STAR_VALUES\t$tooShort"
+	uniqMapPerc=`grep "Uniquely mapped reads %" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}'`
+	STAR_HEADER="$STAR_HEADER\tUniq-mapped Perc"
+	STAR_VALUES="$STAR_VALUES\t$uniqMapPerc"
+
+	multimappedPerc=`grep "% of reads mapped to multiple loci" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}'`
+	STAR_HEADER="$STAR_HEADER\tMulti-mapped"
+	STAR_VALUES="$STAR_VALUES\t$multimappedPerc"
+
+	# we remove the "%" so we can combine the values
+	unmapped1=`grep "% of reads mapped to too many loci" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}' | sed s/%//`
+	unmapped2=`grep "% of reads unmapped: too short" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}' | sed s/%//`
+	unmapped3=`grep "% of reads unmapped: too many mismatches" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}' | sed s/%//`
+	unmapped4=`grep "% of reads unmapped: other" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}' | sed s/%//`
+	unmapped=`echo "$unmapped1+$unmapped2+$unmapped3+$unmapped4" | bc`
+	# add the "%" back
+	STAR_HEADER="$STAR_HEADER\tNot-mapped"
+	STAR_VALUES="$STAR_VALUES\t$unmapped%"
 
 	case $1 in
 		header)
