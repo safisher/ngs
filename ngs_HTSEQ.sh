@@ -266,9 +266,14 @@ ngsStats_HTSEQ() {
     fi
     
     # total number of reads that mapped unambigously to genes
-    readsCounted=$(cat $SAMPLE/htseq/$SAMPLE.htseq.exons.cnts.txt | awk '{sum += $2} END {print sum}')
-    header="Reads Counted"
+    readsCounted=$(grep -v "ERCC-" $SAMPLE/htseq/$SAMPLE.htseq.exons.cnts.txt | awk '{sum += $2} END {print sum}')
+    header="Non-ERCC Reads Counted"
     values="$readsCounted"
+    
+    # total number of reads that mapped unambigously to ERCC controls
+    erccReadsCounted=$(grep "ERCC-" $SAMPLE/htseq/$SAMPLE.htseq.exons.cnts.txt | awk '{sum += $2} END {print sum}')
+    header="$header\tERCC Reads Counted"
+    values="$values\t$erccReadsCounted"
     
     # number of genes with at least 1 read mapped
     numGenes=$($GREPP -v "\t0$" $SAMPLE/htseq/$SAMPLE.htseq.exons.cnts.txt | grep -v "gene" | wc -l)
