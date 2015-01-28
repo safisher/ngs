@@ -224,10 +224,15 @@ starPostProcessing() {
 	if ! $DEBUG; then 
 		gzip -f Unmapped.out.*
 	fi
+   
+	NUM_SORT_THREADS=8	
+	if [[ $NUMCPU < 8 ]]; then
+	    NUM_SORT_THREADS=$NUMCPU
+	fi
 
-	prnCmd "samtools sort -n -@ $NUMCPU -m 32G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.sorted"
+	prnCmd "samtools sort -n -@ $NUM_SORT_THREADS -m 16G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.sorted"
 	if ! $DEBUG; then
-	        samtools sort -n -@ $NUMCPU -m 32G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.sorted
+	        samtools sort -n -@ $NUM_SORT_THREADS -m 16G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.sorted
 	fi
 
 	#prnCmd "mv $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.sorted.bam"
@@ -255,10 +260,10 @@ starPostProcessing() {
 	fi
 	
 	# this might be problematic if the sorting doesn't work.
-	#prnCmd "rm STAR.bam"
-	#if ! $DEBUG; then 
-	#	rm STAR.bam
-	#fi
+	prnCmd "rm Aligned.out.bam"
+	if ! $DEBUG; then 
+		rm Aligned.out.bam
+	fi
 	
 	# rename output stats file to conform to other modules
 	prnCmd "mv Log.final.out $SAMPLE.star.stats.txt"
