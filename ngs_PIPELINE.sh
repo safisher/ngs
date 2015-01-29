@@ -140,7 +140,7 @@ ngsCmd_PIPELINE() {
 		ngsCmd_HTSEQ
 		#ngsCmd_BLASTDB
 
-	if [[ "$ngsLocal_PIPELINE_TYPE" = "RNASeq_Stranded" ]]; then
+	elif [[ "$ngsLocal_PIPELINE_TYPE" = "RNASeq_Stranded" ]]; then
 		ngsArgs_TRIM -m 20 -q 53 -rAT 26 -rN -c $REPO_LOCATION/trim/contaminants.fa $SAMPLE
 		ngsCmd_TRIM
 		ngsArgs_FASTQC -i trim -o fastqc.trim $SAMPLE
