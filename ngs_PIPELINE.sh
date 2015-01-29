@@ -31,14 +31,14 @@ NGS_USAGE+="Usage: `basename $0` pipeline OPTIONS sampleID    --  run full pipel
 ##########################################################################################
 
 ngsHelp_PIPELINE() {
-	echo -e "Usage:\n\t`basename $0` pipeline [-i inputDir] [-o outputDir] [-t RNASeq | WGS] -p numProc -s species [-se] sampleID"
+	echo -e "Usage:\n\t`basename $0` pipeline [-i inputDir] [-o outputDir] [-t RNASeq | RNASeq_Stranded | RNASeq_Human | WGS] -p numProc -s species [-se] sampleID"
 	echo -e "Input:\n\tsee individual commands"
 	echo -e "Output:\n\tsee individual commands"
 	echo -e "Requires:\n\tsee individual commands"
 	echo -e "OPTIONS:"
 	echo -e "\t-i - parent directory containing subdirectory with compressed fastq files (default: ./raw). This is the parent directory of the sample-specific directory. The sampleID will be used to complete the directory path (ie inputDir/sampleID)."
 	echo -e "\t-o - directory containing subdirectory with analysis files (default: ./analyzed). This is the parent directory of the sample-specific directory. The sampleID will be used to complete the directory path (ie outputDir/sampleID)."
-	echo -e "\t-t type - RNASeq or WGS (Whole Genome Sequencing) (default: RNASeq)."
+	echo -e "\t-t type - RNASeq or WGS (Whole Genome Sequencing) (default: RNASeq). RNASeq_Stranded assumes stranded reads for HTSeq counting and will generate intron counts. RNASeq_Human is the same as RNASeq_Stranded but also uses 'gene_name' for the name of the features in the HTSeq GTF file."
 	echo -e "\t-p numProc - number of cpu to use."
 	echo -e "\t-s species - species from repository: $REPO_LOCATION."
 	echo -e "\t-se - single-end reads (default: paired-end)\n"
@@ -114,17 +114,22 @@ ngsCmd_PIPELINE() {
 	# that $SAMPLE is included as the last argument, every time
 	# ngsArgs_XXX() is called.
 
+	########################################################
+	### The modules below are included in all pipelines. ###
+
+	# The value of $RAW is hardcoded in ngs.sh and is used to set
+	# inputDir in INIT. We allow users to change this value using
+	# the optional inputDir argument (-i inputDir). Since INIT
+	# defaults to the original (hardcoded) value of $RAW, we need
+	# to call ngsArgs_INIT() to update the value, prior to calling
+	# ngsCmd_INIT().
+	ngsArgs_INIT -i $RAW $SAMPLE
+	ngsCmd_INIT
+	ngsCmd_FASTQC
+	ngsCmd_BLAST
+	########################################################
+	
 	if [[ "$ngsLocal_PIPELINE_TYPE" = "RNASeq" ]]; then
-		# The value of $RAW is hardcoded in ngs.sh and is used to set
-		# inputDir in INIT. We allow users to change this value using the
-		# optional inputDir argument (-i inputDir). Since INIT defaults to
-		# the original (hardcoded) value of $RAW, we need to call
-		# ngsArgs_INIT() to update the value, prior to calling
-		# ngsCmd_INIT().
-		ngsArgs_INIT -i $RAW $SAMPLE
-		ngsCmd_INIT
-		ngsCmd_FASTQC
-		ngsCmd_BLAST
 		ngsArgs_TRIM -m 20 -q 53 -rAT 26 -rN -c $REPO_LOCATION/trim/contaminants.fa $SAMPLE
 		ngsCmd_TRIM
 		# Need different args to run FastQC on the trimmed data, so adjust
@@ -132,22 +137,28 @@ ngsCmd_PIPELINE() {
 		ngsArgs_FASTQC -i trim -o fastqc.trim $SAMPLE
 		ngsCmd_FASTQC
 		ngsCmd_STAR
-		if [[ $SPECIES = "hg38.gencode21.stranded" ]]; then
-		    ngsArgs_HTSEQ -stranded -introns $SAMPLE
-		fi
 		ngsCmd_HTSEQ
-		ngsCmd_POST
-		ngsCmd_BLASTDB
-		# OutputDir defaults to $ANALYZED which is hardcoded in
-		# ngs.sh, just like inputDir and $RAW.
-		ngsArgs_RSYNC -o $ANALYZED $SAMPLE
-		ngsCmd_RSYNC
+		#ngsCmd_BLASTDB
+
+	if [[ "$ngsLocal_PIPELINE_TYPE" = "RNASeq_Stranded" ]]; then
+		ngsArgs_TRIM -m 20 -q 53 -rAT 26 -rN -c $REPO_LOCATION/trim/contaminants.fa $SAMPLE
+		ngsCmd_TRIM
+		ngsArgs_FASTQC -i trim -o fastqc.trim $SAMPLE
+		ngsCmd_FASTQC
+		ngsCmd_STAR
+		ngsArgs_HTSEQ -stranded -introns $SAMPLE
+		ngsCmd_HTSEQ
+
+	elif [[ "$ngsLocal_PIPELINE_TYPE" = "RNASeq_Human" ]]; then
+		ngsArgs_TRIM -m 20 -q 53 -rAT 26 -rN -c $REPO_LOCATION/trim/contaminants.fa $SAMPLE
+		ngsCmd_TRIM
+		ngsArgs_FASTQC -i trim -o fastqc.trim $SAMPLE
+		ngsCmd_FASTQC
+		ngsCmd_STAR
+		ngsArgs_HTSEQ -stranded -introns -id gene_name $SAMPLE
+		ngsCmd_HTSEQ
 
 	elif [[ "$ngsLocal_PIPELINE_TYPE" = "WGS" ]]; then
-		ngsArgs_INIT -i $RAW $SAMPLE
-		ngsCmd_INIT
-		ngsCmd_FASTQC
-		ngsCmd_BLAST
 		# disable poly-A/T trimming for WGS
 		ngsArgs_TRIM -m 20 -rAT 0 -rN -c $REPO_LOCATION/trim/contaminantsMITO.fa $SAMPLE
 		ngsCmd_TRIM
@@ -156,17 +167,25 @@ ngsCmd_PIPELINE() {
 		ngsCmd_BOWTIE
 		ngsCmd_SNP
 		ngsCmd_SPADES
-		ngsCmd_POST
 		ngsArgs_POST -i bowtie $SAMPLE
 		ngsCmd_POST
 		ngsArgs_POST -i bowtie/SE_mapping $SAMPLE
 		ngsCmd_POST
-		ngsArgs_RSYNC -o $ANALYZED $SAMPLE
-		ngsCmd_RSYNC
 
 	else
 		prnCmd "ERROR: Invalid PIPELINE type $$ngsLocal_PIPELINE_TYPE. Valid options are 'RNASeq' and 'WGS'."
 	fi
+
+	########################################################
+	### The modules below are included in all pipelines. ###
+
+	# compress the trimmed files
+	ngsCmd_POST
+	# OutputDir defaults to $ANALYZED which is hardcoded in
+	# ngs.sh, just like inputDir and $RAW.
+	ngsArgs_RSYNC -o $ANALYZED $SAMPLE
+	ngsCmd_RSYNC
+	########################################################
 
 	if $SE; then prnCmd "# FINISHED: SINGLE-END, $ngsLocal_PIPELINE_TYPE PIPELINE"
 	else prnCmd "# FINISHED: PAIRED-END, $ngsLocal_PIPELINE_TYPE PIPELINE"; fi
