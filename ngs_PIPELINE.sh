@@ -126,6 +126,7 @@ ngsCmd_PIPELINE() {
 	ngsArgs_INIT -i $RAW $SAMPLE
 	ngsCmd_INIT
 	ngsCmd_FASTQC
+	ngsArgs_BLAST -k TATAGTGAGT -p $NUMCPU -s $SPECIES $SAMPLE
 	ngsCmd_BLAST
 	########################################################
 	
@@ -149,6 +150,15 @@ ngsCmd_PIPELINE() {
 		ngsArgs_HTSEQ -stranded -introns $SAMPLE
 		ngsCmd_HTSEQ
 
+	elif [[ "$ngsLocal_PIPELINE_TYPE" = "RNASeq_Introns" ]]; then
+		ngsArgs_TRIM -m 20 -q 53 -rAT 26 -rN -c $REPO_LOCATION/trim/contaminants.fa $SAMPLE
+		ngsCmd_TRIM
+		ngsArgs_FASTQC -i trim -o fastqc.trim $SAMPLE
+		ngsCmd_FASTQC
+		ngsCmd_STAR
+		ngsArgs_HTSEQ -introns $SAMPLE
+		ngsCmd_HTSEQ
+	
 	elif [[ "$ngsLocal_PIPELINE_TYPE" = "RNASeq_Human" ]]; then
 		ngsArgs_TRIM -m 20 -q 53 -rAT 26 -rN -c $REPO_LOCATION/trim/contaminants.fa $SAMPLE
 		ngsCmd_TRIM
