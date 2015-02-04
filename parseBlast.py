@@ -34,7 +34,7 @@ VERSION = '1.1'
 # expect 3 args
 if len(sys.argv) < 4:
     print 'Usage: python parseBlast.py targetSpecies readsFastaFile blastFile'
-    print '\ttargetSpecies - reads mapped to this species will not be counted for other species. Target species must be one of the following species: bact, fish, fly, human, mouse, rat, yeast, ERCC'
+    print '\ttargetSpecies - reads mapped to this species will not be counted for other species. Target species must be one of the following species: bact, fish, fly, human, mouse, rat, yeast, ERCC, phiX'
     print '\tblast.csv - list of each hit per read and count of total number of hits per read'
     print '\treads.counted.txt - all alignments for reads that mapped to at least one of the target species'
     print '\treads.notCounted.txt - all alignments for reads that did not map to any target species'
@@ -72,6 +72,7 @@ if 'hg38' in TARGET: targetSpecies = 'human'
 if 'saccer3' in TARGET: targetSpecies = 'yeast'
 if 'zebrafish' in TARGET or 'zv9' in TARGET: targetSpecies = 'fish'
 if 'ercc' in TARGET: targetSpecies = 'ercc'
+if 'phix' in TARGET or 'phi-x' in TARGET: targetSpecies = 'phix'
 
 targetFile = open(BLAST_PATH+targetSpecies+'.tsv', 'w')
 targetFileFa = open(BLAST_PATH+targetSpecies+'.fa', 'w')
@@ -188,6 +189,7 @@ counts['mouse'] = 0
 counts['rat'] = 0
 counts['yeast'] = 0
 counts['ercc'] = 0
+counts['phix'] = 0
 
 while True:
     line = blastFile.readline()
@@ -270,6 +272,8 @@ while True:
             if 'yeast' not in found: found['yeast'] = line
         elif ('ercc' in lLine):
             if 'ercc' not in found: found['ercc'] = line
+        elif ('phix' in lLine) or ('phi-x' in lLine):
+            if 'phix' not in found: found['phix'] = line
         else:
             # count how many reads only mapped to species we are not tracking
             if len(notFound) == 0: notFound = line
@@ -337,7 +341,7 @@ keyList = sorted(counts.keys())
 for species in keyList:
     speciesFile.write(species + ' hits\t\t' + str(counts[species]) + '\n')
 
-speciesFile.write('\nTotal Hits\tHits Not Counted\tHits Not Target or ERCC\tBacteria\tFish\tFly\tHuman\tMouse\tRat\tYeast\tERCC\n')
+speciesFile.write('\nTotal Hits\tHits Not Counted\tHits Not Target or ERCC\tBacteria\tFish\tFly\tHuman\tMouse\tRat\tYeast\tERCC\tPhiX\n')
 speciesFile.write(str(numHits) + '\t' + str(numNotCounted))
 speciesFile.write('\t%.1f%%' % (hitsNotTargetOrERCC))
 speciesFile.write('\t' + str(counts['bact']))
@@ -348,6 +352,7 @@ speciesFile.write('\t' + str(counts['mouse']))
 speciesFile.write('\t' + str(counts['rat']))
 speciesFile.write('\t' + str(counts['yeast']))
 speciesFile.write('\t' + str(counts['ercc']))
+speciesFile.write('\t' + str(counts['phix']))
 speciesFile.write('\n')
 
 #------------------------------------------------------------------------------------------
