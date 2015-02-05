@@ -31,7 +31,7 @@ NGS_USAGE+="Usage: `basename $0` pipeline OPTIONS sampleID    --  run full pipel
 ##########################################################################################
 
 ngsHelp_PIPELINE() {
-	echo -e "Usage:\n\t`basename $0` pipeline [-i inputDir] [-o outputDir] [-t RNASeq | RNASeq_Stranded | RNASeq_Human | WGS] -p numProc -s species [-se] sampleID"
+	echo -e "Usage:\n\t`basename $0` pipeline [-i inputDir] [-o outputDir] [-t RNASeq | RNASeq_Stranded | RNASeq_Human | WGS] [-l readLength] -p numProc -s species [-se] sampleID"
 	echo -e "Input:\n\tsee individual commands"
 	echo -e "Output:\n\tsee individual commands"
 	echo -e "Requires:\n\tsee individual commands"
@@ -39,6 +39,7 @@ ngsHelp_PIPELINE() {
 	echo -e "\t-i - parent directory containing subdirectory with compressed fastq files (default: ./raw). This is the parent directory of the sample-specific directory. The sampleID will be used to complete the directory path (ie inputDir/sampleID)."
 	echo -e "\t-o - directory containing subdirectory with analysis files (default: ./analyzed). This is the parent directory of the sample-specific directory. The sampleID will be used to complete the directory path (ie outputDir/sampleID)."
 	echo -e "\t-t type - RNASeq or WGS (Whole Genome Sequencing) (default: RNASeq). RNASeq_Stranded assumes stranded reads for HTSeq counting and will generate intron counts. RNASeq_Human is the same as RNASeq_Stranded but also uses 'gene_name' for the name of the features in the HTSeq GTF file."
+	echo -e "\t-l readLength - read length (default = 100). If paired end then this is the length of one mate."
 	echo -e "\t-p numProc - number of cpu to use."
 	echo -e "\t-s species - species from repository: $REPO_LOCATION."
 	echo -e "\t-se - single-end reads (default: paired-end)\n"
@@ -70,6 +71,9 @@ ngsArgs_PIPELINE() {
 				shift; shift;
 				;;
 			-t) ngsLocal_PIPELINE_TYPE=$2
+				shift; shift;
+				;;
+			-l) READ_LENGTH=$2
 				shift; shift;
 				;;
 			-p) NUMCPU=$2

@@ -31,16 +31,17 @@ NGS_USAGE+="Usage: `basename $0` blast OPTIONS sampleID    --  run blast on rand
 ##########################################################################################
 
 ngsHelp_BLAST() {
-	echo -e "Usage:\n\t`basename $0` blast [-r numReads] [-k kmer] -p numProc -s species sampleID"
+	echo -e "Usage:\n\t`basename $0` blast [-r numReads] [-k kmer] [-l readLength] -p numProc -s species sampleID"
 	echo -e "Input:\n\tsampleID/init/unaligned_1.fq"
 	echo -e "Output:\n\tsampleID/blast/blast.txt (blast output)\n\tsampleID/blast/sampleID.blast.stats.txt (species hit counts)"
 	echo -e "Requires:\n\tblastn ( ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/ )\n\trandomSample.py ( https://github.com/safisher/ngs )\n\tparseBlast.py ( https://github.com/safisher/ngs )"
 	echo -e "Options:"
 	echo -e "\t-r numReads - number of reads to randomly select (default = 5000)"
 	echo -e "\t-k kmer - check for presence of k-mer in reads that failed to align"
+	echo -e "\t-l readLength - read length (default = 100). If paired end then this is the length of one mate. If readLength <= 50 then an e-value of 1e-8 will be used for Blast. If readLength > 50 then an e-value of 1e-15 will be used."
 	echo -e "\t-p numProc - number of cpu to use"
 	echo -e "\t-s species - expected species\n"
-	echo -e "Run blast on 5000 reads randomly sampled from init/unaligned_1.fq. Blast paramters used are 'num_descriptions: 10 num_alignments: 10 word_size: 15 gapopen: 3 gapextend: 1 evalue: 1e-15'. The output is put in a directory called 'blast'. The species.txt file contains number of reads mapping to each species (mouse, rat, human, bacteria).\n"
+	echo -e "Run blast on 5000 reads randomly sampled from init/unaligned_1.fq. Blast paramters used are 'num_descriptions: 10 num_alignments: 10 word_size: 15 gapopen: 3 gapextend: 1 evalue: 1e-15 (> 50bp reads) or 1e-8 (<= 50bp reads)'. The output is put in a directory called 'blast'. The species.txt file contains number of reads mapping to each species (mouse, rat, human, bacteria).\n"
 	echo -e "The blast mappings are split into two files: reads.counted.txt and reads.notCounted.txt. Reads.notCounted.txt contains all reads that mapped to something that wasn’t one of the species we track (i.e. mouse, rat, human, bacteria, fly, zebra fish, yeast, ERCC). Browsing this file should elucidate the species of the uncounted mappings."
 }
 
@@ -52,6 +53,7 @@ ngsHelp_BLAST() {
 # number of reads to randomly select
 ngsLocal_BLAST_NUM_READS=5000
 ngsLocal_BLAST_KMER=""
+ngsLocal_BLAST_EVALUE=1e-15
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -71,6 +73,9 @@ ngsArgs_BLAST() {
 				shift; shift;
 				;;
 			-k) ngsLocal_BLAST_KMER=$2
+				shift; shift;
+				;;
+			-l) READ_LENGTH=$2
 				shift; shift;
 				;;
 			-r) ngsLocal_BLAST_NUM_READS=$2
@@ -102,27 +107,32 @@ ngsCmd_BLAST() {
 		if ! $DEBUG; then mkdir $SAMPLE/blast; fi
 	fi
 		
-    # Get ngsLocal_BLAST_NUM_READS (5,000) randomly sampled reads
-    # Usage: randomSample.py <num lines> <lines grouped> <input> <output>
+	# Get ngsLocal_BLAST_NUM_READS (5,000) randomly sampled reads
+	# Usage: randomSample.py <num lines> <lines grouped> <input> <output>
 	prnCmd "randomSample.py $ngsLocal_BLAST_NUM_READS 4 $SAMPLE/init/unaligned_1.fq $SAMPLE/blast/raw.fq > $SAMPLE/blast/sampling.out.txt"
 	if ! $DEBUG; then 
 		randomSample.py $ngsLocal_BLAST_NUM_READS 4 $SAMPLE/init/unaligned_1.fq $SAMPLE/blast/raw.fq > $SAMPLE/blast/sampling.out.txt
 	fi
 	
-    # Convert fastq file to fasta file
+	# Convert fastq file to fasta file
 	prnCmd "awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,\">\");print}; if(P==4)P=0; P++}' $SAMPLE/blast/raw.fq > $SAMPLE/blast/raw.fa"
 	if ! $DEBUG; then 
 		awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,">");print}; if(P==4)P=0; P++}' $SAMPLE/blast/raw.fq > $SAMPLE/blast/raw.fa
 	fi
 	
-    # Run BLAST. Output file should end with ".txt"
-	prnCmd "blastn -query $SAMPLE/blast/raw.fa -db nt -num_descriptions 10 -num_alignments 10 -word_size 15 -gapopen 3 -gapextend 1 -evalue 1e-15 -num_threads $NUMCPU -out $SAMPLE/blast/blast.txt"
+	# use a less stringent e-value for shorter reads
+	if [ $READ_LENGTH -le 50 ]; then
+	    ngsLocal_BLAST_EVALUE=1e-8
+	fi
+
+	# Run BLAST. Output file should end with ".txt"
+	prnCmd "blastn -query $SAMPLE/blast/raw.fa -db nt -num_descriptions 10 -num_alignments 10 -word_size 15 -gapopen 3 -gapextend 1 -evalue $ngsLocal_BLAST_EVALUE -num_threads $NUMCPU -out $SAMPLE/blast/blast.txt"
 	if ! $DEBUG; then 
-		blastn -query $SAMPLE/blast/raw.fa -db nt -num_descriptions 10 -num_alignments 10 -word_size 15 -gapopen 3 -gapextend 1 -evalue 1e-15 -num_threads $NUMCPU -out $SAMPLE/blast/blast.txt
+		blastn -query $SAMPLE/blast/raw.fa -db nt -num_descriptions 10 -num_alignments 10 -word_size 15 -gapopen 3 -gapextend 1 -evalue $ngsLocal_BLAST_EVALUE -num_threads $NUMCPU -out $SAMPLE/blast/blast.txt
 	fi
 	
-    # Parse BLAST output. Will generate *.cvs and *.hits files.
-    # Usage: parseBlast.py targetSpecies readsFastaFile blastFile
+	# Parse BLAST output. Will generate *.cvs and *.hits files.
+	# Usage: parseBlast.py targetSpecies readsFastaFile blastFile
 	prnCmd "parseBlast.py $SPECIES $SAMPLE/blast/raw.fa $SAMPLE/blast/blast.txt"
 	if ! $DEBUG; then 
 		parseBlast.py $SPECIES $SAMPLE/blast/raw.fa $SAMPLE/blast/blast.txt

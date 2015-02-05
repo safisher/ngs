@@ -38,14 +38,15 @@ NGS_USAGE+="Usage: `basename $0` star OPTIONS sampleID    --   run STAR on trimm
 ##########################################################################################
 
 ngsHelp_STAR() {
-	echo -e "Usage:\n\t`basename $0` star [-i inputDir] -p numProc -s species [-se] sampleID"
+	echo -e "Usage:\n\t`basename $0` star [-i inputDir] [-l readLength] -p numProc -s species [-se] sampleID"
 	echo -e "Input:\n\tsampleID/inputDir/unaligned_1.fq\n\tsampleID/inputDir/unaligned_2.fq (paired-end reads)"
 	echo -e "Output:\n\tsampleID/star/sampleID.star.sorted.bam (all alignments)\n\tsampleID/star/sampleID.star.unique.bam (uniquely aligned reads)"
 	echo -e "Requires:\n\tSTAR ( http://code.google.com/p/rna-star )\n\tsamtools ( http://samtools.sourceforge.net/ )"
 	echo -e "Options:"
 	echo -e "\t-i inputDir - location of source files (default: trim)."
+	echo -e "\t-l readLength - read length (default = 100). If paired end then this is the length of one mate. The readLength will be appended to species ('species.readLength') in selecting genome library to use."
 	echo -e "\t-p numProc - number of cpu to use."
-	echo -e "\t-s species - species from repository: $STAR_REPO."
+	echo -e "\t-s species - species is used to select the genome library from the repository ('$STAR_REPO'). ReadLength is appended to species in forming the library location ('species.readLength')."
 	echo -e "\t-se - single-end reads (default: paired-end)\n"
 	echo -e "Runs STAR using the trimmed files from sampleID/trim. Output is stored in sampleID/star. The STAR stats file (Log.final.out) is renamed sampleID.star.stats.txt. STAR is run on a single machine using numProc number of cores on that machine. Depending on the size of the genome, it is recommended that the machine have at least 32 GB RAM. See ngs_STAR.sh for STAR options used."
 }
@@ -133,6 +134,9 @@ ngsArgs_STAR() {
 			-i) ngsLocal_STAR_INP_DIR=$2
 				shift; shift;
 				;;
+			-l) READ_LENGTH=$2
+				shift; shift;
+				;;
 			-p) NUMCPU=$2
 				shift; shift;
 				;;
@@ -176,9 +180,12 @@ ngsCmd_STAR() {
 		ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS $ngsLocal_STAR_PE_ARGS --readFilesIn $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_2.fq"
 	fi
 
-	prnCmd "STAR --genomeDir $STAR_REPO/$SPECIES $ngsLocal_STAR_ARGS --runThreadN $NUMCPU --outFileNamePrefix $SAMPLE/star/ "
+	# location of genome library
+	ngsLocal_GENOME_DIR="$STAR_REPO/$SPECIES.$READ_LENGTH"
+
+	prnCmd "STAR --genomeDir $ngsLocal_GENOME_DIR $ngsLocal_STAR_ARGS --runThreadN $NUMCPU --outFileNamePrefix $SAMPLE/star/ "
 	if ! $DEBUG; then 
-		STAR --genomeDir $STAR_REPO/$SPECIES $ngsLocal_STAR_ARGS --runThreadN $NUMCPU --outFileNamePrefix $SAMPLE/star/
+		STAR --genomeDir $ngsLocal_GENOME_DIR $ngsLocal_STAR_ARGS --runThreadN $NUMCPU --outFileNamePrefix $SAMPLE/star/
 	fi
 
 	# run post processing to generate necessary alignment files

@@ -48,7 +48,7 @@ DEBUG=false   # disable commands when true, use to see what commands would be ru
 #if "$DEBUG"; then set -x
 
 ###############################################################################################
-# ****************************** BEGIN USER DEFINED VARIABLES ******************************
+# ****************************** BEGIN USER DEFINED VARIABLES *********************************
 
 # this is the location of the demultiplexed files, with each sample in
 # a separate subdirectory named with the sample ID. This is often a
@@ -72,14 +72,30 @@ SNP_REPO=$REPO_LOCATION/snp
 # list of all modules available to be run.
 MODULES=( "HELP" "INIT" "FASTQC" "BLAST" "RMDUP" "BOWTIE" "TRIM" "STAR" "RUM" "RUMSTATUS" "POST" "BLASTDB" "HTSEQ" "SNP" "SPADES" "RSYNC" "STATS" "PIPELINE" "VERSION" )
 
-# ****************************** END USER DEFINED VARIABLES ******************************
+# ****************************** END USER DEFINED VARIABLES ***********************************
 ###############################################################################################
 
-# when modules are loaded, the add their usage to this variable.
+###############################################################################################
+# ****************************** GLOBAL DEFINED VARIABLES AND OPTIONS *************************
+
+# when modules are loaded, they add their usage to this variable.
 NGS_USAGE=""
 
 # default is paired-end.
 SE=false  
+
+# species is used to determine what library files to use.
+SPECIES=""
+
+# number of cpu/core to use in multi-processing modules
+NUMCPU=""
+
+# name of sample
+SAMPLE=""
+
+# read length. If paired end then this is the length of one mate
+# (default = 100). This is used in BLAST, STAR and PIPELINE.
+READ_LENGTH="100"
 
 # cause the application to crash if any command generates an
 # error. This is equivalent to the "-e" flag.
@@ -109,6 +125,9 @@ case ${OS_VERSION} in
 		GREPP="grep -P"
 		;;
 esac
+
+# ****************************** END GLOBAL DEFINED VARIABLES AND OPTIONS *********************
+###############################################################################################
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 # LOAD MODULES
