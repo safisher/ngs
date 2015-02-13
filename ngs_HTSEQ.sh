@@ -288,7 +288,11 @@ ngsStats_HTSEQ() {
     values="$values\t$numGenes"
     
     # average number of reads that mapped unambigously to genes
-    avgReadPerGene=$(($readsCounted/$numGenes))
+    if [[ $numGenes -gt 0 ]]; then
+	avgReadPerGene=$(($readsCounted/$numGenes))
+    else
+	avgReadPerGene=0
+    fi
     header="$header\tAvg Read Per Gene"
     values="$values\t$avgReadPerGene"
     
@@ -324,7 +328,11 @@ ngsStats_HTSEQ() {
 	values="$values\t$numGenes"
 	
 	# average number of reads that mapped unambigously to genes
-	avgReadPerGene=$(($readsCounted/$numGenes))
+	if [[ $numGenes -gt 0 ]]; then
+	    avgReadPerGene=$(($readsCounted/$numGenes))
+	else
+	    avgReadPerGene=0
+	fi
 	header="$header\tAvg Read Per Gene (introns)"
 	values="$values\t$avgReadPerGene"
 	
@@ -360,7 +368,11 @@ ngsStats_HTSEQ() {
 	values="$values\t$numGenes"
 	
 	# average number of reads that mapped unambigously to genes
-	avgReadPerGene=$(($readsCounted/$numGenes))
+	if [[ $numGenes -gt 0 ]]; then
+	    avgReadPerGene=$(($readsCounted/$numGenes))
+	else
+	    avgReadPerGene=0
+	fi
 	header="$header\tAvg Read Per Gene (mito)"
 	values="$values\t$avgReadPerGene"
 	
