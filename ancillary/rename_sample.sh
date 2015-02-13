@@ -17,6 +17,27 @@
 FROM=$1
 TO=$2
 
+shopt -s nullglob
+
+renameOther() {
+    DIR=$1
+    pushd $DIR
+
+    rename "$FROM" "$TO" *
+    for f in *; do
+	if [[ `file $f | grep 'text'` && $f != *.fq ]]; then
+	    sed "s/$FROM/$TO/g" $f > $f.tmp
+	    mv $f.tmp $f
+	elif [[ `file $f | grep 'directory'` ]]; then
+	    renameOther $f
+	fi
+    done
+    popd
+
+}
+
+
+
 pushd analyzed/$FROM
 for dir in *; do
     case $dir in
@@ -47,13 +68,9 @@ for dir in *; do
 	    rename "$FROM" "$TO" blastdb/*
 	    ;;
 	*)
-	    rename "$FROM" "$TO" dir/*
-	    for f in dir/*; do
-		if [[ `file $f | grep 'text'` ]]; then
-		    sed "s/$FROM/$TO/g" $f > $f.tmp
-		    mv $f.tmp $f
-		fi
-	    done
+	    if [[ -d $dir ]]; then
+		renameOther $dir
+	    fi
 	    ;;
     esac
 done
