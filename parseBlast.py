@@ -209,8 +209,10 @@ while True:
     # count the read
     numReads += 1
 
+    while line is not "": line = getLine()
+
     # skip next 5 lines
-    for cnt in range(0, 5): line = getLine()
+    for cnt in range(0, 4): line = getLine()
 
     # test if no alignments 
     if 'No hits' in line:
