@@ -65,7 +65,7 @@ speciesFile = open(BLAST_PATH+'speciesCounts.txt', 'w')
 # convert from repo species name to names used here.
 targetSpecies = TARGET.lower()
 if 'mm9' in TARGET or 'mm10' in TARGET: targetSpecies = 'mouse'
-if 'rn5' in TARGET: targetSpecies = 'rat'
+if 'rn5' in TARGET or 'rn6' in TARGET: targetSpecies = 'rat'
 if 'drosophila' in TARGET or 'dmel5' in TARGET: targetSpecies = 'fly'
 if 'hg19' in TARGET: targetSpecies = 'human'
 if 'hg38' in TARGET: targetSpecies = 'human'
