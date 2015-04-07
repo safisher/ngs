@@ -305,12 +305,12 @@ ngsStats_HTSEQ() {
     fi
     
     # total number of reads that mapped unambigously to genes
-    readsCounted=$(grep -v "ERCC-" $SAMPLE/htseq/$SAMPLE.htseq.exons.cnts.txt | awk '{sum += $2} END {print sum}')
+    readsCounted=$(grep -v "ERCC-" $SAMPLE/htseq/$SAMPLE.htseq.exons.cnts.txt | awk -F '\t' '{sum += $2} END {print sum}')
     header="Non-ERCC Reads Counted"
     values="$readsCounted"
     
     # total number of reads that mapped unambigously to ERCC controls
-    erccReadsCounted=$(grep "ERCC-" $SAMPLE/htseq/$SAMPLE.htseq.exons.cnts.txt | awk '{sum += $2} END {print sum}')
+    erccReadsCounted=$(grep "ERCC-" $SAMPLE/htseq/$SAMPLE.htseq.exons.cnts.txt | awk -F '\t' '{sum += $2} END {print sum}')
     header="$header\tERCC Reads Counted"
     values="$values\t$erccReadsCounted"
     
@@ -329,7 +329,7 @@ ngsStats_HTSEQ() {
     values="$values\t$avgReadPerGene"
     
     # maximum number of reads that mapped unambigously to a single gene
-    maxReadsPerGene=$(grep -v "gene" $SAMPLE/htseq/$SAMPLE.htseq.exons.cnts.txt | awk '{if(max=="") {max=$2}; if($2>max) {max=$2};} END {print max}')
+    maxReadsPerGene=$(grep -v "gene" $SAMPLE/htseq/$SAMPLE.htseq.exons.cnts.txt | awk -F '\t' '{if(max=="") {max=$2}; if($2>max) {max=$2};} END {print max}')
     header="$header\tMax Reads Per Gene"
     values="$values\t$maxReadsPerGene"
     
@@ -350,7 +350,7 @@ ngsStats_HTSEQ() {
 
     if [ -f $SAMPLE/htseq/$SAMPLE.htseq.introns.cnts.txt ]; then 
 	# total number of reads that mapped unambigously to genes
-	readsCounted=$(cat $SAMPLE/htseq/$SAMPLE.htseq.introns.cnts.txt | awk '{sum += $2} END {print sum}')
+	readsCounted=$(cat $SAMPLE/htseq/$SAMPLE.htseq.introns.cnts.txt | awk -F '\t' '{sum += $2} END {print sum}')
 	header="$header\tReads Counted (introns)"
 	values="$values\t$readsCounted"
 	
@@ -369,7 +369,7 @@ ngsStats_HTSEQ() {
 	values="$values\t$avgReadPerGene"
 	
 	# maximum number of reads that mapped unambigously to a single gene
-	maxReadsPerGene=$(grep -v "gene" $SAMPLE/htseq/$SAMPLE.htseq.introns.cnts.txt | awk '{if(max=="") {max=$2}; if($2>max) {max=$2};} END {print max}')
+	maxReadsPerGene=$(grep -v "gene" $SAMPLE/htseq/$SAMPLE.htseq.introns.cnts.txt | awk -F '\t' '{if(max=="") {max=$2}; if($2>max) {max=$2};} END {print max}')
 	header="$header\tMax Reads Per Gene (introns)"
 	values="$values\t$maxReadsPerGene"
 	
@@ -394,7 +394,7 @@ ngsStats_HTSEQ() {
 
     if [ -f $SAMPLE/htseq/$SAMPLE.htseq.mito.cnts.txt ]; then 
 	# total number of reads that mapped unambigously to genes
-	readsCounted=$(cat $SAMPLE/htseq/$SAMPLE.htseq.mito.cnts.txt | awk '{sum += $2} END {print sum}')
+	readsCounted=$(cat $SAMPLE/htseq/$SAMPLE.htseq.mito.cnts.txt | awk -F '\t' '{sum += $2} END {print sum}')
 	header="$header\tReads Counted (mito)"
 	values="$values\t$readsCounted"
 	
@@ -413,7 +413,7 @@ ngsStats_HTSEQ() {
 	values="$values\t$avgReadPerGene"
 	
 	# maximum number of reads that mapped unambigously to a single gene
-	maxReadsPerGene=$(grep -v "gene" $SAMPLE/htseq/$SAMPLE.htseq.mito.cnts.txt | awk '{if(max=="") {max=$2}; if($2>max) {max=$2};} END {print max}')
+	maxReadsPerGene=$(grep -v "gene" $SAMPLE/htseq/$SAMPLE.htseq.mito.cnts.txt | awk -F '\t' '{if(max=="") {max=$2}; if($2>max) {max=$2};} END {print max}')
 	header="$header\tMax Reads Per Gene (mito)"
 	values="$values\t$maxReadsPerGene"
 	
@@ -438,7 +438,7 @@ ngsStats_HTSEQ() {
 
     if [ -f $SAMPLE/htseq/$SAMPLE.htseq.intergenic.cnts.txt ]; then 
 	# total number of reads that mapped unambigously to genes
-	readsCounted=$(cat $SAMPLE/htseq/$SAMPLE.htseq.intergenic.cnts.txt | awk '{sum += $2} END {print sum}')
+	readsCounted=$(cat $SAMPLE/htseq/$SAMPLE.htseq.intergenic.cnts.txt | awk -F '\t' '{sum += $2} END {print sum}')
 	header="$header\tReads Counted (intergenic)"
 	values="$values\t$readsCounted"
 	
@@ -457,7 +457,7 @@ ngsStats_HTSEQ() {
 	values="$values\t$avgReadPerGene"
 	
 	# maximum number of reads that mapped unambigously to a single gene
-	maxReadsPerGene=$(grep -v "gene" $SAMPLE/htseq/$SAMPLE.htseq.intergenic.cnts.txt | awk '{if(max=="") {max=$2}; if($2>max) {max=$2};} END {print max}')
+	maxReadsPerGene=$(grep -v "gene" $SAMPLE/htseq/$SAMPLE.htseq.intergenic.cnts.txt | awk -F '\t' '{if(max=="") {max=$2}; if($2>max) {max=$2};} END {print max}')
 	header="$header\tMax Reads Per Intergenic Region"
 	values="$values\t$maxReadsPerGene"
 	
@@ -473,11 +473,11 @@ ngsStats_HTSEQ() {
     if [ -f $SAMPLE/htseq/$SAMPLE.htseq.lines_sines.cnts.txt ]; then 
 
 	# total number of reads that mapped unambigously to genes
-	LINEreadsCounted=$(grep 'LINE'  $SAMPLE/htseq/$SAMPLE.htseq.lines_sines.cnts.txt | awk '{sum += $2} END {print sum}')
+	LINEreadsCounted=$(grep 'LINE'  $SAMPLE/htseq/$SAMPLE.htseq.lines_sines.cnts.txt | awk -F '\t' '{sum += $2} END {print sum}')
 	header="$header\tLINE Reads"
 	values="$values\t$LINEreadsCounted"
 	
-	SINEreadsCounted=$(grep 'SINE'  $SAMPLE/htseq/$SAMPLE.htseq.lines_sines.cnts.txt | awk '{sum += $2} END {print sum}')
+	SINEreadsCounted=$(grep 'SINE'  $SAMPLE/htseq/$SAMPLE.htseq.lines_sines.cnts.txt | awk -F '\t' '{sum += $2} END {print sum}')
 	header="$header\tSINE Reads"
 	values="$values\t$SINEreadsCounted"
 
