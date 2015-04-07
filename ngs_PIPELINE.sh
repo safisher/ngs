@@ -127,10 +127,11 @@ ngsCmd_PIPELINE() {
 	# defaults to the original (hardcoded) value of $RAW, we need
 	# to call ngsArgs_INIT() to update the value, prior to calling
 	# ngsCmd_INIT().
+
 	ngsArgs_INIT -i $RAW $SAMPLE
 	ngsCmd_INIT
 	ngsCmd_FASTQC
-	ngsArgs_BLAST -k TATAGTGAGT -p $NUMCPU -s $SPECIES $SAMPLE
+	ngsArgs_BLAST -l $READ_LENGTH -k TATAGTGAGT -p $NUMCPU -s $SPECIES $SAMPLE
 	ngsCmd_BLAST
 	########################################################
 	
@@ -154,13 +155,22 @@ ngsCmd_PIPELINE() {
 		ngsArgs_HTSEQ -stranded -introns $SAMPLE
 		ngsCmd_HTSEQ
 
+	elif [[ "$ngsLocal_PIPELINE_TYPE" = "RNASeq_Tiva-x" ]]; then
+		ngsArgs_TRIM -m 20 -q 53 -rAT 26 -rN -c $REPO_LOCATION/trim/contaminants.tiva-x.fa $SAMPLE
+		ngsCmd_TRIM
+		ngsArgs_FASTQC -i trim -o fastqc.trim $SAMPLE
+		ngsCmd_FASTQC
+		ngsCmd_STAR
+		ngsArgs_HTSEQ -stranded -introns $SAMPLE
+		ngsCmd_HTSEQ
+
 	elif [[ "$ngsLocal_PIPELINE_TYPE" = "RNASeq_Introns" ]]; then
 		ngsArgs_TRIM -m 20 -q 53 -rAT 26 -rN -c $REPO_LOCATION/trim/contaminants.fa $SAMPLE
 		ngsCmd_TRIM
 		ngsArgs_FASTQC -i trim -o fastqc.trim $SAMPLE
 		ngsCmd_FASTQC
 		ngsCmd_STAR
-		ngsArgs_HTSEQ -introns $SAMPLE
+		ngsArgs_HTSEQ -introns -id gene_id -s $SPECIES $SAMPLE
 		ngsCmd_HTSEQ
 	
 	elif [[ "$ngsLocal_PIPELINE_TYPE" = "RNASeq_Human" ]]; then
@@ -169,12 +179,12 @@ ngsCmd_PIPELINE() {
 		ngsArgs_FASTQC -i trim -o fastqc.trim $SAMPLE
 		ngsCmd_FASTQC
 		ngsCmd_STAR
-		ngsArgs_HTSEQ -stranded -introns -id gene_name $SAMPLE
+		ngsArgs_HTSEQ -stranded -introns -intergenic -lines_sines -id gene_name $SAMPLE
 		ngsCmd_HTSEQ
 
 	elif [[ "$ngsLocal_PIPELINE_TYPE" = "WGS" ]]; then
 		# disable poly-A/T trimming for WGS
-		ngsArgs_TRIM -m 20 -rAT 0 -rN -c $REPO_LOCATION/trim/contaminantsMITO.fa $SAMPLE
+		ngsArgs_TRIM -m 20 -rAT 0 -rN -c $REPO_LOCATION/trim/contaminantsWGS.fa $SAMPLE
 		ngsCmd_TRIM
 		ngsArgs_FASTQC -i trim -o fastqc.trim $SAMPLE
 		ngsCmd_FASTQC

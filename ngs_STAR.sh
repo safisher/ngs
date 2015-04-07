@@ -327,9 +327,13 @@ ngsStats_STAR() {
 
 	statsFile="$SAMPLE.star.stats.txt"
 
+	genome=`tail -n1 $SAMPLE/star/$SAMPLE.versions | awk '{print($6)}'`
+	STAR_HEADER="Genome"
+	STAR_VALUES="$genome"
+
 	totalReads=`grep "Number of input reads" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}'`
-	STAR_HEADER="Tot Reads After Trim"
-	STAR_VALUES="$totalReads"
+	STAR_HEADER="$STAR_HEADER\tTot Reads After Trim"
+	STAR_VALUES="$STAR_VALUES\t$totalReads"
 
 	avgReadLen=`grep "Average input read length" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}'`
 	STAR_HEADER="$STAR_HEADER\tAvg Inp Read Len"
