@@ -304,19 +304,86 @@ ngsStats_HTSEQ() {
 	prnError "Incorrect number of parameters for ngsStats_HTSEQ()."
     fi
     
-    # total number of reads that mapped unambigously to genes
-    readsCounted=$(grep -v "ERCC-" $SAMPLE/htseq/$SAMPLE.htseq.exons.cnts.txt | awk -F '\t' '{sum += $2} END {print sum}')
-    header="Non-ERCC Reads Counted"
-    values="$readsCounted"
+    header=""
+    values=""
     
-    # total number of reads that mapped unambigously to ERCC controls
-    erccReadsCounted=$(grep "ERCC-" $SAMPLE/htseq/$SAMPLE.htseq.exons.cnts.txt | awk -F '\t' '{sum += $2} END {print sum}')
-    header="$header\tERCC Reads Counted"
-    values="$values\t$erccReadsCounted"
-    
+    if [ -f $SAMPLE/htseq/$SAMPLE.htseq.exons.cnts.txt ]; then 
+	ngsHelperStatsHTSEQ "exons" "Gene (exons)"
+    else
+	# pad header and values with tabs for missing exon file.
+	header="$header\t\t\t\t\t\t\t"
+	values="$values\t\t\t\t\t\t\t"
+    fi
+
+    if [ -f $SAMPLE/htseq/$SAMPLE.htseq.introns.cnts.txt ]; then 
+	ngsHelperStatsHTSEQ "introns" "Gene (introns)"
+    else
+	# pad header and values with tabs for missing introns file.
+	header="$header\t\t\t\t\t\t\t"
+	values="$values\t\t\t\t\t\t\t"
+    fi
+
+    if [ -f $SAMPLE/htseq/$SAMPLE.htseq.mito.cnts.txt ]; then 
+	ngsHelperStatsHTSEQ "mito" "Gene (mito)"
+    else
+	header="$header\t\t\t\t\t\t\t"
+	values="$values\t\t\t\t\t\t\t"
+    fi
+
+    if [ -f $SAMPLE/htseq/$SAMPLE.htseq.intergenic.cnts.txt ]; then 
+	ngsHelperStatsHTSEQ "intergenic" "Intergenic Region"
+    else
+	header="$header\t\t\t\t\t"
+	values="$values\t\t\t\t\t"
+    fi
+
+    if [ -f $SAMPLE/htseq/$SAMPLE.htseq.lines_sines.cnts.txt ]; then 
+	# handle lines-sines differently than the rest
+	ngsHelperStatsHTSEQ_LS
+    else
+	header="$header\t\t\t\t\t"
+	values="$values\t\t\t\t\t"
+    fi
+
+    case $1 in
+	header) 
+	    echo "$header"
+	    ;;
+	
+	values) 
+	    echo "$values"
+	    ;;
+	
+	*) 
+	    # incorrect argument
+	    prnError "Invalid parameter for ngsStats_HTSEQ() (got $1, expected: 'header|values')."
+	    ;;
+    esac
+}
+
+ngsHelperStatsHTSEQ() {
+    # $1 = exons | introns | mito | intergenic
+    # $2 = ie "gene (exons) or "intergenic region"
+
+    if [[ $1 == "exons" ]]; then
+	# total number of reads that mapped unambigously to genes
+	readsCounted=$(grep -v "ERCC-" $SAMPLE/htseq/$SAMPLE.htseq.${1}.cnts.txt | awk -F '\t' '{sum += $2} END {print sum}')
+	header="${header}non-ERCC Reads Counted"
+	values="${values}$readsCounted"
+	
+	# total number of reads that mapped unambigously to ERCC controls
+	erccReadsCounted=$(grep "ERCC-" $SAMPLE/htseq/$SAMPLE.htseq.${1}.cnts.txt | awk -F '\t' '{sum += $2} END {print sum}')
+	header="$header\tERCC Reads Counted"
+	values="$values\t$erccReadsCounted"
+    else
+	readsCounted=$(cat $SAMPLE/htseq/$SAMPLE.htseq.${1}.cnts.txt | awk -F '\t' '{sum += $2} END {print sum}')
+	header="$header\tReads Counted (${1})"
+	values="$values\t$readsCounted"
+    fi
+
     # number of genes with at least 1 read mapped
-    numGenes=$($GREPP -v "\t0$" $SAMPLE/htseq/$SAMPLE.htseq.exons.cnts.txt | grep -v "gene" | wc -l)
-    header="$header\tNum Genes"
+    numGenes=$($GREPP -v "\t0$" $SAMPLE/htseq/$SAMPLE.htseq.${1}.cnts.txt | grep -v "gene" | wc -l)
+    header="$header\tNum ${2}"
     values="$values\t$numGenes"
     
     # average number of reads that mapped unambigously to genes
@@ -325,153 +392,35 @@ ngsStats_HTSEQ() {
     else
 	avgReadPerGene=0
     fi
-    header="$header\tAvg Read Per Gene"
+    header="$header\tAvg Read Per ${2}"
     values="$values\t$avgReadPerGene"
     
     # maximum number of reads that mapped unambigously to a single gene
-    maxReadsPerGene=$(grep -v "gene" $SAMPLE/htseq/$SAMPLE.htseq.exons.cnts.txt | awk -F '\t' '{if(max=="") {max=$2}; if($2>max) {max=$2};} END {print max}')
-    header="$header\tMax Reads Per Gene"
+    maxReadsPerGene=$(grep -v "gene" $SAMPLE/htseq/$SAMPLE.htseq.${1}.cnts.txt | awk -F '\t' '{if(max=="") {max=$2}; if($2>max) {max=$2};} END {print max}')
+    header="$header\tMax Reads Per ${2}"
     values="$values\t$maxReadsPerGene"
     
     # number of reads that didn't map to a gene region
-    noFeature=$(tail -5 $SAMPLE/htseq/$SAMPLE.htseq.exons.log.txt | head -1 | awk '{print $2}')
-    header="$header\tNo Feature"
+    noFeature=$(tail -5 $SAMPLE/htseq/$SAMPLE.htseq.${1}.log.txt | head -1 | awk '{print $2}')
+    header="$header\tNo Feature (${1})"
     values="$values\t$noFeature"
     
-    # number of reads that completely overlapped two or more gene regions
-    ambiguousMapped=$(tail -4 $SAMPLE/htseq/$SAMPLE.htseq.exons.log.txt | head -1 | awk '{print $2}')
-    header="$header\tAmbiguous Mapped"
-    values="$values\t$ambiguousMapped"
-    
-    # compute dynamic range
-    dynamicRange=$(dynamicRange.py -c $SAMPLE/htseq/$SAMPLE.htseq.exons.cnts.txt)
-    header="$header\tDynamic Range"
-    values="$values\t$dynamicRange"
+    if [[ $1 != "intergenic" ]]; then
 
-    if [ -f $SAMPLE/htseq/$SAMPLE.htseq.introns.cnts.txt ]; then 
-	# total number of reads that mapped unambigously to genes
-	readsCounted=$(cat $SAMPLE/htseq/$SAMPLE.htseq.introns.cnts.txt | awk -F '\t' '{sum += $2} END {print sum}')
-	header="$header\tReads Counted (introns)"
-	values="$values\t$readsCounted"
-	
-	# number of genes with at least 1 read mapped
-	numGenes=$($GREPP -v "\t0$" $SAMPLE/htseq/$SAMPLE.htseq.introns.cnts.txt | grep -v "gene" | wc -l)
-	header="$header\tNum Genes (introns)"
-	values="$values\t$numGenes"
-	
-	# average number of reads that mapped unambigously to genes
-	if [[ $numGenes -gt 0 ]]; then
-	    avgReadPerGene=$(($readsCounted/$numGenes))
-	else
-	    avgReadPerGene=0
-	fi
-	header="$header\tAvg Read Per Gene (introns)"
-	values="$values\t$avgReadPerGene"
-	
-	# maximum number of reads that mapped unambigously to a single gene
-	maxReadsPerGene=$(grep -v "gene" $SAMPLE/htseq/$SAMPLE.htseq.introns.cnts.txt | awk -F '\t' '{if(max=="") {max=$2}; if($2>max) {max=$2};} END {print max}')
-	header="$header\tMax Reads Per Gene (introns)"
-	values="$values\t$maxReadsPerGene"
-	
-	# number of reads that didn't map to a gene region
-	noFeature=$(tail -5 $SAMPLE/htseq/$SAMPLE.htseq.introns.log.txt | head -1 | awk '{print $2}')
-	header="$header\tNo Feature (introns)"
-	values="$values\t$noFeature"
-	
 	# number of reads that completely overlapped two or more gene regions
-	ambiguousMapped=$(tail -4 $SAMPLE/htseq/$SAMPLE.htseq.introns.log.txt | head -1 | awk '{print $2}')
-	header="$header\tAmbiguous Mapped (introns)"
+	ambiguousMapped=$(tail -4 $SAMPLE/htseq/$SAMPLE.htseq.${1}.log.txt | head -1 | awk '{print $2}')
+	header="$header\tAmbiguous Mapped (${1})"
 	values="$values\t$ambiguousMapped"
 	
 	# compute dynamic range
-	dynamicRange=$(dynamicRange.py -c $SAMPLE/htseq/$SAMPLE.htseq.introns.cnts.txt)
-	header="$header\tDynamic Range (introns)"
+	dynamicRange=$(dynamicRange.py -c $SAMPLE/htseq/$SAMPLE.htseq.${1}.cnts.txt)
+	header="$header\tDynamic Range (${1})"
 	values="$values\t$dynamicRange"
-    else
-	header="$header\t\t\t\t\t\t\t"
-	values="$values\t\t\t\t\t\t\t"
     fi
+}
 
-    if [ -f $SAMPLE/htseq/$SAMPLE.htseq.mito.cnts.txt ]; then 
-	# total number of reads that mapped unambigously to genes
-	readsCounted=$(cat $SAMPLE/htseq/$SAMPLE.htseq.mito.cnts.txt | awk -F '\t' '{sum += $2} END {print sum}')
-	header="$header\tReads Counted (mito)"
-	values="$values\t$readsCounted"
-	
-	# number of genes with at least 1 read mapped
-	numGenes=$($GREPP -v "\t0$" $SAMPLE/htseq/$SAMPLE.htseq.mito.cnts.txt | grep -v "gene" | wc -l)
-	header="$header\tNum Genes (mito)"
-	values="$values\t$numGenes"
-	
-	# average number of reads that mapped unambigously to genes
-	if [[ $numGenes -gt 0 ]]; then
-	    avgReadPerGene=$(($readsCounted/$numGenes))
-	else
-	    avgReadPerGene=0
-	fi
-	header="$header\tAvg Read Per Gene (mito)"
-	values="$values\t$avgReadPerGene"
-	
-	# maximum number of reads that mapped unambigously to a single gene
-	maxReadsPerGene=$(grep -v "gene" $SAMPLE/htseq/$SAMPLE.htseq.mito.cnts.txt | awk -F '\t' '{if(max=="") {max=$2}; if($2>max) {max=$2};} END {print max}')
-	header="$header\tMax Reads Per Gene (mito)"
-	values="$values\t$maxReadsPerGene"
-	
-	# number of reads that didn't map to a gene region
-	noFeature=$(tail -5 $SAMPLE/htseq/$SAMPLE.htseq.mito.log.txt | head -1 | awk '{print $2}')
-	header="$header\tNo Feature (mito)"
-	values="$values\t$noFeature"
-	
-	# number of reads that completely overlapped two or more gene regions
-	ambiguousMapped=$(tail -4 $SAMPLE/htseq/$SAMPLE.htseq.mito.log.txt | head -1 | awk '{print $2}')
-	header="$header\tAmbiguous Mapped (mito)"
-	values="$values\t$ambiguousMapped"
-	
-	# compute dynamic range
-	dynamicRange=$(dynamicRange.py -c $SAMPLE/htseq/$SAMPLE.htseq.mito.cnts.txt)
-	header="$header\tDynamic Range (mito)"
-	values="$values\t$dynamicRange"
-    else
-	header="$header\t\t\t\t\t\t\t"
-	values="$values\t\t\t\t\t\t\t"
-    fi
-
-    if [ -f $SAMPLE/htseq/$SAMPLE.htseq.intergenic.cnts.txt ]; then 
-	# total number of reads that mapped unambigously to genes
-	readsCounted=$(cat $SAMPLE/htseq/$SAMPLE.htseq.intergenic.cnts.txt | awk -F '\t' '{sum += $2} END {print sum}')
-	header="$header\tReads Counted (intergenic)"
-	values="$values\t$readsCounted"
-	
-	# number of genes with at least 1 read mapped
-	numGenes=$($GREPP -v "\t0$" $SAMPLE/htseq/$SAMPLE.htseq.intergenic.cnts.txt | grep -v "gene" | wc -l)
-	header="$header\tNum Intergenic Regions"
-	values="$values\t$numGenes"
-	
-	# average number of reads that mapped unambigously to genes
-	if [[ $numGenes -gt 0 ]]; then
-	    avgReadPerGene=$(($readsCounted/$numGenes))
-	else
-	    avgReadPerGene=0
-	fi
-	header="$header\tAvg Read Per Intergenic Region"
-	values="$values\t$avgReadPerGene"
-	
-	# maximum number of reads that mapped unambigously to a single gene
-	maxReadsPerGene=$(grep -v "gene" $SAMPLE/htseq/$SAMPLE.htseq.intergenic.cnts.txt | awk -F '\t' '{if(max=="") {max=$2}; if($2>max) {max=$2};} END {print max}')
-	header="$header\tMax Reads Per Intergenic Region"
-	values="$values\t$maxReadsPerGene"
-	
-	# number of reads that didn't map to a gene region
-	noFeature=$(tail -5 $SAMPLE/htseq/$SAMPLE.htseq.intergenic.log.txt | head -1 | awk '{print $2}')
-	header="$header\tNo Feature (intergenic)"
-	values="$values\t$noFeature"	
-    else
-	header="$header\t\t\t\t\t"
-	values="$values\t\t\t\t\t"
-    fi
-
-    if [ -f $SAMPLE/htseq/$SAMPLE.htseq.lines_sines.cnts.txt ]; then 
-
+# lines and sines are handled differently.
+ngsHelperStatsHTSEQ_LS() {
 	# total number of reads that mapped unambigously to genes
 	LINEreadsCounted=$(grep 'LINE'  $SAMPLE/htseq/$SAMPLE.htseq.lines_sines.cnts.txt | awk -F '\t' '{sum += $2} END {print sum}')
 	header="$header\tLINE Reads"
@@ -495,22 +444,5 @@ ngsStats_HTSEQ() {
 	noFeature=$(tail -5 $SAMPLE/htseq/$SAMPLE.htseq.lines_sines.log.txt | head -1 | awk '{print $2}')
 	header="$header\tNeither LINEs nor SINEs"
 	values="$values\t$noFeature"
-    else
-	header="$header\t\t\t\t\t"
-	values="$values\t\t\t\t\t"
-    fi
-    case $1 in
-	header) 
-	    echo "$header"
-	    ;;
-	
-	values) 
-	    echo "$values"
-	    ;;
-	
-	*) 
-	    # incorrect argument
-	    prnError "Invalid parameter for ngsStats_HTSEQ() (got $1, expected: 'header|values')."
-	    ;;
-    esac
 }
+
