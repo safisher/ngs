@@ -258,7 +258,9 @@ while True:
         lLine = line.lower() # test lowercase version of line
 
         # keep first mapping as that will be the best mapping
-        if ('bacter' in lLine) or ('coli' in lLine): 
+        if ('phix' in lLine) or ('phi-x' in lLine):
+            if 'phix' not in found: found['phix'] = line
+        elif ('bacter' in lLine) or ('coli' in lLine): 
             if 'bact' not in found: found['bact'] = line
         elif ('zebrafish' in lLine) or ('danio' in lLine) or ('rerio' in lLine):
             if 'fish' not in found: found['fish'] = line
@@ -274,8 +276,6 @@ while True:
             if 'yeast' not in found: found['yeast'] = line
         elif ('ercc' in lLine):
             if 'ercc' not in found: found['ercc'] = line
-        elif ('phix' in lLine) or ('phi-x' in lLine):
-            if 'phix' not in found: found['phix'] = line
         else:
             # count how many reads only mapped to species we are not tracking
             if len(notFound) == 0: notFound = line
