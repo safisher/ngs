@@ -140,7 +140,9 @@ ngsCmd_HTSEQ() {
     if ! $DEBUG; then 
 	# returns: "0.5.4p5"
 	ver=$(python -c "import HTSeq, pkg_resources; print pkg_resources.get_distribution(\"HTSeq\").version")
-	prnVersion "htseq" "program\tversion\ttranscriptome" "htseq\t$ver\t$HTSEQ_REPO/$SPECIES.gz"
+	prnVersion "htseq" \
+	"program\tversion\ttranscriptome\tstranded\tID_attribute\tintrons\tintergenic\tlines/sines" \
+	"htseq\t$ver\t$HTSEQ_REPO/$SPECIES.gz\t$ngsLocal_HTSEQ_STRANDED\t$ngsLocal_HTSEQ_ID_ATTR\t$ngsLocal_HTSEQ_INTRONS\t$ngsLocal_HTSEQ_INTERGENIC\t$ngsLocal_HTSEQ_xINEs"
     fi
     
     # if the user didn't provide an input file then set it to the
@@ -310,7 +312,6 @@ ngsStats_HTSEQ() {
     if [ -f $SAMPLE/htseq/$SAMPLE.htseq.exons.cnts.txt ]; then 
 	ngsHelperStatsHTSEQ "exons" "Gene (exons)"
     else
-	# pad header and values with tabs for missing exon file.
 	header="$header\t\t\t\t\t\t\t"
 	values="$values\t\t\t\t\t\t\t"
     fi
@@ -318,7 +319,6 @@ ngsStats_HTSEQ() {
     if [ -f $SAMPLE/htseq/$SAMPLE.htseq.introns.cnts.txt ]; then 
 	ngsHelperStatsHTSEQ "introns" "Gene (introns)"
     else
-	# pad header and values with tabs for missing introns file.
 	header="$header\t\t\t\t\t\t\t"
 	values="$values\t\t\t\t\t\t\t"
     fi
@@ -338,7 +338,6 @@ ngsStats_HTSEQ() {
     fi
 
     if [ -f $SAMPLE/htseq/$SAMPLE.htseq.lines_sines.cnts.txt ]; then 
-	# handle lines-sines differently than the rest
 	ngsHelperStatsHTSEQ_LS
     else
 	header="$header\t\t\t\t\t"
@@ -419,7 +418,6 @@ ngsHelperStatsHTSEQ() {
     fi
 }
 
-# lines and sines are handled differently.
 ngsHelperStatsHTSEQ_LS() {
 	# total number of reads that mapped unambigously to genes
 	LINEreadsCounted=$(grep 'LINE'  $SAMPLE/htseq/$SAMPLE.htseq.lines_sines.cnts.txt | awk -F '\t' '{sum += $2} END {print sum}')

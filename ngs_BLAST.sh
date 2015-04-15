@@ -189,7 +189,9 @@ ngsCmd_BLAST() {
 		# returns this: "2.2.28"
 		ver=$(blastn -version | tail -1 | awk '{print $3}' | sed s/,//)
 		ver1=$(grep parseBlast $SAMPLE/blast/$SAMPLE.blast.stats.txt | awk -F: '{print $2}')
-		prnVersion "blast" "program\tversion\tprogram\tversion\tspecies" "blastn\t$ver\tparseBlast.py\t$ver1\t$SPECIES"
+		prnVersion "blast" \
+		"program\tversion\tprogram\tversion\tspecies\treadLength\tnumReads\tkmer" \
+		"blastn\t$ver\tparseBlast.py\t$ver1\t$SPECIES\t$READ_LENGTH\t$ngsLocal_BLAST_NUM_READS\t$ngsLocal_BLAST_KMER"
 	fi
 
 	prnCmd "# FINISHED: BLAST"

@@ -199,7 +199,9 @@ ngsCmd_STAR() {
 	if ! $DEBUG; then 
 		ver=$(head -1 $SAMPLE/star/Log.out | awk -F= '{print $2}')
 		ver1=$(samtools 2>&1 | grep 'Version:' | awk '{print $2}')
-		prnVersion "star" "program\tversion\tprogram\tversion\tspecies" "star\t$ver\tsamtools\t$ver1\t$SPECIES"
+		prnVersion "star" \
+		"program\tversion\tprogram\tversion\tspecies\tSE?\treadLength" \
+		"star\t$ver\tsamtools\t$ver1\t$SPECIES\t$READ_LENGTH\t$SE"
 	fi
 
 	if $SE; then prnCmd "# FINISHED: STAR SINGLE-END ALIGNMENT"

@@ -52,7 +52,7 @@ ngsHelp_SPADES() {
 ##########################################################################################
 
 ngsLocal_SPADES_INP_DIR="bowtie"
-ngsLocal_SPADES_MAX_RAM=100
+ngsLocal_SPADES_MAX_RAM=250
 ngsLocal_SPADES_KMERS="33,49,83"
 
 ##########################################################################################
@@ -111,7 +111,9 @@ ngsCmd_SPADES() {
 	# print version info in journal file
 	prnCmd "# SPAdes version: (check SPAdes log file)"
 	if ! $DEBUG; then 
-		prnVersion "spades" "program\tversion" "spades.py\t2.2.1"
+		prnVersion "spades" \
+		"program\tversion\tkmers\tSE?" \
+		"spades.py\t2.2.1\t$ngsLocal_SPADES_KMERS\t$SE"
 	fi
 
 	if $SE; then

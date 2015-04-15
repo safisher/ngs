@@ -131,7 +131,9 @@ ngsCmd_TRIM() {
 	prnCmd "# trimReads.py version: trimReads.py -v 2>&1"
 	if ! $DEBUG; then 
 		ver=$(trimReads.py -v 2>&1)
-		prnVersion "trim" "program\tversion" "trimReads.py\t$ver"
+		prnVersion "trim" \
+		"program\tversion\tminLen\tphredThresh\tremoveN?\tnumAT\tSE?" \
+		"trimReads.py\t$ver\t$ngsLocal_TRIM_MINLEN_VALUE\t$ngsLocal_TRIM_PHRED_THRESHOLD_VALUE\t$ngsLocal_TRIM_RN_VALUE\t$ngsLocal_TRIM_POLYAT_VALUE\t$SE"
 	fi
 
 	# set argument for padding reads

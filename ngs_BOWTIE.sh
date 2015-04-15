@@ -137,7 +137,9 @@ ngsCmd_BOWTIE() {
 		# returns this: "0.12.7"
 		ver=$(bowtie --version | head -1 | awk '{print $3}')
 		sver=$(samtools 2>&1 | grep 'Version:' | awk '{print $2}')
-		prnVersion "bowtie" "program\tversion\tprogram\tversion\tspecies" "bowtie\t$ver\tsamtools\t$sver\t$SPECIES"
+		prnVersion "bowtie" \
+		"program\tversion\tprogram\tversion\tspecies\tnMismatch\tmaxMulti\tminIns\tmaxIns\tSE?" \
+		"bowtie\t$ver\tsamtools\t$sver\t$SPECIES\t$ngsLocal_BOWTIE_MISMATCHES\t$ngsLocal_BOWTIE_MAXMULTI\t$ngsLocal_BOWTIE_MININS\t$ngsLocal_BOWTIE_MAXINS\t$SE"
 	fi
 	
 	
