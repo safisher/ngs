@@ -17,7 +17,7 @@
 """
 by: S. Fisher, 2013
 
-usage: trimReads.py [-h] [-v] [-p] [-m MIN_LEN] [-c3 NUM_CUT_3] [-c5 NUM_CUT_5] [-q PHRED] [-rN] [-rAT REMOVE_AT] [-c CONTAMINANTS_FA] -f FIRST_FQ [-r SECOND_FQ] -o OUTPUT_PREFIX
+usage: trimReads.py [-h] [-v] [-p] [-l] [-m MIN_LEN] [-c3 NUM_CUT_3] [-c5 NUM_CUT_5] [-q PHRED] [-rN] [-rAT REMOVE_AT] [-c CONTAMINANTS_FA] -f FIRST_FQ [-r SECOND_FQ] -o OUTPUT_PREFIX
 
 Contaminants file:
 1. Sequences must be on a single line (ie can't contain line breaks)
@@ -44,7 +44,7 @@ import sys, os, argparse
 DEBUG = False
 if DEBUG: print 'DEBUG MODE: ON'
 
-VERSION = '0.6'
+VERSION = '0.7'
 
 # indecies for the read set
 HEADER = 'header'
@@ -52,6 +52,7 @@ SEQUENCE = 'seq'
 QUALS = 'quals'
 LENGTH = 'length'
 TRIMMED = 'trimmed'
+LOCATIONS = 'locations'
 
 DEFAULT_END = 3
 DEFAULT_MAX = 0
@@ -98,6 +99,8 @@ argParser = argparse.ArgumentParser(version=VERSION,
                                     )
 argParser.add_argument( '-p', '--padPaired', dest='padPaired', action='store_true', default=False,
                         help='Pad paired reads so that they are the same length after all trimming has occured. N\'s will be added to the 3\' end with \'#\' added to the quality score for each N that is added. This will not do anything for single-end reads. (default: no)' )
+argParser.add_argument( '-l', '--outputLocations', dest='output_locations', action='store_true', default=False,
+                        help='Create a tab-delimited file ("OUTPUT_PREFIX_?.loc.txt") containing the 5\' locations of all 3\' trimming events and the 3\' locations for all 5\' trimming events. The file will not include truncating of the reads with -c3 or -c5. (default: no)' )
 argParser.add_argument( '-m', '--minLen', dest='min_len', action='store', default=0, type=int,
                         help='Minimum size of trimmed read. If trimmed beyond minLen, then read is discarded. If read is paired then read is replaced with N\'s, unless both reads in pair are smaller than minLen in which case the pair is discarded. (default: no minimum length)' )
 argParser.add_argument( '-c3', '--cut3', dest='num_cut_3', action='store', default=0, type=int, 
@@ -126,6 +129,11 @@ if DEBUG: print clArgs
 PAIRED = False
 if clArgs.second_fq:
     PAIRED = True
+
+# flag if output trimming locations
+OUTPUT_LOCATIONS = False
+if clArgs.output_locations:
+    OUTPUT_LOCATIONS = True
 
 # track trimming stats
 nBothTrimmed = 0 # total number of read pairs in which both reads were trimmed (equal to nFirstTrimmed if single-end)
@@ -181,6 +189,7 @@ def nextRead(inFile):
         # store additional read information in read set
         read[LENGTH] = len(read[SEQUENCE])
         read[TRIMMED] = False
+        read[LOCATIONS] = ''
 
         return read
     except:
@@ -260,6 +269,10 @@ def qualityScoreThreshold(read, phredThreshold, isFirstRead):
     seq = read[SEQUENCE]
     quals = read[QUALS]
     length = read[LENGTH]
+    locations = read[LOCATIONS]
+
+    # if we're tracking trim locations and we're not the first trim even, then add delimiter
+    if OUTPUT_LOCATIONS and (len(locations) > 0): locations += '\t'
 
     wasTrimmed = False # local flag for trimming
 
@@ -269,9 +282,17 @@ def qualityScoreThreshold(read, phredThreshold, isFirstRead):
     for qualityScore in quals:
         if ord(qualityScore) < phredThreshold:
             newSeq += "N"
+
+            # create comma separated list of locations for phred score trimming
+            if OUTPUT_LOCATIONS:
+                if wasTrimmed: locations += ','
+                locations += str(i)
+
             wasTrimmed = True
+            
         else:
             newSeq += seq[i]
+            
         i += 1
 
     if wasTrimmed:
@@ -282,6 +303,7 @@ def qualityScoreThreshold(read, phredThreshold, isFirstRead):
         if DEBUG: debugTrimOutput(read[SEQUENCE], length, newSeq, length, 'qualityScoreThreshold', '')
 
         read[SEQUENCE] = newSeq
+        read[LOCATIONS] = locations
     return read
 
 # remove N's on either end of the read
@@ -292,6 +314,7 @@ def removeNs(read, isFirstRead):
     seq = read[SEQUENCE]
     quals = read[QUALS]
     length = read[LENGTH]
+    locations = read[LOCATIONS]
 
     # local flag for trimming having occurred. This is unnecessary
     # since removeNs() is first trimming to happen. However this
@@ -305,8 +328,14 @@ def removeNs(read, isFirstRead):
         seq = seq.lstrip('N')
 
         # need to trim quals in same way we trimmed sequence
-        quals = quals[len(quals) - len(seq):]
+        pos = len(quals) - len(seq)
+        quals = quals[pos:]
 
+        # store trimming location
+        if OUTPUT_LOCATIONS:
+            if len(locations) > 0: locations += '\t'
+            locations += str(pos)
+                
         # flag read as having been trimmed
         wasTrimmed = True
 
@@ -319,8 +348,14 @@ def removeNs(read, isFirstRead):
         seq = seq.rstrip('N')
 
         # need to trim quals in same way we trimmed sequence
-        quals = quals[:len(seq)]
+        pos = len(seq)
+        quals = quals[:pos]
 
+        # store trimming location
+        if OUTPUT_LOCATIONS:
+            if len(locations) > 0: locations += '\t'
+            locations += str(pos)
+                
         # flag read as having been trimmed
         wasTrimmed = True
 
@@ -333,6 +368,7 @@ def removeNs(read, isFirstRead):
         read[SEQUENCE] = seq
         read[QUALS] = quals
         read[LENGTH] = len(seq)
+        read[LOCATIONS] = locations
         read[TRIMMED] = True
     return read
 
@@ -352,6 +388,10 @@ def fullContaminantTrimming(read, contaminant, isFirstRead):
     seq = read[SEQUENCE]
     quals = read[QUALS]
     length = read[LENGTH]
+    locations = read[LOCATIONS]
+
+    # if we're tracking trim locations and we're not the first trim even, then add delimiter
+    if OUTPUT_LOCATIONS and (len(locations) > 0): locations += '\t'
 
     # list of contaminant k-mers to look for in read
     kmers = contaminant[2]
@@ -391,6 +431,9 @@ def fullContaminantTrimming(read, contaminant, isFirstRead):
     seq = seq[:pos]
     quals = quals[:pos]
 
+    # store trimming location
+    if OUTPUT_LOCATIONS: locations += str(pos)
+                
     if DEBUG: debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'fullContaminantTrimming', name)
 
     if isFirstRead: nFirstContaminantsTrim[name] += 1
@@ -399,6 +442,7 @@ def fullContaminantTrimming(read, contaminant, isFirstRead):
     read[SEQUENCE] = seq
     read[QUALS] = quals
     read[LENGTH] = len(seq)
+    read[LOCATIONS] = locations
     read[TRIMMED] = True
     return read
 
@@ -418,6 +462,10 @@ def mappedContaminantTrimming(read, contaminant, isFirstRead):
     seq = read[SEQUENCE]
     quals = read[QUALS]
     length = read[LENGTH]
+    locations = read[LOCATIONS]
+
+    # if we're tracking trim locations and we're not the first trim even, then add delimiter
+    if OUTPUT_LOCATIONS and (len(locations) > 0): locations += '\t'
 
     # contaminant sequence
     cSeq = contaminant[1]
@@ -475,6 +523,9 @@ def mappedContaminantTrimming(read, contaminant, isFirstRead):
     seq = seq[:pos]
     quals = quals[:pos]
 
+    # store trimming location
+    if OUTPUT_LOCATIONS: locations += str(pos)
+                
     if DEBUG: debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'mappedContaminantTrimming', name)
 
     if isFirstRead: nFirstContaminantsTrim[name] += 1
@@ -483,6 +534,7 @@ def mappedContaminantTrimming(read, contaminant, isFirstRead):
     read[SEQUENCE] = seq
     read[QUALS] = quals
     read[LENGTH] = len(seq)
+    read[LOCATIONS] = locations
     read[TRIMMED] = True
     return read
 
@@ -515,6 +567,10 @@ def identityTrimming(read, contaminant, isFirstRead):
     seq = read[SEQUENCE]
     quals = read[QUALS]
     length = read[LENGTH]
+    locations = read[LOCATIONS]
+
+    # if we're tracking trim locations and we're not the first trim even, then add delimiter
+    if OUTPUT_LOCATIONS and (len(locations) > 0): locations += '\t'
 
     # contaminant sequence
     cSeq = contaminant[1]
@@ -596,6 +652,9 @@ def identityTrimming(read, contaminant, isFirstRead):
     seq = seq[:pos]
     quals = quals[:pos]
 
+    # store trimming location
+    if OUTPUT_LOCATIONS: locations += str(pos)
+                
     if DEBUG: 
         misc = name + "\t" + str(percIdentity) + "\t" + str(totIdentity)
         debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'identityTrimming', misc)
@@ -606,6 +665,7 @@ def identityTrimming(read, contaminant, isFirstRead):
     read[SEQUENCE] = seq
     read[QUALS] = quals
     read[LENGTH] = len(seq)
+    read[LOCATIONS] = locations
     read[TRIMMED] = True
     return read
 
@@ -619,6 +679,7 @@ def removePolyAT(read, trimLength, isFirstRead):
     seq = read[SEQUENCE]
     quals = read[QUALS]
     length = read[LENGTH]
+    locations = read[LOCATIONS]
 
     wasTrimmed = False # local flag for trimming
 
@@ -633,8 +694,14 @@ def removePolyAT(read, trimLength, isFirstRead):
         seq = n_mer + seq[trimLength:]
 
         # need to trim quals to same degree that we trimmed sequence
-        quals = quals[len(quals) - len(seq):]
+        pos = len(quals) - len(seq)
+        quals = quals[pos:]
 
+        # store trimming location
+        if OUTPUT_LOCATIONS:
+            if len(locations) > 0: locations += '\t'
+            locations += str(pos)
+                
         # flag read as having been trimmed
         wasTrimmed = True
 
@@ -653,8 +720,14 @@ def removePolyAT(read, trimLength, isFirstRead):
         seq = seq[:idx] + n_mer
 
         # need to trim quals in same way we trimmed sequence
-        quals = quals[:len(seq)]
+        pos = len(seq)
+        quals = quals[:pos]
 
+        # store trimming location
+        if OUTPUT_LOCATIONS:
+            if len(locations) > 0: locations += '\t'
+            locations += str(pos)
+                
         # flag read as having been trimmed
         wasTrimmed = True
 
@@ -667,6 +740,7 @@ def removePolyAT(read, trimLength, isFirstRead):
         read[SEQUENCE] = seq
         read[QUALS] = quals
         read[LENGTH] = len(seq)
+        read[LOCATIONS] = locations
         read[TRIMMED] = True
     return read
 
@@ -844,6 +918,14 @@ except:
     msg = 'Unable to open output file ' + clArgs.output_prefix + "_1.disc.txt"
     quitOnError(msg)
 
+# open file that will store trim locations
+firstReadTrimLocations = ''
+try: 
+    firstReadTrimLocations = open(clArgs.output_prefix + "_1.loc.txt", 'w')
+except: 
+    msg = 'Unable to open output file ' + clArgs.output_prefix + "_1.loc.txt"
+    quitOnError(msg)
+
 if PAIRED:
     secondReadIn = ''
     try: 
@@ -864,6 +946,13 @@ if PAIRED:
         secondReadDiscardedOut = open(clArgs.output_prefix + "_2.disc.txt", 'w')
     except: 
         msg = 'Unable to open output file ' + clArgs.output_prefix + "_2.disc.txt"
+        quitOnError(msg)
+
+    secondReadTrimLocations = ''
+    try: 
+        secondReadTrimLocations = open(clArgs.output_prefix + "_2.loc.txt", 'w')
+    except: 
+        msg = 'Unable to open output file ' + clArgs.output_prefix + "_2.loc.txt"
         quitOnError(msg)
 
 #------------------------------------------------------------------------------------------
@@ -1014,6 +1103,11 @@ while 1:
     # add sequence length to read header
     firstRead[HEADER] += ' L:%d' % firstRead[LENGTH]
     if PAIRED: secondRead[HEADER] += ' L:%d' % secondRead[LENGTH]
+
+    #--------------------------------------------------------------------------------------
+    # write trimming locations to output file
+    firstReadTrimLocations.write(firstRead[HEADER] + '\t' + firstRead[LOCATIONS] + '\n')
+    if PAIRED: secondReadTrimLocations.write(secondRead[HEADER] + '\t' + secondRead[LOCATIONS] + '\n')
 
     #--------------------------------------------------------------------------------------
     # write read(s) to output file if not over-trimmed

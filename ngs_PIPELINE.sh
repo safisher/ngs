@@ -136,7 +136,7 @@ ngsCmd_PIPELINE() {
 	########################################################
 	
 	if [[ "$ngsLocal_PIPELINE_TYPE" = "RNASeq" ]]; then
-		ngsArgs_TRIM -m 20 -q 53 -rAT 26 -rN -c $REPO_LOCATION/trim/contaminants.fa $SAMPLE
+		ngsArgs_TRIM -m 20 -q 53 -rAT 26 -rN -c contaminants.fa $SAMPLE
 		ngsCmd_TRIM
 		# Need different args to run FastQC on the trimmed data, so adjust
 		# args by calling ngsArgs_FASTQC() prior to running ngsCmd_FASTQC().
@@ -147,7 +147,7 @@ ngsCmd_PIPELINE() {
 		#ngsCmd_BLASTDB
 
 	elif [[ "$ngsLocal_PIPELINE_TYPE" = "RNASeq_Stranded" ]]; then
-		ngsArgs_TRIM -m 20 -q 53 -rAT 26 -rN -c $REPO_LOCATION/trim/contaminants.fa $SAMPLE
+		ngsArgs_TRIM -m 20 -q 53 -rAT 26 -rN -c contaminants.fa $SAMPLE
 		ngsCmd_TRIM
 		ngsArgs_FASTQC -i trim -o fastqc.trim $SAMPLE
 		ngsCmd_FASTQC
@@ -156,7 +156,7 @@ ngsCmd_PIPELINE() {
 		ngsCmd_HTSEQ
 
 	elif [[ "$ngsLocal_PIPELINE_TYPE" = "RNASeq_Tiva-x" ]]; then
-		ngsArgs_TRIM -m 20 -q 53 -rAT 26 -rN -c $REPO_LOCATION/trim/contaminants.tiva-x.fa $SAMPLE
+		ngsArgs_TRIM -m 20 -q 53 -rAT 26 -rN -c contaminants.tiva-x.fa $SAMPLE
 		ngsCmd_TRIM
 		ngsArgs_FASTQC -i trim -o fastqc.trim $SAMPLE
 		ngsCmd_FASTQC
@@ -165,7 +165,7 @@ ngsCmd_PIPELINE() {
 		ngsCmd_HTSEQ
 
 	elif [[ "$ngsLocal_PIPELINE_TYPE" = "RNASeq_Introns" ]]; then
-		ngsArgs_TRIM -m 20 -q 53 -rAT 26 -rN -c $REPO_LOCATION/trim/contaminants.fa $SAMPLE
+		ngsArgs_TRIM -m 20 -q 53 -rAT 26 -rN -c contaminants.fa $SAMPLE
 		ngsCmd_TRIM
 		ngsArgs_FASTQC -i trim -o fastqc.trim $SAMPLE
 		ngsCmd_FASTQC
@@ -174,7 +174,7 @@ ngsCmd_PIPELINE() {
 		ngsCmd_HTSEQ
 	
 	elif [[ "$ngsLocal_PIPELINE_TYPE" = "RNASeq_Human" ]]; then
-		ngsArgs_TRIM -m 20 -q 53 -rAT 26 -rN -c $REPO_LOCATION/trim/contaminants.fa $SAMPLE
+		ngsArgs_TRIM -m 20 -q 53 -rAT 26 -rN -c contaminants.fa $SAMPLE
 		ngsCmd_TRIM
 		ngsArgs_FASTQC -i trim -o fastqc.trim $SAMPLE
 		ngsCmd_FASTQC
@@ -184,7 +184,7 @@ ngsCmd_PIPELINE() {
 
 	elif [[ "$ngsLocal_PIPELINE_TYPE" = "WGS" ]]; then
 		# disable poly-A/T trimming for WGS
-		ngsArgs_TRIM -m 20 -rAT 0 -rN -c $REPO_LOCATION/trim/contaminantsWGS.fa $SAMPLE
+		ngsArgs_TRIM -m 20 -rAT 0 -rN -c contaminantsWGS.fa $SAMPLE
 		ngsCmd_TRIM
 		ngsArgs_FASTQC -i trim -o fastqc.trim $SAMPLE
 		ngsCmd_FASTQC
