@@ -88,7 +88,7 @@ ngsArgs_TRIM() {
 			-l) ngsLocal_TRIM_OUTPUT_LOCATIONS=true
 				shift;
 				;;
-			-c) ngsLocal_TRIM_CONTAMINANTS_FILE=$2
+			-c) ngsLocal_TRIM_CONTAMINANTS_FILE=$REPO_LOCATION/trim/$2
 				shift; shift;
 				;;
 			-m) ngsLocal_TRIM_MINLEN_VALUE=$2
@@ -180,7 +180,7 @@ ngsCmd_TRIM() {
 	# set contaminants file, if being used
 	ngsLocal_TRIM_CONTAMINANTS=""
 	if [[ -n $ngsLocal_TRIM_CONTAMINANTS_FILE ]]; then
-		ngsLocal_TRIM_CONTAMINANTS="-c $REPO_LOCATION/trim/$ngsLocal_TRIM_CONTAMINANTS_FILE"
+		ngsLocal_TRIM_CONTAMINANTS="-c $ngsLocal_TRIM_CONTAMINANTS_FILE"
 	fi
 
 	if $SE; then
@@ -309,4 +309,7 @@ ngsStats_TRIM() {
 
 		*) 
 			# incorrect argument
-			prnError "Invalid parameter for ngsStats_TRIM() (got $1, expected: 'header|value
+			prnError "Invalid parameter for ngsStats_TRIM() (got $1, expected: 'header|values')."
+			;;
+	esac
+}
