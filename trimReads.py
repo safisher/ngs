@@ -919,12 +919,13 @@ except:
     quitOnError(msg)
 
 # open file that will store trim locations
-firstReadTrimLocations = ''
-try: 
-    firstReadTrimLocations = open(clArgs.output_prefix + "_1.loc.txt", 'w')
-except: 
-    msg = 'Unable to open output file ' + clArgs.output_prefix + "_1.loc.txt"
-    quitOnError(msg)
+if OUTPUT_LOCATIONS:
+    firstReadTrimLocations = ''
+    try: 
+        firstReadTrimLocations = open(clArgs.output_prefix + "_1.loc.txt", 'w')
+    except: 
+        msg = 'Unable to open output file ' + clArgs.output_prefix + "_1.loc.txt"
+        quitOnError(msg)
 
 if PAIRED:
     secondReadIn = ''
@@ -948,12 +949,13 @@ if PAIRED:
         msg = 'Unable to open output file ' + clArgs.output_prefix + "_2.disc.txt"
         quitOnError(msg)
 
-    secondReadTrimLocations = ''
-    try: 
-        secondReadTrimLocations = open(clArgs.output_prefix + "_2.loc.txt", 'w')
-    except: 
-        msg = 'Unable to open output file ' + clArgs.output_prefix + "_2.loc.txt"
-        quitOnError(msg)
+    if OUTPUT_LOCATIONS:
+        secondReadTrimLocations = ''
+        try: 
+            secondReadTrimLocations = open(clArgs.output_prefix + "_2.loc.txt", 'w')
+        except: 
+            msg = 'Unable to open output file ' + clArgs.output_prefix + "_2.loc.txt"
+            quitOnError(msg)
 
 #------------------------------------------------------------------------------------------
 # TRIM READS.  LOAD ONE READ FROM BOTH FQ FILES AT SAME TIME. PROCESS
@@ -967,9 +969,11 @@ while 1:
     if firstRead == {}:
         firstReadIn.close()
         firstReadOut.close()
+        if OUTPUT_LOCATIONS: firstReadTrimLocations.close()
         if PAIRED: 
             secondReadIn.close()
             secondReadOut.close()
+            if OUTPUT_LOCATIONS: secondReadTrimLocations.close()
         break
             
     nTotalReadPairs += 1
@@ -1106,8 +1110,9 @@ while 1:
 
     #--------------------------------------------------------------------------------------
     # write trimming locations to output file
-    firstReadTrimLocations.write(firstRead[HEADER] + '\t' + firstRead[LOCATIONS] + '\n')
-    if PAIRED: secondReadTrimLocations.write(secondRead[HEADER] + '\t' + secondRead[LOCATIONS] + '\n')
+    if OUTPUT_LOCATIONS: 
+        firstReadTrimLocations.write(firstRead[HEADER] + '\t' + firstRead[LOCATIONS] + '\n')
+        if PAIRED: secondReadTrimLocations.write(secondRead[HEADER] + '\t' + secondRead[LOCATIONS] + '\n')
 
     #--------------------------------------------------------------------------------------
     # write read(s) to output file if not over-trimmed
