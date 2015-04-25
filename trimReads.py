@@ -322,6 +322,9 @@ def removeNs(read, isFirstRead):
     # option prior to removeNs()
     wasTrimmed = False 
 
+    # if we're tracking trim locations and we're not the first trim even, then add delimiter
+    if OUTPUT_LOCATIONS and (len(locations) > 0): locations += '\t'
+
     # trim N from beginning of read (5' end)
     if seq.startswith('N'):
         # trim sequence
@@ -332,15 +335,16 @@ def removeNs(read, isFirstRead):
         quals = quals[pos:]
 
         # store trimming location
-        if OUTPUT_LOCATIONS:
-            if len(locations) > 0: locations += '\t'
-            locations += str(pos)
+        if OUTPUT_LOCATIONS: locations += str(pos)
                 
         # flag read as having been trimmed
         wasTrimmed = True
 
         if isFirstRead: nFirstContaminantsTrim['remove5N'] += 1
         else: nSecondContaminantsTrim['remove5N'] += 1
+
+    # if we're tracking trim locations, then add delimiter
+    if OUTPUT_LOCATIONS: locations += '\t'
 
     # trim N from end of read (3' end)
     if seq.endswith('N'):
@@ -352,9 +356,7 @@ def removeNs(read, isFirstRead):
         quals = quals[:pos]
 
         # store trimming location
-        if OUTPUT_LOCATIONS:
-            if len(locations) > 0: locations += '\t'
-            locations += str(pos)
+        if OUTPUT_LOCATIONS: locations += str(pos)
                 
         # flag read as having been trimmed
         wasTrimmed = True
@@ -683,6 +685,9 @@ def removePolyAT(read, trimLength, isFirstRead):
 
     wasTrimmed = False # local flag for trimming
 
+    # if we're tracking trim locations and we're not the first trim even, then add delimiter
+    if OUTPUT_LOCATIONS and (len(locations) > 0): locations += '\t'
+
     # trim poly-T from 5' of read
     if seq.startswith(POLY_T):
         # only remove up to trimLength number of bases from poly-T.
@@ -698,15 +703,16 @@ def removePolyAT(read, trimLength, isFirstRead):
         quals = quals[pos:]
 
         # store trimming location
-        if OUTPUT_LOCATIONS:
-            if len(locations) > 0: locations += '\t'
-            locations += str(pos)
+        if OUTPUT_LOCATIONS: locations += str(pos)
                 
         # flag read as having been trimmed
         wasTrimmed = True
 
         if isFirstRead: nFirstContaminantsTrim['polyT'] += 1
         else: nSecondContaminantsTrim['polyT'] += 1
+
+    # if we're tracking trim locations, then add delimiter
+    if OUTPUT_LOCATIONS: locations += '\t'
 
     # trim poly-A from 3' end of read
     if seq.endswith(POLY_A):
@@ -724,9 +730,7 @@ def removePolyAT(read, trimLength, isFirstRead):
         quals = quals[:pos]
 
         # store trimming location
-        if OUTPUT_LOCATIONS:
-            if len(locations) > 0: locations += '\t'
-            locations += str(pos)
+        if OUTPUT_LOCATIONS: locations += str(pos)
                 
         # flag read as having been trimmed
         wasTrimmed = True
