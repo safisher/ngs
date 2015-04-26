@@ -197,6 +197,21 @@ ngsCmd_TRIM() {
 			trimReads.py $ngsLocal_TRIM_PAD $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_OUTPUT_LOCATIONS $ngsLocal_TRIM_PHRED_THRESHOLD $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT $ngsLocal_TRIM_CONTAMINANTS -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt
 		fi
 	fi
+
+	# rename file(s) with trimming locations, if present
+	if $ngsLocal_TRIM_OUTPUT_LOCATIONS; then
+	    prnCmd "mv $SAMPLE/trim/unaligned_1.loc.txt $SAMPLE/trim/$SAMPLE_1.trim.loc.txt"
+	    if ! $DEBUG; then
+		mv $SAMPLE/trim/unaligned_1.loc.txt $SAMPLE/trim/$SAMPLE_1.trim.loc.txt
+	    fi
+	    if ! $SE; then
+		prnCmd "mv $SAMPLE/trim/unaligned_2.loc.txt $SAMPLE/trim/$SAMPLE_2.trim.loc.txt"
+		if ! $DEBUG; then
+		    mv $SAMPLE/trim/unaligned_2.loc.txt $SAMPLE/trim/$SAMPLE_2.trim.loc.txt
+		fi
+	    fi
+	fi
+	    
 	
 	# copy contaminants files into trim directory for future reference
 	if [[ -n $ngsLocal_TRIM_CONTAMINANTS_FILE ]]; then
