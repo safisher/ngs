@@ -61,7 +61,7 @@ ngsHelp_TRIM() {
 
 ngsLocal_TRIM_INP_DIR="init"
 ngsLocal_TRIM_PAD_VALUE=false
-ngsLocal_TRIM_OUTPUT_LOCATIONS=false
+ngsLocal_TRIM_OUTPUT_LOCATIONS_VALUE=false
 ngsLocal_TRIM_CONTAMINANTS_FILE=""
 ngsLocal_TRIM_MINLEN_VALUE="0"
 ngsLocal_TRIM_POLYAT_VALUE="0"
@@ -85,7 +85,7 @@ ngsArgs_TRIM() {
 			-p) ngsLocal_TRIM_PAD_VALUE=true
 				shift;
 				;;
-			-l) ngsLocal_TRIM_OUTPUT_LOCATIONS=true
+			-l) ngsLocal_TRIM_OUTPUT_LOCATIONS_VALUE=true
 				shift;
 				;;
 			-c) ngsLocal_TRIM_CONTAMINANTS_FILE=$REPO_LOCATION/trim/$2
@@ -149,7 +149,7 @@ ngsCmd_TRIM() {
 
 	# set argument for output trim locations
 	ngsLocal_TRIM_OUTPUT_LOCATIONS=""
-	if $ngsLocal_TRIM_OUTPUT_LOCATIONS; then
+	if $ngsLocal_TRIM_OUTPUT_LOCATIONS_VALUE; then
 		ngsLocal_TRIM_OUTPUT_LOCATIONS="-l"
 	fi
 
@@ -199,7 +199,7 @@ ngsCmd_TRIM() {
 	fi
 
 	# rename file(s) with trimming locations, if present
-	if $ngsLocal_TRIM_OUTPUT_LOCATIONS; then
+	if $ngsLocal_TRIM_OUTPUT_LOCATIONS_VALUE; then
 	    prnCmd "mv $SAMPLE/trim/unaligned_1.loc.txt $SAMPLE/trim/$SAMPLE_1.trim.loc.txt"
 	    if ! $DEBUG; then
 		mv $SAMPLE/trim/unaligned_1.loc.txt $SAMPLE/trim/$SAMPLE_1.trim.loc.txt
