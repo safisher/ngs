@@ -398,12 +398,10 @@ def fullContaminantTrimming(read, contaminant, isFirstRead):
     seq = read[SEQUENCE]
     quals = read[QUALS]
     length = read[LENGTH]
-
-    # if we're tracking trim locations and we're not the first trim
-    # even, then add delimiter. We add it here to make sure it's
-    # included, even if read isn't trimmed.
-    if OUTPUT_LOCATIONS and (len(locations) > 0): read[LOCATIONS] += '\t'
     locations = read[LOCATIONS]
+
+    # if we're tracking trim locations and we're not the first trim even, then add delimiter
+    if OUTPUT_LOCATIONS and (len(locations) > 0): locations += '\t'
 
     # list of contaminant k-mers to look for in read
     kmers = contaminant[2]
@@ -438,7 +436,10 @@ def fullContaminantTrimming(read, contaminant, isFirstRead):
             break
 
     # if k-mers not found, then no trimming
-    if pos == -1: return read
+    if pos == -1: 
+        # this will make sure the delimiter in included, even though we didn't trim
+        read[LOCATIONS] = locations
+        return read
 
     seq = seq[:pos]
     quals = quals[:pos]
@@ -474,12 +475,10 @@ def mappedContaminantTrimming(read, contaminant, isFirstRead):
     seq = read[SEQUENCE]
     quals = read[QUALS]
     length = read[LENGTH]
-
-    # if we're tracking trim locations and we're not the first trim
-    # even, then add delimiter. We add it here to make sure it's
-    # included, even if read isn't trimmed.
-    if OUTPUT_LOCATIONS and (len(locations) > 0): read[LOCATIONS] += '\t'
     locations = read[LOCATIONS]
+
+    # if we're tracking trim locations and we're not the first trim even, then add delimiter
+    if OUTPUT_LOCATIONS and (len(locations) > 0): locations += '\t'
 
     # contaminant sequence
     cSeq = contaminant[1]
@@ -532,7 +531,10 @@ def mappedContaminantTrimming(read, contaminant, isFirstRead):
                     offset -= 1
 
     # if k-mers not found, then no trimming
-    if pos == -1: return read
+    if pos == -1: 
+        # this will make sure the delimiter in included, even though we didn't trim
+        read[LOCATIONS] = locations
+        return read
 
     seq = seq[:pos]
     quals = quals[:pos]
@@ -581,12 +583,10 @@ def identityTrimming(read, contaminant, isFirstRead):
     seq = read[SEQUENCE]
     quals = read[QUALS]
     length = read[LENGTH]
-
-    # if we're tracking trim locations and we're not the first trim
-    # even, then add delimiter. We add it here to make sure it's
-    # included, even if read isn't trimmed.
-    if OUTPUT_LOCATIONS and (len(locations) > 0): read[LOCATIONS] += '\t'
     locations = read[LOCATIONS]
+
+    # if we're tracking trim locations and we're not the first trim even, then add delimiter
+    if OUTPUT_LOCATIONS and (len(locations) > 0): locations += '\t'
 
     # contaminant sequence
     cSeq = contaminant[1]
@@ -659,11 +659,17 @@ def identityTrimming(read, contaminant, isFirstRead):
             break
 
     # if k-mers not found, then no trimming
-    if index == -1: return read
+    if index == -1: 
+        # this will make sure the delimiter in included, even though we didn't trim
+        read[LOCATIONS] = locations
+        return read
 
     # if the k-mers were not found or the contaminant didn't map
     # sufficiently to the read then we don't trim.
-    if (percIdentity < percIdentityThreshold) or (totIdentity < totIdentityThreshold): return read
+    if (percIdentity < percIdentityThreshold) or (totIdentity < totIdentityThreshold): 
+        # this will make sure the delimiter in included, even though we didn't trim
+        read[LOCATIONS] = locations
+        return read
 
     seq = seq[:pos]
     quals = quals[:pos]
