@@ -1113,10 +1113,14 @@ while 1:
     if PAIRED: secondRead[HEADER] += ' L:%d' % secondRead[LENGTH]
 
     #--------------------------------------------------------------------------------------
-    # write trimming locations to output file
-    if OUTPUT_LOCATIONS: 
-        firstReadTrimLocations.write(firstRead[HEADER] + '\t' + firstRead[LOCATIONS] + '\n')
-        if PAIRED: secondReadTrimLocations.write(secondRead[HEADER] + '\t' + secondRead[LOCATIONS] + '\n')
+    # write trimming locations to output file, only if either read is trimmed
+    if OUTPUT_LOCATIONS:
+        if PAIRED:
+            if firstRead[TRIMMED] or secondRead[TRIMMED]:
+                firstReadTrimLocations.write(firstRead[HEADER] + '\t' + firstRead[LOCATIONS] + '\n')
+                secondReadTrimLocations.write(secondRead[HEADER] + '\t' + secondRead[LOCATIONS] + '\n')
+        elif firstRead[TRIMMED]:
+            firstReadTrimLocations.write(firstRead[HEADER] + '\t' + firstRead[LOCATIONS] + '\n')
 
     #--------------------------------------------------------------------------------------
     # write read(s) to output file if not over-trimmed
