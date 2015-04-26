@@ -303,7 +303,11 @@ def qualityScoreThreshold(read, phredThreshold, isFirstRead):
         if DEBUG: debugTrimOutput(read[SEQUENCE], length, newSeq, length, 'qualityScoreThreshold', '')
 
         read[SEQUENCE] = newSeq
-        read[LOCATIONS] = locations
+
+    # we need to do this regardless of trimming happening as we need
+    # to pad with \t to preserve column formatting
+    read[LOCATIONS] = locations
+
     return read
 
 # remove N's on either end of the read
@@ -370,8 +374,12 @@ def removeNs(read, isFirstRead):
         read[SEQUENCE] = seq
         read[QUALS] = quals
         read[LENGTH] = len(seq)
-        read[LOCATIONS] = locations
         read[TRIMMED] = True
+
+    # we need to do this regardless of trimming happening as we need
+    # to pad with \t to preserve column formatting
+    read[LOCATIONS] = locations
+
     return read
 
 # trim contaminant removing entire contaminant based on single k-mer
@@ -390,10 +398,12 @@ def fullContaminantTrimming(read, contaminant, isFirstRead):
     seq = read[SEQUENCE]
     quals = read[QUALS]
     length = read[LENGTH]
-    locations = read[LOCATIONS]
 
-    # if we're tracking trim locations and we're not the first trim even, then add delimiter
-    if OUTPUT_LOCATIONS and (len(locations) > 0): locations += '\t'
+    # if we're tracking trim locations and we're not the first trim
+    # even, then add delimiter. We add it here to make sure it's
+    # included, even if read isn't trimmed.
+    if OUTPUT_LOCATIONS and (len(locations) > 0): read[LOCATIONS] += '\t'
+    locations = read[LOCATIONS]
 
     # list of contaminant k-mers to look for in read
     kmers = contaminant[2]
@@ -464,10 +474,12 @@ def mappedContaminantTrimming(read, contaminant, isFirstRead):
     seq = read[SEQUENCE]
     quals = read[QUALS]
     length = read[LENGTH]
-    locations = read[LOCATIONS]
 
-    # if we're tracking trim locations and we're not the first trim even, then add delimiter
-    if OUTPUT_LOCATIONS and (len(locations) > 0): locations += '\t'
+    # if we're tracking trim locations and we're not the first trim
+    # even, then add delimiter. We add it here to make sure it's
+    # included, even if read isn't trimmed.
+    if OUTPUT_LOCATIONS and (len(locations) > 0): read[LOCATIONS] += '\t'
+    locations = read[LOCATIONS]
 
     # contaminant sequence
     cSeq = contaminant[1]
@@ -569,10 +581,12 @@ def identityTrimming(read, contaminant, isFirstRead):
     seq = read[SEQUENCE]
     quals = read[QUALS]
     length = read[LENGTH]
-    locations = read[LOCATIONS]
 
-    # if we're tracking trim locations and we're not the first trim even, then add delimiter
-    if OUTPUT_LOCATIONS and (len(locations) > 0): locations += '\t'
+    # if we're tracking trim locations and we're not the first trim
+    # even, then add delimiter. We add it here to make sure it's
+    # included, even if read isn't trimmed.
+    if OUTPUT_LOCATIONS and (len(locations) > 0): read[LOCATIONS] += '\t'
+    locations = read[LOCATIONS]
 
     # contaminant sequence
     cSeq = contaminant[1]
@@ -744,8 +758,12 @@ def removePolyAT(read, trimLength, isFirstRead):
         read[SEQUENCE] = seq
         read[QUALS] = quals
         read[LENGTH] = len(seq)
-        read[LOCATIONS] = locations
         read[TRIMMED] = True
+
+    # we need to do this regardless of trimming happening as we need
+    # to pad with \t to preserve column formatting
+    read[LOCATIONS] = locations
+
     return read
 
 #------------------------------------------------------------------------------------------
