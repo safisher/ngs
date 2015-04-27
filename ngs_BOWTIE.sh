@@ -269,10 +269,14 @@ ngsStats_BOWTIE() {
 
 	statsFile="$SAMPLE.stats.txt"
 
+	genome=`tail -n1 $SAMPLE/bowtie/$SAMPLE.versions | awk '{print($6)}'`
+	BOWTIE_HEADER="Genome"
+	BOWTIE_VALUES="$genome"
+
 	allNumReads=`grep "processed" $SAMPLE/bowtie/$SAMPLE.stats.txt | awk -F $' ' '{print $4}'`
 	PENumReads=`echo $allNumReads | awk -F $' ' '{if(NR==1){print $1}}'`
-	BOWTIE_HEADER="Number of PE reads"
-	BOWTIE_VALUES="$PENumReads"
+	BOWTIE_HEADER="$BOWTIE_HEADER\tNumber of PE reads"
+	BOWTIE_VALUES="$BOWTIE_VALUES\t$PENumReads"
 
 	uniqMap=`grep "reported" $SAMPLE/bowtie/$SAMPLE.stats.txt | awk -F $' ' '{print $9}'`
 	uniqPEmap=`echo $uniqMap | awk -F $' ' '{if(NR==1){print $1}}'`
