@@ -200,14 +200,14 @@ ngsCmd_TRIM() {
 
 	# rename file(s) with trimming locations, if present
 	if $ngsLocal_TRIM_OUTPUT_LOCATIONS_VALUE; then
-	    prnCmd "mv $SAMPLE/trim/unaligned_1.loc.txt $SAMPLE/trim/$SAMPLE_1.trim.loc.txt"
+	    prnCmd "mv $SAMPLE/trim/unaligned_1.loc.txt $SAMPLE/trim/${SAMPLE}_1.trim.loc.txt"
 	    if ! $DEBUG; then
-		mv $SAMPLE/trim/unaligned_1.loc.txt $SAMPLE/trim/$SAMPLE_1.trim.loc.txt
+		mv $SAMPLE/trim/unaligned_1.loc.txt $SAMPLE/trim/${SAMPLE}_1.trim.loc.txt
 	    fi
 	    if ! $SE; then
-		prnCmd "mv $SAMPLE/trim/unaligned_2.loc.txt $SAMPLE/trim/$SAMPLE_2.trim.loc.txt"
+		prnCmd "mv $SAMPLE/trim/unaligned_2.loc.txt $SAMPLE/trim/${SAMPLE}_2.trim.loc.txt"
 		if ! $DEBUG; then
-		    mv $SAMPLE/trim/unaligned_2.loc.txt $SAMPLE/trim/$SAMPLE_2.trim.loc.txt
+		    mv $SAMPLE/trim/unaligned_2.loc.txt $SAMPLE/trim/${SAMPLE}_2.trim.loc.txt
 		fi
 	    fi
 	fi
