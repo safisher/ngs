@@ -17,11 +17,11 @@
 ##########################################################################################
 # SINGLE-END READS
 # INPUT: $SAMPLE/trim/unaligned_1.fq
-# OUTPUT: $SAMPLE/star/$SAMPLE.star.sorted.bam and $SAMPLE/star/$SAMPLE.star.unique.bam
+# OUTPUT: $SAMPLE/star/$SAMPLE.star.posSorted.bam and $SAMPLE/star/$SAMPLE.star.unique.bam
 #
 # PAIRED-END READS
 # INPUT: $SAMPLE/trim/unaligned_1.fq and $SAMPLE/trim/unaligned_2.fq
-# OUTPUT: $SAMPLE/star/$SAMPLE.star.sorted.bam and $SAMPLE/star/$SAMPLE.star.unique.bam
+# OUTPUT: $SAMPLE/star/$SAMPLE.star.posSorted.bam and $SAMPLE/star/$SAMPLE.star.unique.bam
 #
 # REQUIRES: samtools, STAR version 2.3.0.1 (STAR does not have a versions option so
 # the version is hardcoded in this file)
@@ -40,7 +40,7 @@ NGS_USAGE+="Usage: `basename $0` star OPTIONS sampleID    --   run STAR on trimm
 ngsHelp_STAR() {
 	echo -e "Usage:\n\t`basename $0` star [-i inputDir] [-l readLength] -p numProc -s species [-se] sampleID"
 	echo -e "Input:\n\tsampleID/inputDir/unaligned_1.fq\n\tsampleID/inputDir/unaligned_2.fq (paired-end reads)"
-	echo -e "Output:\n\tsampleID/star/sampleID.star.sorted.bam (all alignments)\n\tsampleID/star/sampleID.star.unique.bam (uniquely aligned reads)"
+	echo -e "Output:\n\tsampleID/star/sampleID.star.posSorted.bam (all alignments)\n\tsampleID/star/sampleID.star.unique.bam (uniquely aligned reads)"
 	echo -e "Requires:\n\tSTAR ( http://code.google.com/p/rna-star )\n\tsamtools ( http://samtools.sourceforge.net/ )"
 	echo -e "Options:"
 	echo -e "\t-i inputDir - location of source files (default: trim)."
@@ -239,33 +239,39 @@ starPostProcessing() {
 	    NUM_SORT_THREADS=$NUMCPU
 	fi
 
-	prnCmd "samtools sort -n -@ $NUM_SORT_THREADS -m 16G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.sorted"
+	prnCmd "samtools sort -@ $NUM_SORT_THREADS -m 16G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.posSorted"
 	if ! $DEBUG; then
-	        samtools sort -n -@ $NUM_SORT_THREADS -m 16G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.sorted
+	        samtools sort -@ $NUM_SORT_THREADS -m 16G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.posSorted
 	fi
 
-	#prnCmd "mv $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.sorted.bam"
+	#prnCmd "mv $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.posSorted.bam"
 	#if ! $DEBUG; then 
-	#    mv $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.sorted.bam
+	#    mv $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.posSorted.bam
 	#fi
 	
-	#prnCmd "samtools index $SAMPLE.star.sorted.bam"
-	#if ! $DEBUG; then 
-	#	samtools index $SAMPLE.star.sorted.bam
-	#fi
+	prnCmd "samtools index $SAMPLE.star.posSorted.bam"
+	if ! $DEBUG; then 
+		samtools index $SAMPLE.star.posSorted.bam
+	fi
 	
 	# generate BAM file containing all uniquely mapped reads. This variant will
 	# remove mitochondrial genes:
-	#   samtools view -H -S $SAMPLE.star.sorted.bam > header.sam; $GREPP -v 'chrM\t' $SAMPLE.star.sorted.bam | $GREPP 'IH:i:1\t' | cat header.sam - | samtools view -bS - > STAR_Unique.bam
+	#   samtools view -H -S $SAMPLE.star.posSorted.bam > header.sam; $GREPP -v 'chrM\t' $SAMPLE.star.posSorted.bam | $GREPP 'IH:i:1\t' | cat header.sam - | samtools view -bS - > STAR_Unique.bam
 	prnCmd "# generating STAR_Unique.bam file"
-	prnCmd "samtools view -H $SAMPLE.star.sorted.bam > header.sam"
+	prnCmd "samtools view -H $SAMPLE.star.posSorted.bam > header.sam"
 	# (1) extract all mapped reads from SAM file, (2) filter by number of mappings, (3) add header, (4) convert to BAM
-	prnCmd "samtools view -F 0x4 $SAMPLE.star.sorted.bam | $GREPP 'NH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.star.unique.bam"
-	prnCmd "rm header.sam"
+	prnCmd "samtools view -F 0x4 $SAMPLE.star.posSorted.bam | $GREPP 'NH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.star.tmp.bam"
+	prnCmd "samtools sort -n -@ $NUM_SORT_THREADS -m 16G $SAMPLE.star.tmp.bam $SAMPLE.star.tmp2.bam"
+	prnCmd "samtools fixmate $SAMPLE.star.tmp2.bam $SAMPLE.star.unique.bam"
+	prnCmd "samtools index $SAMPLE.star.unique.bam"
+	prnCmd "rm header.sam $SAMPLE.star.tmp.bam $SAMPLE.star.tmp2.bam"
 	if ! $DEBUG; then 
-		samtools view -H $SAMPLE.star.sorted.bam > header.sam
-		samtools view -F 0x4 $SAMPLE.star.sorted.bam | $GREPP 'NH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.star.unique.bam
-		rm header.sam
+		samtools view -H $SAMPLE.star.posSorted.bam > header.sam
+		samtools view -F 0x4 $SAMPLE.star.posSorted.bam | $GREPP 'NH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.star.tmp.bam
+		samtools sort -n -@ $NUM_SORT_THREADS -m 16G $SAMPLE.star.tmp.bam $SAMPLE.star.tmp2.bam
+		samtools fixmate $SAMPLE.star.tmp2.bam $SAMPLE.star.unique.bam
+		samtools index $SAMPLE.star.unique.bam
+		rm header.sam $SAMPLE.star.tmp.bam $SAMPLE.star.tmp2.bam
 	fi
 	
 	# this might be problematic if the sorting doesn't work.
@@ -302,7 +308,7 @@ ngsErrorChk_STAR() {
 
 	inputFile_1="$SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq"
 	inputFile_2="$SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_2.fq"
-	outputFile_1="$SAMPLE/star/$SAMPLE.star.sorted.bam"
+	outputFile_1="$SAMPLE/star/$SAMPLE.star.posSorted.bam"
 	outputFile_2="$SAMPLE/star/$SAMPLE.star.unique.bam"
 
 	# make sure expected output files exists
