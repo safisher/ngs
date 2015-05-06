@@ -267,9 +267,8 @@ starPostProcessing() {
 	if ! $DEBUG; then 
 		samtools view -H $SAMPLE.star.posSorted.bam > header.sam
 		samtools view -F 0x4 $SAMPLE.star.posSorted.bam | $GREPP 'NH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.star.tmp.bam
-		samtools sort -n -@ $NUM_SORT_THREADS -m 16G $SAMPLE.star.tmp.bam $SAMPLE.star.tmp2
-		samtools fixmate $SAMPLE.star.tmp2.bam $SAMPLE.star.unique.bam
-		rm header.sam $SAMPLE.star.tmp.bam $SAMPLE.star.tmp2.bam
+		samtools sort -n -@ $NUM_SORT_THREADS -m 16G $SAMPLE.star.tmp.bam $SAMPLE.star.unique.bam
+		rm header.sam $SAMPLE.star.tmp.bam
 	fi
 	
 	# this might be problematic if the sorting doesn't work.
