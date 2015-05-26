@@ -234,10 +234,28 @@ starPostProcessing() {
 		gzip -f Unmapped.out.*
 	fi
    
+   	# generate BAM file containing all uniquely mapped reads. This variant will
+	# remove mitochondrial genes:
+	#   samtools view -H -S $SAMPLE.star.posSorted.bam > header.sam; $GREPP -v 'chrM\t' $SAMPLE.star.posSorted.bam | $GREPP 'IH:i:1\t' | cat header.sam - | samtools view -bS - > STAR_Unique.bam
+	prnCmd "# generating STAR_Unique.bam file"
+	prnCmd "samtools view -H $ngsLocal_STAR_ALIGN_OUTPUT > header.sam"
+	# (1) extract all mapped reads from SAM file, (2) filter by number of mappings, (3) add header, (4) convert to BAM
+	prnCmd "samtools view -F 0x4 $ngsLocal_STAR_ALIGN_OUTPUT | $GREPP 'NH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.star.unique.bam"
+	#prnCmd "samtools sort -n -@ $NUM_SORT_THREADS -m 16G $SAMPLE.star.tmp.bam $SAMPLE.star.unique.bam"
+	prnCmd "rm header.sam"
+	if ! $DEBUG; then 
+		samtools view -H $ngsLocal_STAR_ALIGN_OUTPUT > header.sam
+		samtools view -F 0x4 $ngsLocal_STAR_ALIGN_OUTPUT | $GREPP 'NH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.star.unique.bam
+		#samtools sort -n -@ $NUM_SORT_THREADS -m 16G $SAMPLE.star.tmp.bam $SAMPLE.star.unique.bam
+		rm header.sam 
+	fi
+   
+   
 	NUM_SORT_THREADS=8	
 	if [[ $NUMCPU < 8 ]]; then
 	    NUM_SORT_THREADS=$NUMCPU
 	fi
+
 
 	prnCmd "samtools sort -@ $NUM_SORT_THREADS -m 16G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.posSorted"
 	if ! $DEBUG; then
@@ -254,21 +272,7 @@ starPostProcessing() {
 		samtools index $SAMPLE.star.posSorted.bam
 	fi
 	
-	# generate BAM file containing all uniquely mapped reads. This variant will
-	# remove mitochondrial genes:
-	#   samtools view -H -S $SAMPLE.star.posSorted.bam > header.sam; $GREPP -v 'chrM\t' $SAMPLE.star.posSorted.bam | $GREPP 'IH:i:1\t' | cat header.sam - | samtools view -bS - > STAR_Unique.bam
-	prnCmd "# generating STAR_Unique.bam file"
-	prnCmd "samtools view -H $SAMPLE.star.posSorted.bam > header.sam"
-	# (1) extract all mapped reads from SAM file, (2) filter by number of mappings, (3) add header, (4) convert to BAM
-	prnCmd "samtools view -F 0x4 $SAMPLE.star.posSorted.bam | $GREPP 'NH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.star.tmp.bam"
-	prnCmd "samtools sort -n -@ $NUM_SORT_THREADS -m 16G $SAMPLE.star.tmp.bam $SAMPLE.star.unique.bam"
-	prnCmd "rm header.sam $SAMPLE.star.tmp.bam"
-	if ! $DEBUG; then 
-		samtools view -H $SAMPLE.star.posSorted.bam > header.sam
-		samtools view -F 0x4 $SAMPLE.star.posSorted.bam | $GREPP 'NH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.star.tmp.bam
-		samtools sort -n -@ $NUM_SORT_THREADS -m 16G $SAMPLE.star.tmp.bam $SAMPLE.star.unique.bam
-		rm header.sam $SAMPLE.star.tmp.bam
-	fi
+
 	
 	# this might be problematic if the sorting doesn't work.
 	prnCmd "rm Aligned.out.bam"
