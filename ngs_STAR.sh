@@ -252,7 +252,7 @@ starPostProcessing() {
    
    
 	NUM_SORT_THREADS=8	
-	if [[ $NUMCPU < 8 ]]; then
+	if [[ $NUMCPU -gt 8 ]]; then
 	    NUM_SORT_THREADS=$NUMCPU
 	fi
 
