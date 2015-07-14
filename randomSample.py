@@ -71,7 +71,7 @@ if NUM_LINES == 0:
     error("ERROR: Empty file\n")
 
 # make sure there are enough lines in the input file
-if NUM_LINES < totalLines:
+if NUM_LINES > totalLines:
     print "WARNING: Not enough lines in the input file, so entire input file will be used"
     NUM_LINES = totalLines
 
