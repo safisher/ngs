@@ -58,13 +58,23 @@ def file_len(fname):
     if p.returncode != 0: raise IOError(err)
     return int(result.strip().split()[0])
 
-def error():
-    print "Ran out of lines in the file\n"
+def error(msg):
+    print msg
     inFile.close()
     outFile.close()
     quit()
 
 totalLines = file_len(IN_FILE) / LINES_GROUPED
+
+# make sure the input file isn't empty
+if NUM_LINES == 0:
+    error("ERROR: Empty file\n")
+
+# make sure there are enough lines in the input file
+if NUM_LINES < totalLines:
+    print "WARNING: Not enough lines in the input file, so entire input file will be used"
+    NUM_LINES = totalLines
+
 lines = random.sample(xrange(totalLines), NUM_LINES)
 lines.sort()
 
@@ -81,7 +91,10 @@ for lnum in lines:
         while g < LINES_GROUPED:
             if DEBUG: print "searching j: ", j, "i: ", i, "g: ", g
             line = inFile.readline()
-            if not line: error()
+            if not line: 
+                # should never get here because above we set NUM_LINES
+                # to be no greater than totalLines
+                error("ERROR: Ran out of lines in the file\n")
             g += 1
             j += 1
         i += 1
