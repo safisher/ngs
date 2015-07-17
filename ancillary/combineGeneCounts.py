@@ -17,7 +17,7 @@
 """
 by: S. Fisher, 2015
 
-usage: combineGeneCounts.py <AND | OR> <FILE 1> <FILE 2> <OUTPUT FILENAME>
+usage: combineGeneCounts.py <AND | OR> <FILE 1> <FILE 2>
 """
 
 import sys, os
@@ -29,35 +29,40 @@ import sys, os
 DEBUG = False
 if DEBUG: print 'DEBUG MODE: ON'
 
-# expect 4 args
-if len(sys.argv) < 5:
-    print 'Usage: combineGeneCounts.py  <AND | OR> <FILE_1> <FILE_2> <OUTPUT FILE>'
-    print '\tCombine two files containing gene counts according to the boolean operator specified.\n'
-    print '\tThe boolean operator must be either "AND" or "OR".'
-    print '\t\tAND: output count is zero if either file has a zero count.'
-    print '\t\tOR: output count is equal to the sum of the counts from both files.\n'
-    print '\tThe files are formatted as follows:'
-    print '\t\tThe first row in each file is expected to be column headers (name count).'
-    print '\t\tColumns are expected to be tab delimited.\n'
-    print '\tAny genes in FILE_1 that are not in FILE_2 will be skipped. Any genes in FILE_2 '
-    print '\tthat are not in FILE_1 will be treated as if they had a read count of "0" in FILE_1.\n'
-    print '\tThe output file will be overwritten without warning.\n'
-    print '\tExample usage:\n\t\tcombineGeneCounts.py AND exonCnts intronCnts combinedCnts'
+# expect 3 args
+if len(sys.argv) < 4:
+    sys.stderr.write('Usage: combineGeneCounts.py  <AND | OR> <FILE_1> <FILE_2>\n')
+    sys.stderr.write('Combine two files containing gene counts according to the boolean operator specified.\n\n')
+    sys.stderr.write('The boolean operator must be either "AND" or "OR".\n')
+    sys.stderr.write('\tAND: output count is zero if either file has a zero count.\n')
+    sys.stderr.write('\tOR: output count is equal to the sum of the counts from both files.\n\n')
+    sys.stderr.write('The files are formatted as follows:\n')
+    sys.stderr.write('\tThe first row in each file is expected to be column headers (name count).\n')
+    sys.stderr.write('\tColumns are expected to be tab delimited.\n\n')
+    sys.stderr.write('Any genes in FILE_1 that are not in FILE_2 will be skipped. Any genes in FILE_2 \n')
+    sys.stderr.write('that are not in FILE_1 will be treated as if they had a read count of "0" in FILE_1.\n\n')
+    sys.stderr.write('The output will be written to the screen (i.e. STDOUT).\n\n')
+    sys.stderr.write('Example usage:\n\t\tcombineGeneCounts.py AND exonCnts intronCnts\n')
     sys.exit()
 
 BOOLEAN = sys.argv[1].lower()
 FILE_1 = sys.argv[2]
 FILE_2 = sys.argv[3]
-OUT_FILE = sys.argv[4]
 
-file1 = open(FILE_1, 'r')
-file2 = open(FILE_2, 'r')
-outFile = open(OUT_FILE, 'w')
+if FILE_1 == '-':
+    file1 = sys.stdin
+else:
+    file1 = open(FILE_1, 'r')
+
+if FILE_2 == '-':
+    file2 = sys.stdin
+else:
+    file2 = open(FILE_2, 'r')
 
 # make sure boolean is either AND or OR
 if BOOLEAN not in ('and', 'or'):
-    print 'ERROR: Incorrect boolean operator: ' + BOOLEAN
-    print 'Boolean operator must be either "AND" or "OR".'
+    sys.stderr.write('ERROR: Incorrect boolean operator: ' + BOOLEAN + '\n')
+    sys.stderr.write('Boolean operator must be either "AND" or "OR".\n')
     sys.exit()
 
 # build dictionary from first file. We load the entire file into RAM,
@@ -81,8 +86,8 @@ for line in file1:
 
     if DEBUG: print count, geneID, gene[1]
 
-# add header to output file
-outFile.write('gene\tcount\n')
+# send header to standard output
+sys.stdout.write('gene\tcount\n')
 
 firstLine = True
 for line in file2:
@@ -100,7 +105,7 @@ for line in file2:
     # make sure the gene exists in first file. If not then treat as if
     # it has a 0 value in the first file.
     if geneID not in geneCounts:
-        print 'WARNING: Gene "' + geneID + '" is not in "' + FILE_1 + '". TREATING GENE AS IF WAS "0" IN THE FIRST FILE.'
+        sys.stderr.write('WARNING: Gene "' + geneID + '" is not in "' + FILE_1 + '". TREATING GENE AS IF WAS "0" IN THE FIRST FILE.\n')
         readCnt_1 = 0
 
     else:
@@ -122,16 +127,16 @@ for line in file2:
         finalCount = readCnt_1 + readCnt_2
 
     # output the combined count
-    outFile.write(geneID + '\t' + str(finalCount) + '\n')
+    sys.stdout.write(geneID + '\t' + str(finalCount) + '\n')
 
 if geneCounts:
     # still have items in geneCounts so files not equal
-    print 'ERROR: The following genes are not in the file "' + FILE_2 + '".'
-    print 'THESE GENES ARE NOT INCLUDED IN THE OUTPUT FILE.'
-    print geneCounts
+    sys.stderr.write('ERROR: The following genes are not in the file "' + FILE_2 + '".\n')
+    sys.stderr.write('THESE GENES ARE NOT INCLUDED IN THE OUTPUT FILE.\n')
+    sys.stderr.write(geneCounts)
+    sys.stderr.write('\n')
 
 file1.close()
 file2.close()
-outFile.close()
 
-print 'Processed ' + str(count) + ' genes.'
+if DEBUG: print 'Processed ' + str(count) + ' genes.'
