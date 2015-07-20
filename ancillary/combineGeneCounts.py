@@ -149,4 +149,9 @@ if geneCounts:
         for gene in geneCounts:
             if not QUIET:
                 sys.stderr.write('WARNING: Gene "' + gene + '" is not in "' + FILE_2 + '". TREATING GENE AS IF WAS "0" IN THE SECOND FILE.\n')
-            sys.stdout.write(gene + '\t' + str(geneCounts[gene]
+            sys.stdout.write(gene + '\t' + str(geneCounts[gene]) + '\n')
+
+file1.close()
+file2.close()
+
+if DEBUG: print 'Processed ' + str(count) + ' genes.'
