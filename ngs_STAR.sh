@@ -23,8 +23,7 @@
 # INPUT: $SAMPLE/trim/unaligned_1.fq and $SAMPLE/trim/unaligned_2.fq
 # OUTPUT: $SAMPLE/star/$SAMPLE.star.posSorted.bam and $SAMPLE/star/$SAMPLE.star.unique.bam
 #
-# REQUIRES: samtools, STAR version 2.3.0.1 (STAR does not have a versions option so
-# the version is hardcoded in this file)
+# REQUIRES: samtools, STAR version 2.4.0 or higher
 ##########################################################################################
 
 ##########################################################################################
@@ -172,7 +171,20 @@ ngsCmd_STAR() {
 		prnCmd "mkdir $SAMPLE/star"
 		if ! $DEBUG; then mkdir $SAMPLE/star; fi
 	fi
-	
+
+	starbin="STAR"
+
+	L=35
+	if [[ $READ_LENGTH -ge  50 ]]; then L=50; fi
+	if [[ $READ_LENGTH -ge  75 ]]; then L=75; fi
+	if [[ $READ_LENGTH -ge 100 ]]; then L=100; fi
+	if [[ $READ_LENGTH -ge 150 ]]; then L=150; fi	
+	if [[ $READ_LENGTH -ge 200 ]]; then L=200; fi	
+	if [[ $READ_LENGTH -eq 249 ]]; then L=250; fi	
+	if [[ $READ_LENGTH -ge 250 ]]; then L=250; starbin="STARlong"; fi	
+	READ_LENGTH=$L
+	echo $starbin
+
 	# single-end only has one input file
 	if $SE; then 
 		ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS $ngsLocal_STAR_SE_ARGS --readFilesIn $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq"
@@ -183,9 +195,9 @@ ngsCmd_STAR() {
 	# location of genome library
 	ngsLocal_GENOME_DIR="$STAR_REPO/$SPECIES.$READ_LENGTH"
 
-	prnCmd "STAR --genomeDir $ngsLocal_GENOME_DIR $ngsLocal_STAR_ARGS --runThreadN $NUMCPU --outFileNamePrefix $SAMPLE/star/ "
+	prnCmd "$starbin --genomeDir $ngsLocal_GENOME_DIR $ngsLocal_STAR_ARGS --runThreadN $NUMCPU --outFileNamePrefix $SAMPLE/star/ "
 	if ! $DEBUG; then 
-		STAR --genomeDir $ngsLocal_GENOME_DIR $ngsLocal_STAR_ARGS --runThreadN $NUMCPU --outFileNamePrefix $SAMPLE/star/
+		$starbin --genomeDir $ngsLocal_GENOME_DIR $ngsLocal_STAR_ARGS --runThreadN $NUMCPU --outFileNamePrefix $SAMPLE/star/
 	fi
 
 	# run post processing to generate necessary alignment files
@@ -199,9 +211,11 @@ ngsCmd_STAR() {
 	if ! $DEBUG; then 
 		ver=$(head -1 $SAMPLE/star/Log.out | awk -F= '{print $2}')
 		ver1=$(samtools 2>&1 | grep 'Version:' | awk '{print $2}')
+		local prnSE=0
+		if $SE; then prnSE=1; fi
 		prnVersion "star" \
-		"program\tversion\tprogram\tversion\tspecies\tSE?\treadLength" \
-		"star\t$ver\tsamtools\t$ver1\t$SPECIES\t$READ_LENGTH\t$SE"
+		"program\tversion\tprogram\tversion\tspecies (genome)\tSE\treadLength" \
+		"star\t$ver\tsamtools\t$ver1\t$SPECIES\t$prnSE\t$READ_LENGTH"
 	fi
 
 	if $SE; then prnCmd "# FINISHED: STAR SINGLE-END ALIGNMENT"
@@ -251,15 +265,20 @@ starPostProcessing() {
 	fi
    
    
-	NUM_SORT_THREADS=8	
-	if [[ $NUMCPU -gt 8 ]]; then
+	NUM_SORT_THREADS=4	
+	if [[ $NUMCPU -lt 4 ]]; then
 	    NUM_SORT_THREADS=$NUMCPU
 	fi
 
-
-	prnCmd "samtools sort -@ $NUM_SORT_THREADS -m 16G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.posSorted"
+	prnCmd "samtools sort -@ $NUM_SORT_THREADS -m 4G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.posSorted"
 	if ! $DEBUG; then
-	        samtools sort -@ $NUM_SORT_THREADS -m 16G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.posSorted
+	       if ! samtools sort -@ $NUM_SORT_THREADS -m 4G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.posSorted
+	       then
+		   vmstat -s 1>&2
+		   #if multithread sorting fails, try single thread 
+		   prnCmd "samtools sort -m 4G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.posSorted"
+		   samtools sort -m 4G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.posSorted
+	       fi
 	fi
 
 	#prnCmd "mv $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.posSorted.bam"
@@ -335,13 +354,13 @@ ngsStats_STAR() {
 
 	statsFile="$SAMPLE.star.stats.txt"
 
-	genome=`tail -n1 $SAMPLE/star/$SAMPLE.versions | awk '{print($6)}'`
-	STAR_HEADER="Genome"
-	STAR_VALUES="$genome"
+	#genome=`tail -n1 $SAMPLE/star/$SAMPLE.versions | awk '{print($6)}'`
+	#STAR_HEADER="Genome"
+	#STAR_VALUES="$genome"
 
 	totalReads=`grep "Number of input reads" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}'`
-	STAR_HEADER="$STAR_HEADER\tTot Reads After Trim"
-	STAR_VALUES="$STAR_VALUES\t$totalReads"
+	STAR_HEADER="Tot Reads After Trim"
+	STAR_VALUES="$totalReads"
 
 	avgReadLen=`grep "Average input read length" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}'`
 	STAR_HEADER="$STAR_HEADER\tAvg Inp Read Len"
@@ -360,12 +379,12 @@ ngsStats_STAR() {
 	STAR_HEADER="$STAR_HEADER\tTotal-mapped Reads"
 	STAR_VALUES="$STAR_VALUES\t$totalMapped"
 
-	uniqMapPerc=`grep "Uniquely mapped reads %" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}'`
+	uniqMapPerc=`grep "Uniquely mapped reads %" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}' | tr -d '%'`
 	STAR_HEADER="$STAR_HEADER\tUniq-mapped Perc"
 	STAR_VALUES="$STAR_VALUES\t$uniqMapPerc"
 
-	multimappedPerc=`grep "% of reads mapped to multiple loci" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}'`
-	STAR_HEADER="$STAR_HEADER\tMulti-mapped"
+	multimappedPerc=`grep "% of reads mapped to multiple loci" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}' | tr -d '%'`
+	STAR_HEADER="$STAR_HEADER\tMulti-mapped Perc"
 	STAR_VALUES="$STAR_VALUES\t$multimappedPerc"
 
 	# we remove the "%" so we can combine the values
@@ -374,9 +393,8 @@ ngsStats_STAR() {
 	unmapped3=`grep "% of reads unmapped: too many mismatches" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}' | sed s/%//`
 	unmapped4=`grep "% of reads unmapped: other" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}' | sed s/%//`
 	unmapped=`echo "$unmapped1+$unmapped2+$unmapped3+$unmapped4" | bc`
-	# add the "%" back
-	STAR_HEADER="$STAR_HEADER\tNot-mapped"
-	STAR_VALUES="$STAR_VALUES\t$unmapped%"
+	STAR_HEADER="$STAR_HEADER\tNot-mapped Perc"
+	STAR_VALUES="$STAR_VALUES\t$unmapped"
 
 	case $1 in
 		header)

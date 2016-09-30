@@ -32,7 +32,7 @@
 #    section: ADD MODULE COMMAND FUNCTIONS HERE
 ##########################################################################################
 
-VERSION=2.0
+VERSION=2.1
 
 # each module should output a tab-delimited list of file and program
 # version information. This file should have two lines, the first line
@@ -45,7 +45,7 @@ VERSION_FILE="versions"
 DEBUG=false   # disable commands when true, use to see what commands would be run.
 
 # output every line of code to the console when running
-#if "$DEBUG"; then set -x
+#if "$DEBUG"; then set -x; fi
 
 ###############################################################################################
 # ****************************** BEGIN USER DEFINED VARIABLES *********************************
@@ -68,9 +68,10 @@ RUM_REPO=$REPO_LOCATION/rum2
 STAR_REPO=$REPO_LOCATION/star
 HTSEQ_REPO=$REPO_LOCATION/htseq
 SNP_REPO=$REPO_LOCATION/snp
+verse_REPO=$REPO_LOCATION/verse
 
 # list of all modules available to be run.
-MODULES=( "HELP" "INIT" "FASTQC" "BLAST" "RMDUP" "BOWTIE" "TRIM" "STAR" "RUM" "RUMSTATUS" "POST" "BLASTDB" "HTSEQ" "SNP" "SPADES" "RSYNC" "STATS" "PIPELINE" "VERSION" )
+MODULES=( "HELP" "INIT" "FASTQC" "BLAST" "RMDUP" "BOWTIE" "TRIM" "STAR" "RUM" "RUMSTATUS" "POST" "BLASTDB" "HTSEQ" "VERSE" "SNP" "SPADES" "BARCODE" "RSYNC" "STATS" "PIPELINE" "VERSION" )
 
 # ****************************** END USER DEFINED VARIABLES ***********************************
 ###############################################################################################
@@ -270,8 +271,12 @@ SAMPLE="${SAMPLE%/}"
 VERSION_FILE="$SAMPLE.${VERSION_FILE}"
 
 # create output directory
-if [[ ! -d $SAMPLE ]]; then
+if [[ ! -d $SAMPLE  ]]; then
+    if [[ $COMMAND == "STATS" ]]; then
+	prnError "Cannot stat a sample that doesn't exist"
+    else
 	mkdir $SAMPLE
+    fi
 fi
 
 # create log directory. This needs to happen prior to using the

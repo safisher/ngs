@@ -35,12 +35,11 @@ NGS_USAGE+="Usage: `basename $0` post OPTIONS sampleID    --  clean up RUM and t
 ##########################################################################################
 
 ngsHelp_POST() {
-	echo -e "Usage:\n\t`basename $0` post [-i inputDir] sampleID"
+	echo -e "Usage:\n\t`basename $0` post [-i inputDir] [-g group] sampleID"
 	echo -e "Input:\n\tsampleID/INPUTDIR/*.fq"
-	echo -e "Output:\n\tsampleID/INPUTDIR/*.fq.gz"
-	echo -e "OPTIONS:"
-	echo -e "\t-i - directory containing fastq files to be compressed with gzip (default: sampleID/trim).\n" 
+	echo -e "Output:\n\tsampleID/INPUTDIR/*.fq.gz\n"
 	echo -e "Compresses all files that end with 'fq'. For example the unaligned_1.fq file in the trim directory will be compressed with gzip and renamed unaligned_1.fq.gz."
+	echo -e "With -g option run chgrp -R [group] on sample."
 }
 
 ##########################################################################################
@@ -49,6 +48,7 @@ ngsHelp_POST() {
 ##########################################################################################
 
 ngsLocal_POST_INP_DIR="trim"
+ngsLocal_POST_CHGRP=""
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -62,6 +62,9 @@ ngsArgs_POST() {
 	while true; do
 		case $1 in
 			-i) ngsLocal_POST_INP_DIR=$2
+				shift; shift;
+				;;
+			-g) ngsLocal_POST_CHGRP=$2
 				shift; shift;
 				;;
 			-*) printf "Illegal option: '%s'\n" "$1"
@@ -83,9 +86,14 @@ ngsArgs_POST() {
 ngsCmd_POST() {
 	prnCmd "# BEGIN: POST PROCESSING"
 	
-	prnCmd "gzip $SAMPLE/$ngsLocal_POST_INP_DIR/*fq"
+	if [[ $ngsLocal_POST_CHGRP ]]; then
+	    prnCmd "chgrp -R $ngsLocal_POST_CHGRP $SAMPLE"
+	    chgrp -R $ngsLocal_POST_CHGRP $SAMPLE
+	fi
+
+	prnCmd "gzip -f $SAMPLE/$ngsLocal_POST_INP_DIR/*fq"
 	if ! $DEBUG; then 
-		gzip $SAMPLE/$ngsLocal_POST_INP_DIR/*fq
+		gzip -f $SAMPLE/$ngsLocal_POST_INP_DIR/*fq
 	fi
 	
 	prnCmd "# FINISHED: POST PROCESSING"

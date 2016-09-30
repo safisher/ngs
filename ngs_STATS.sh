@@ -35,7 +35,7 @@ ngsHelp_STATS() {
 	echo -e "Output:\n\tprinting to console"
 	echo -e "Options:"
 	echo -e "\t-verbose - print extra information to the terminal (default: off)."
-	echo -e "\t-versions - prepend each module's stats with program and pipeline version information (default: off)."
+	echo -e "\t-simple - don't prepend each module's stats with program and pipeline version information (default: off)."
 	echo -e "\tmodules - comma separated, ordered list of modules to include for stats (must not include spaces).\n"
 	echo -e "Prints stats for user-specified list of modules. The stats will be tab delimited so they can be copy-pasted into an Excel table. This will not write to the analysis.log file."
 }
@@ -47,8 +47,9 @@ ngsHelp_STATS() {
 
 # we assume this should only print the essential data as tab-delimited key:value pairs
 ngsLocal_STATS_VERBOSE="false"
-ngsLocal_STATS_VERSIONS="false"
+ngsLocal_STATS_VERSIONS="true"
 ngsLocal_STATS_MODULES=""
+ngsLocal_STATS_MOD_DELIM=""
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -64,8 +65,11 @@ ngsArgs_STATS() {
 			-verbose) ngsLocal_STATS_VERBOSE=true
 				shift;
 				;;
-			-versions) ngsLocal_STATS_VERSIONS=true
+			-simple) ngsLocal_STATS_VERSIONS=false
 				shift;
+				;;
+			-d) ngsLocal_STATS_MOD_DELIM="$2\t"
+				shift; shift;
 				;;
 			-*) printf "Illegal option: '%s'\n" "$1"
 				printHelp $COMMAND
@@ -114,6 +118,9 @@ ngsCmd_STATS() {
 
 	# step through each user-specified module and call the module's
 	# ngsStats_MODULE() function.
+
+	local sep="$ngsLocal_STATS_MOD_DELIM"
+
 	for module in ${ngsLocal_STATS_MODULES//,/ }; do
 		if $ngsLocal_STATS_VERBOSE; then echo "# EXTRACTING $module STATS"; fi
 
@@ -124,14 +131,15 @@ ngsCmd_STATS() {
 			local mod=$(echo $module | tr "[A-Z]" "[a-z]")
 			local vFile="$SAMPLE/$mod/$SAMPLE.versions"
 
-			vHeader=$(head -1 $vFile)
-			header="$header\t$vHeader"
-			vValues=$(tail -1 $vFile)
-			values="$values\t$vValues"
+			vHeader="$(head -1 $vFile)\t"
+			vValues="$(tail -1 $vFile)\t"
+		else
+			vHeader=""
+			vValues=""
 		fi
 
-		header="$header\t$(ngsStats_$module 'header')"
-		values="$values\t$(ngsStats_$module 'values')"
+		header="$header\t${sep}Module\t${vHeader}$(ngsStats_$module 'header')"
+		values="$values\t${sep}${module}\t${vValues}$(ngsStats_$module 'values')"
 	done
 
 	echo -e $header

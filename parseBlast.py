@@ -63,16 +63,20 @@ uncountedFile = open(BLAST_PATH+'uncounted.tsv', 'w')
 speciesFile = open(BLAST_PATH+'speciesCounts.txt', 'w')
 
 # convert from repo species name to names used here.
-targetSpecies = TARGET.lower()
+TARGET = TARGET.lower()
+targetSpecies = TARGET
 if 'mm9' in TARGET or 'mm10' in TARGET: targetSpecies = 'mouse'
-if 'rn5' in TARGET or 'rn6' in TARGET: targetSpecies = 'rat'
-if 'drosophila' in TARGET or 'dmel5' in TARGET or 'dmel6' in TARGET: targetSpecies = 'fly'
-if 'hg19' in TARGET: targetSpecies = 'human'
-if 'hg38' in TARGET: targetSpecies = 'human'
-if 'saccer3' in TARGET: targetSpecies = 'yeast'
-if 'zebrafish' in TARGET or 'zv9' in TARGET: targetSpecies = 'fish'
-if 'ercc' in TARGET: targetSpecies = 'ercc'
-if 'phix' in TARGET or 'phi-x' in TARGET: targetSpecies = 'phix'
+elif 'rn5' in TARGET or 'rn6' in TARGET: targetSpecies = 'rat'
+elif 'drosophila' in TARGET or 'dmel5' in TARGET or 'dmel6' in TARGET: targetSpecies = 'fly'
+elif 'hg19' in TARGET: targetSpecies = 'human'
+elif 'hg38' in TARGET: targetSpecies = 'human'
+elif 'saccer3' in TARGET: targetSpecies = 'yeast'
+elif 'zebrafish' in TARGET or 'zv' in TARGET or 'grcz' in TARGET: targetSpecies = 'fish'
+elif 'ercc' in TARGET: targetSpecies = 'ercc'
+elif 'phix' in TARGET or 'phi-x' in TARGET: targetSpecies = 'phix'
+elif 'galgal4' in TARGET or 'chick' in TARGET: targetSpecies = 'chicken'
+elif 'cj2' in TARGET or 'quail' in TARGET: targetSpecies = 'quail'
+else: raise NotImplementedError(targetSpecies + " not a currently recognized genome")
 
 targetFile = open(BLAST_PATH+targetSpecies+'.tsv', 'w')
 targetFileFa = open(BLAST_PATH+targetSpecies+'.fa', 'w')
@@ -190,6 +194,8 @@ counts['rat'] = 0
 counts['yeast'] = 0
 counts['ercc'] = 0
 counts['phix'] = 0
+counts['chicken'] = 0
+counts['quail'] = 0
 
 while True:
     line = blastFile.readline()
@@ -274,6 +280,8 @@ while True:
             if 'rat' not in found: found['rat'] = line
         elif ('yeast' in lLine) or ('cerevisiae' in lLine) or ('carlsbergensis' in lLine):
             if 'yeast' not in found: found['yeast'] = line
+        elif ('Gallus' in lLine) or ('chicken' in lLine): 
+            if 'rat' not in found: found['rat'] = line
         elif ('ercc' in lLine):
             if 'ercc' not in found: found['ercc'] = line
         else:
@@ -331,21 +339,21 @@ speciesFile.write('Hits not accounted for: ' + str(numNotCounted) + '\n')
 
 # need to include ERCC in target counts when computing hits not target species.
 targetCounts = counts[targetSpecies]
-if 'ercc' not in 'targetSpecies': targetCounts += counts['ercc']
+if 'ercc' not in targetSpecies: targetCounts += counts['ercc']
 if numHits > 0:
     hitsNotTargetOrERCC = 100.0 * float(numHits - targetCounts)/float(numHits)
 else:
     hitsNotTargetOrERCC = 0
-speciesFile.write('Hits not target species or ERCC: %.1f%%\n\n' % (hitsNotTargetOrERCC))
+speciesFile.write('Perc Hits not target species or ERCC: %.1f\n\n' % (hitsNotTargetOrERCC))
 
 # print out species counts
 keyList = sorted(counts.keys())
 for species in keyList:
     speciesFile.write(species + ' hits\t\t' + str(counts[species]) + '\n')
 
-speciesFile.write('\nTotal Hits\tHits Not Counted\tHits Not Target or ERCC\tBacteria\tFish\tFly\tHuman\tMouse\tRat\tYeast\tERCC\tPhiX\n')
+speciesFile.write('\nTotal Hits\tHits Not Counted\tPerc Hits Not Target or SpikeIn\tBacteria\tFish\tFly\tHuman\tMouse\tRat\tYeast\tERCC\tPhiX\n')
 speciesFile.write(str(numHits) + '\t' + str(numNotCounted))
-speciesFile.write('\t%.1f%%' % (hitsNotTargetOrERCC))
+speciesFile.write('\t%.1f' % (hitsNotTargetOrERCC))
 speciesFile.write('\t' + str(counts['bact']))
 speciesFile.write('\t' + str(counts['fish']))
 speciesFile.write('\t' + str(counts['fly']))

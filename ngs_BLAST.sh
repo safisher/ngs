@@ -54,6 +54,7 @@ ngsHelp_BLAST() {
 ngsLocal_BLAST_NUM_READS=5000
 ngsLocal_BLAST_KMER=""
 ngsLocal_BLAST_EVALUE=1e-15
+ngsLocal_BLAST_ALREADY=""
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -81,6 +82,9 @@ ngsArgs_BLAST() {
 			-r) ngsLocal_BLAST_NUM_READS=$2
 				shift; shift;
 				;;
+			-ab) ngsLocal_BLAST_ALREADY='TRUE'
+				shift;
+				;;
 			-*) printf "Illegal option: '%s'\n" "$1"
 				printHelp $COMMAND
 				exit 0
@@ -107,28 +111,31 @@ ngsCmd_BLAST() {
 		if ! $DEBUG; then mkdir $SAMPLE/blast; fi
 	fi
 		
-	# Get ngsLocal_BLAST_NUM_READS (5,000) randomly sampled reads
-	# Usage: randomSample.py <num lines> <lines grouped> <input> <output>
-	prnCmd "randomSample.py $ngsLocal_BLAST_NUM_READS 4 $SAMPLE/init/unaligned_1.fq $SAMPLE/blast/raw.fq > $SAMPLE/blast/sampling.out.txt"
-	if ! $DEBUG; then 
-		randomSample.py $ngsLocal_BLAST_NUM_READS 4 $SAMPLE/init/unaligned_1.fq $SAMPLE/blast/raw.fq > $SAMPLE/blast/sampling.out.txt
-	fi
-	
-	# Convert fastq file to fasta file
-	prnCmd "awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,\">\");print}; if(P==4)P=0; P++}' $SAMPLE/blast/raw.fq > $SAMPLE/blast/raw.fa"
-	if ! $DEBUG; then 
-		awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,">");print}; if(P==4)P=0; P++}' $SAMPLE/blast/raw.fq > $SAMPLE/blast/raw.fa
-	fi
-	
-	# use a less stringent e-value for shorter reads
-	if [ $READ_LENGTH -le 50 ]; then
-	    ngsLocal_BLAST_EVALUE=1e-8
-	fi
 
-	# Run BLAST. Output file should end with ".txt"
-	prnCmd "blastn -query $SAMPLE/blast/raw.fa -db nt -num_descriptions 10 -num_alignments 10 -word_size 15 -gapopen 3 -gapextend 1 -evalue $ngsLocal_BLAST_EVALUE -num_threads $NUMCPU -out $SAMPLE/blast/blast.txt"
-	if ! $DEBUG; then 
-		blastn -query $SAMPLE/blast/raw.fa -db nt -num_descriptions 10 -num_alignments 10 -word_size 15 -gapopen 3 -gapextend 1 -evalue $ngsLocal_BLAST_EVALUE -num_threads $NUMCPU -out $SAMPLE/blast/blast.txt
+	if [[ $ngsLocal_BLAST_ALREADY != 'TRUE' ]]; then
+	    # Get ngsLocal_BLAST_NUM_READS (5,000) randomly sampled reads
+	    # Usage: randomSample.py <num lines> <lines grouped> <input> <output>
+	    prnCmd "randomSample.py $ngsLocal_BLAST_NUM_READS 4 $SAMPLE/init/unaligned_1.fq $SAMPLE/blast/raw.fq > $SAMPLE/blast/sampling.out.txt"
+	    if ! $DEBUG; then 
+		    randomSample.py $ngsLocal_BLAST_NUM_READS 4 $SAMPLE/init/unaligned_1.fq $SAMPLE/blast/raw.fq > $SAMPLE/blast/sampling.out.txt
+	    fi
+	    
+	    # Convert fastq file to fasta file
+	    prnCmd "awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,\">\");print}; if(P==4)P=0; P++}' $SAMPLE/blast/raw.fq > $SAMPLE/blast/raw.fa"
+	    if ! $DEBUG; then 
+		    awk 'BEGIN{P=1}{if(P==1||P==2){gsub(/^[@]/,">");print}; if(P==4)P=0; P++}' $SAMPLE/blast/raw.fq > $SAMPLE/blast/raw.fa
+	    fi
+	    
+	    # use a less stringent e-value for shorter reads
+	    if [ $READ_LENGTH -le 50 ]; then
+		ngsLocal_BLAST_EVALUE=1e-8
+	    fi
+
+	    # Run BLAST. Output file should end with ".txt"
+	    prnCmd "blastn -query $SAMPLE/blast/raw.fa -db nt -num_descriptions 10 -num_alignments 10 -word_size 15 -gapopen 3 -gapextend 1 -evalue $ngsLocal_BLAST_EVALUE -num_threads $NUMCPU -out $SAMPLE/blast/blast.txt"
+	    if ! $DEBUG; then 
+		    blastn -query $SAMPLE/blast/raw.fa -db nt -num_descriptions 10 -num_alignments 10 -word_size 15 -gapopen 3 -gapextend 1 -evalue $ngsLocal_BLAST_EVALUE -num_threads $NUMCPU -out $SAMPLE/blast/blast.txt
+	    fi
 	fi
 	
 	# Parse BLAST output. Will generate *.cvs and *.hits files.
@@ -189,6 +196,8 @@ ngsCmd_BLAST() {
 		# returns this: "2.2.28"
 		ver=$(blastn -version | tail -1 | awk '{print $3}' | sed s/,//)
 		ver1=$(grep parseBlast $SAMPLE/blast/$SAMPLE.blast.stats.txt | awk -F: '{print $2}')
+		local kmer=$ngsLocal_BLAST_KMER
+		if [[ $ngsLocal_BLAST_KMER == "" ]]; then kmer="none"; fi
 		prnVersion "blast" \
 		"program\tversion\tprogram\tversion\tspecies\treadLength\tnumReads\tkmer" \
 		"blastn\t$ver\tparseBlast.py\t$ver1\t$SPECIES\t$READ_LENGTH\t$ngsLocal_BLAST_NUM_READS\t$ngsLocal_BLAST_KMER"
@@ -244,7 +253,7 @@ ngsStats_BLAST() {
 	# Total Hits	Hits Not Counted	Bacteria	Fish	Fly	Human	Mouse	Rat	Yeast
 	local header=$(tail -2 $statsFile | head -1)
 	# the last line of the stats file is a tab-delimited lists of values
-	local values=$(tail -1 $statsFile)
+	local values=$(tail -1 $statsFile | tr -d '%')
 
 	# test if k-mer search results exist in stats file. If so the
 	# include in output.
@@ -259,6 +268,11 @@ ngsStats_BLAST() {
 		# append sequence to header/values list
 		values+="\t$kmerCount"
 	fi
+
+	pCounted=$(grep 'Number hits:' $statsFile | awk -vRS="% )" -vFS="(" '{print $2}')
+	header="$header\tPerc Counted"
+	values="$values\t$pCounted"
+
 
 	case $1 in
 		header)

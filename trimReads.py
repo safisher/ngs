@@ -17,7 +17,7 @@
 """
 by: S. Fisher, 2013
 
-usage: trimReads.py [-h] [-v] [-p] [-l] [-m MIN_LEN] [-c3 NUM_CUT_3] [-c5 NUM_CUT_5] [-q PHRED] [-rN] [-rAT REMOVE_AT] [-c CONTAMINANTS_FA] -f FIRST_FQ [-r SECOND_FQ] -o OUTPUT_PREFIX
+usage: trimReads.py [-h] [-t THREADS] [-C CHUNK_SIZE] [-v] [-p] [-m MIN_LEN] [-c3 NUM_CUT_3] [-c5 NUM_CUT_5] [-q PHRED] [-rN] [-rAT REMOVE_AT] [-c CONTAMINANTS_FA] -f FIRST_FQ [-r SECOND_FQ] -o OUTPUT_PREFIX
 
 Contaminants file:
 1. Sequences must be on a single line (ie can't contain line breaks)
@@ -40,11 +40,14 @@ REQUIRES Python 2.7 or later
 #------------------------------------------------------------------------------------------
 
 import sys, os, argparse
+import multiprocessing
 
 DEBUG = False
 if DEBUG: print 'DEBUG MODE: ON'
 
-VERSION = '0.7'
+VERSION = '0.7.2'
+
+PAIRED = False
 
 # indecies for the read set
 HEADER = 'header'
@@ -52,8 +55,10 @@ SEQUENCE = 'seq'
 QUALS = 'quals'
 LENGTH = 'length'
 TRIMMED = 'trimmed'
-LOCATIONS = 'locations'
+FLAGS = 'flags'
+DISCARDED = 'discarded' 
 
+DEFAULT_WORKERS = 4
 DEFAULT_END = 3
 DEFAULT_MAX = 0
 DEFAULT_METHOD = 2
@@ -66,85 +71,9 @@ DEFAULT_WINDOWS_NUMBER = 6
 POLY_A = 'AAAAAAAAAA'
 POLY_T = 'TTTTTTTTTT'
 
-argParser = argparse.ArgumentParser(version=VERSION, 
-                                    description='Trim NGS reads (requires Python 2.7 or later).',
-                                    formatter_class=argparse.RawDescriptionHelpFormatter,
-                                    epilog='' +
-'Trimming will happen in the following order depending on which options are selected:\n' + 
-'\t1. Cut 3\' end of read.\n' + 
-'\t2. Cut 5\' end of read.\n' + 
-'\t3. Replace any base with N if the quality score is below the Phred threshold. Quality score is not changed.\n' + 
-'\t4. Remove N\'s from both ends.\n' +
-'\t5. Process contaminants file, removing contaminants based on their order in the contaminants file.\n' +
-'\t6a. Single-end: discard read if shorter than the minimum length.\n' + 
-'\t6b. Paired-end: if only one of the paired reads is shorter than the minimum length, then replace that read\'s sequence with N\'s and replace that read\'s quality scores with #. If both paired reads are shorter than the minimum length, then discard the read pair.\n' + 
-'\t7. Pad paired reads with N\'s so that they are both the same length. For every N that is added, also add a # to the quality score.\n' + 
-'\t8. Add "L:X" to the read header with X being the new length of the sequence (including any N\'s that were added to the sequence).\n\n' + 
+# Declare as global so each thread gets it's own copy w/o the overhead of passing as a param for each read (ie 4 copies instead of 40M)
+clArgs = None
 
-'Contaminants file (fasta-like file):\n' + 
-'\t1. Sequences must be on a single line (ie can\'t contain line breaks).\n' +
-'\t2. No blank lines in file.\n' +
-'\t3. Sequence header is space delimited list of options that begins with a \'>\' (similar to fasta files). Option names and values should be separated by a colon. \n' +
-'\t\t Example header "> name:oligo end:3 size:10 windows:5"\n' +
-'\t4. Options:\n' +
-'\t\t * name: this option is required for every sequence\n' +
-'\t\t * method: there are three trimming methods (0 = full contaminant, 1 = mapped contaminant, 2 = identity based). (default 2)\n' +
-'\t\t\t 0. Full contaminant trimming means that when a k-mer is mapped then it is expected that the entire contaminant mapped and the read is trimmed accordingly. For example lets assume we have a k-mer that is located 4 bases from the 5\' end of a contaminant. If that k-mer maps then we would shift where we trim the read by 4 bases in the direction of the 5\' end of the read. We would then remove all bases from that position to the 3\' end of the read, regardless of the additional bases mapped to the contaminant.\n' +
-'\t\t\t 1. Mapped contaminant trimming means that when a k-mer is mapped then we extend the mapping and trimmed accord to the mapping. For example lets assume we have a k-mer that is located 4 bases from the 5\' end of a contaminant. If that k-mer maps then we would extend the mapped region one base at a time, in the 5\' direction until we found a base that didn\'t map. We would then trim from that postion to the 3\' end of the read.\n' +
-'\t\t\t 2. If a k-mer maps to the read then the location of the mapping is used to anchor the contaminant to the read. The percent and total identity between the contaminant and the read is computed. If both the percent and total identity are above a user-defined threshold then the read is trimmed from the beginning of the contaminant to the 3\' end of the read. If not then the read is not trimmed.\n' +
-'\t\t * size: size of k-mer (default 7)\n' +
-'\t\t * windows: how many k-mers to seek. can not be larger than (contaminant length - k-mer). (default 6)\n' +
-'\t\t * percentIdentity: percent identity threshold for trimming method 2 (0.0 < percentIdentity <= 1.0). (default 0.9)\n' +
-'\t\t * totalIdentity: total identity threshold for trimming method 2. If this is less than the k-mer size then it will have no impact on trimming. (default 16)\n'
-                                    )
-argParser.add_argument( '-p', '--padPaired', dest='padPaired', action='store_true', default=False,
-                        help='Pad paired reads so that they are the same length after all trimming has occured. N\'s will be added to the 3\' end with \'#\' added to the quality score for each N that is added. This will not do anything for single-end reads. (default: no)' )
-argParser.add_argument( '-l', '--outputLocations', dest='output_locations', action='store_true', default=False,
-                        help='Create a tab-delimited file ("OUTPUT_PREFIX_?.loc.txt") containing the 5\' locations of all 3\' trimming events and the 3\' locations for all 5\' trimming events. The file will not include truncating of the reads with -c3 or -c5. (default: no)' )
-argParser.add_argument( '-m', '--minLen', dest='min_len', action='store', default=0, type=int,
-                        help='Minimum size of trimmed read. If trimmed beyond minLen, then read is discarded. If read is paired then read is replaced with N\'s, unless both reads in pair are smaller than minLen in which case the pair is discarded. (default: no minimum length)' )
-argParser.add_argument( '-c3', '--cut3', dest='num_cut_3', action='store', default=0, type=int, 
-                        help='number of bases to remove from 3\' end of read. TRUNCATING READS DOES NOT COUNT TOWARD TRIMMING TOTALS. This happens prior to the removing of N\'s and hence prior to contaminant trimming. (default: 0)' )
-argParser.add_argument( '-c5', '--cut5', dest='num_cut_5', action='store', default=0, type=int, 
-                        help='number of bases to remove from 5\' end of read. TRUNCATING READS DOES NOT COUNT TOWARD TRIMMING TOTALS. This happens prior to the removing of N\'s and hence prior to contaminant trimming. (default: 0)' )
-argParser.add_argument( '-q', dest='phred_threshold', action='store', default=0, type=int, 
-                        help='threshold for Phred score below which the base will be changed to an N. This happens prior to the removing of N\'s and hence low quality bases at the ends of the read will be removed if this is used in conjunction with the -rN flag. QUALITY SCORES ARE NOT SCALED BASED ON ENCODING SCHEME. For example, use a threshold of 53 to filter Illumina 1.8 fastq files (Phred+33) based on a Phred score of 20. REPLACING BASES WITH N DOES NOT COUNT TOWARD TRIMMING TOTAL. (default: 0)' )
-argParser.add_argument( '-rN', '--removeNs', dest='removeN', action='store_true', default=False,
-                        help='remove N\'s from both ends of the read. This trimming happens before contaminant trimming. (default: no)' )
-argParser.add_argument( '-rAT', '--removePolyAT', dest='remove_AT', action='store', default=-1, type=int,
-                        help='length of 3\' poly-A and 5\' poly-T to remove from the respective ends of the read. If all poly A/T is to be removed then the value should be equal to or greater than the length of the read. A minimum of ten A\'s or ten T\'s must exist in order for this trimming to happen, regardless of the trimming length; that is, poly-A and poly-T fragments are defined as being at least 10 nt in length. A sequences of A\'s or T\'s are ignored. This trimming happens after contaminant trimming. (default: no trimming)' )
-argParser.add_argument( '-c', dest='contaminants_fa', action='store', default=None, 
-                        help='fasta-like file containing list of contaminants to trim from the 3\' end of the read' )
-argParser.add_argument( '-f', dest='first_fq', action='store', required=True,
-                        help='fastq file with reads to be trimmed' )
-argParser.add_argument( '-r', dest='second_fq', 
-                        help='second read with paired-end reads. This file is not present for single-end reads.' )
-argParser.add_argument( '-o', dest='output_prefix', action='store', required=True,
-                        help='prefix for output file(s). A \'_1\' will be appended to the first reads output file and if paired reads then a \'_2\' will be appended to the second reads file. Output files similarly named and with the suffix \'.disc.txt\' will be created to store the fastq headers for reads shorter than the minimum length threshold after trimming.' )
-
-clArgs = argParser.parse_args()
-if DEBUG: print clArgs
-
-# flag if paired-end reads
-PAIRED = False
-if clArgs.second_fq:
-    PAIRED = True
-
-# flag if output trimming locations
-OUTPUT_LOCATIONS = False
-if clArgs.output_locations:
-    OUTPUT_LOCATIONS = True
-
-# track trimming stats
-nBothTrimmed = 0 # total number of read pairs in which both reads were trimmed (equal to nFirstTrimmed if single-end)
-nFirstTrimmed = 0 # num first reads trimmed
-nSecondTrimmed = 0 # num second reads trimmed
-nBothDiscarded = 0 # num read pairs discarded (equal to nFirstDiscarded if single-end)
-nFirstDiscarded = 0 # num of first reads replaced with N's
-nSecondDiscarded = 0 # num of second reads replaced with N's
-nTotalReadPairs = 0 # total number of read pairs processed
-nFirstContaminantsTrim = {} # number of each contaminant trimmed from first read
-nSecondContaminantsTrim = {} # number of each contaminant trimmed from second read
 
 # print error and quit
 def quitOnError(msg):
@@ -153,12 +82,6 @@ def quitOnError(msg):
 
 # generate output file with every trim event. First and second
 # reads will be combined in this output file.
-if DEBUG:
-    try: 
-        debugFile = open("debug.tsv", 'w')
-        debugFile.write('Orig Seq\tLen\tTrimmed Seq\tLen\tTrim Type\tMisc\n')
-    except: 
-        quitOnError('Unable to open output file debug.tsv')
 
 #------------------------------------------------------------------------------------------
 # FUNCTIONS FOR HANDLING READING AND WRITING OF READS
@@ -186,10 +109,6 @@ def nextRead(inFile):
 
         read[QUALS] = inFile.readline().rstrip()
         
-        # store additional read information in read set
-        read[LENGTH] = len(read[SEQUENCE])
-        read[TRIMMED] = False
-        read[LOCATIONS] = ''
 
         return read
     except:
@@ -206,11 +125,6 @@ def writeRead(read, outFile):
     outFile.write('+\n') # +
     outFile.write(read[QUALS] + '\n') # quals
 
-def debugTrimOutput(origSeq, origLen, trimSeq, trimLen, trimType, misc):
-    """
-    Output information about the trim event.
-    """
-    debugFile.write(origSeq + '\t' + str(origLen) + '\t' + trimSeq + '\t' + str(trimLen) + '\t' + trimType + '\t' + misc + '\n')
     
 #------------------------------------------------------------------------------------------
 # TRIMMING FUNCTIONS
@@ -269,10 +183,6 @@ def qualityScoreThreshold(read, phredThreshold, isFirstRead):
     seq = read[SEQUENCE]
     quals = read[QUALS]
     length = read[LENGTH]
-    locations = read[LOCATIONS]
-
-    # if we're tracking trim locations and we're not the first trim even, then add delimiter
-    if OUTPUT_LOCATIONS and (len(locations) > 0): locations += '\t'
 
     wasTrimmed = False # local flag for trimming
 
@@ -282,32 +192,18 @@ def qualityScoreThreshold(read, phredThreshold, isFirstRead):
     for qualityScore in quals:
         if ord(qualityScore) < phredThreshold:
             newSeq += "N"
-
-            # create comma separated list of locations for phred score trimming
-            if OUTPUT_LOCATIONS:
-                if wasTrimmed: locations += ','
-                locations += str(i)
-
             wasTrimmed = True
-            
         else:
             newSeq += seq[i]
-            
         i += 1
 
     if wasTrimmed:
         # track number of reads that have a base swap
-        if isFirstRead: nFirstContaminantsTrim['qualityScoreThreshold'] += 1
-        else: nSecondContaminantsTrim['qualityScoreThreshold'] += 1
+	read["flags"].append('qualityScoreThreshold')
 
-        if DEBUG: debugTrimOutput(read[SEQUENCE], length, newSeq, length, 'qualityScoreThreshold', '')
+        if DEBUG: read["debug"].append([read[SEQUENCE], length, newSeq, length, 'qualityScoreThreshold', ''])
 
         read[SEQUENCE] = newSeq
-
-    # we need to do this regardless of trimming happening as we need
-    # to pad with \t to preserve column formatting
-    read[LOCATIONS] = locations
-
     return read
 
 # remove N's on either end of the read
@@ -318,7 +214,6 @@ def removeNs(read, isFirstRead):
     seq = read[SEQUENCE]
     quals = read[QUALS]
     length = read[LENGTH]
-    locations = read[LOCATIONS]
 
     # local flag for trimming having occurred. This is unnecessary
     # since removeNs() is first trimming to happen. However this
@@ -326,29 +221,18 @@ def removeNs(read, isFirstRead):
     # option prior to removeNs()
     wasTrimmed = False 
 
-    # if we're tracking trim locations and we're not the first trim even, then add delimiter
-    if OUTPUT_LOCATIONS and (len(locations) > 0): locations += '\t'
-
     # trim N from beginning of read (5' end)
     if seq.startswith('N'):
         # trim sequence
         seq = seq.lstrip('N')
 
         # need to trim quals in same way we trimmed sequence
-        pos = len(quals) - len(seq)
-        quals = quals[pos:]
+        quals = quals[len(quals) - len(seq):]
 
-        # store trimming location
-        if OUTPUT_LOCATIONS: locations += str(pos)
-                
         # flag read as having been trimmed
         wasTrimmed = True
 
-        if isFirstRead: nFirstContaminantsTrim['remove5N'] += 1
-        else: nSecondContaminantsTrim['remove5N'] += 1
-
-    # if we're tracking trim locations, then add delimiter
-    if OUTPUT_LOCATIONS: locations += '\t'
+        read["flags"].append('remove5N')
 
     # trim N from end of read (3' end)
     if seq.endswith('N'):
@@ -356,30 +240,20 @@ def removeNs(read, isFirstRead):
         seq = seq.rstrip('N')
 
         # need to trim quals in same way we trimmed sequence
-        pos = len(seq)
-        quals = quals[:pos]
+        quals = quals[:len(seq)]
 
-        # store trimming location
-        if OUTPUT_LOCATIONS: locations += str(pos)
-                
         # flag read as having been trimmed
         wasTrimmed = True
 
-        if isFirstRead: nFirstContaminantsTrim['remove3N'] += 1
-        else: nSecondContaminantsTrim['remove3N'] += 1
+        read["flags"].append('remove3N')
 
     if wasTrimmed:
-        if DEBUG: debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'removeNs', '')
+        if DEBUG: read["debug"].append([read[SEQUENCE], length, seq, len(seq), 'removeNs', ''])
 
         read[SEQUENCE] = seq
         read[QUALS] = quals
         read[LENGTH] = len(seq)
         read[TRIMMED] = True
-
-    # we need to do this regardless of trimming happening as we need
-    # to pad with \t to preserve column formatting
-    read[LOCATIONS] = locations
-
     return read
 
 # trim contaminant removing entire contaminant based on single k-mer
@@ -398,10 +272,6 @@ def fullContaminantTrimming(read, contaminant, isFirstRead):
     seq = read[SEQUENCE]
     quals = read[QUALS]
     length = read[LENGTH]
-    locations = read[LOCATIONS]
-
-    # if we're tracking trim locations and we're not the first trim even, then add delimiter
-    if OUTPUT_LOCATIONS and (len(locations) > 0): locations += '\t'
 
     # list of contaminant k-mers to look for in read
     kmers = contaminant[2]
@@ -436,26 +306,18 @@ def fullContaminantTrimming(read, contaminant, isFirstRead):
             break
 
     # if k-mers not found, then no trimming
-    if pos == -1: 
-        # this will make sure the delimiter in included, even though we didn't trim
-        read[LOCATIONS] = locations
-        return read
+    if pos == -1: return read
 
     seq = seq[:pos]
     quals = quals[:pos]
 
-    # store trimming location
-    if OUTPUT_LOCATIONS: locations += str(pos)
-                
-    if DEBUG: debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'fullContaminantTrimming', name)
+    if DEBUG: read["debug"].append([read[SEQUENCE], length, seq, len(seq), 'fullContaminantTrimming', name])
 
-    if isFirstRead: nFirstContaminantsTrim[name] += 1
-    else: nSecondContaminantsTrim[name] += 1
+    read[FLAGS].append(name)
 
     read[SEQUENCE] = seq
     read[QUALS] = quals
     read[LENGTH] = len(seq)
-    read[LOCATIONS] = locations
     read[TRIMMED] = True
     return read
 
@@ -475,10 +337,6 @@ def mappedContaminantTrimming(read, contaminant, isFirstRead):
     seq = read[SEQUENCE]
     quals = read[QUALS]
     length = read[LENGTH]
-    locations = read[LOCATIONS]
-
-    # if we're tracking trim locations and we're not the first trim even, then add delimiter
-    if OUTPUT_LOCATIONS and (len(locations) > 0): locations += '\t'
 
     # contaminant sequence
     cSeq = contaminant[1]
@@ -531,26 +389,18 @@ def mappedContaminantTrimming(read, contaminant, isFirstRead):
                     offset -= 1
 
     # if k-mers not found, then no trimming
-    if pos == -1: 
-        # this will make sure the delimiter in included, even though we didn't trim
-        read[LOCATIONS] = locations
-        return read
+    if pos == -1: return read
 
     seq = seq[:pos]
     quals = quals[:pos]
 
-    # store trimming location
-    if OUTPUT_LOCATIONS: locations += str(pos)
-                
-    if DEBUG: debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'mappedContaminantTrimming', name)
+    if DEBUG: read["debug"].append([read[SEQUENCE], length, seq, len(seq), 'mappedContaminantTrimming', name])
 
-    if isFirstRead: nFirstContaminantsTrim[name] += 1
-    else: nSecondContaminantsTrim[name] += 1
+    read[FLAGS].append(name)
 
     read[SEQUENCE] = seq
     read[QUALS] = quals
     read[LENGTH] = len(seq)
-    read[LOCATIONS] = locations
     read[TRIMMED] = True
     return read
 
@@ -583,10 +433,6 @@ def identityTrimming(read, contaminant, isFirstRead):
     seq = read[SEQUENCE]
     quals = read[QUALS]
     length = read[LENGTH]
-    locations = read[LOCATIONS]
-
-    # if we're tracking trim locations and we're not the first trim even, then add delimiter
-    if OUTPUT_LOCATIONS and (len(locations) > 0): locations += '\t'
 
     # contaminant sequence
     cSeq = contaminant[1]
@@ -659,35 +505,24 @@ def identityTrimming(read, contaminant, isFirstRead):
             break
 
     # if k-mers not found, then no trimming
-    if index == -1: 
-        # this will make sure the delimiter in included, even though we didn't trim
-        read[LOCATIONS] = locations
-        return read
+    if index == -1: return read
 
     # if the k-mers were not found or the contaminant didn't map
     # sufficiently to the read then we don't trim.
-    if (percIdentity < percIdentityThreshold) or (totIdentity < totIdentityThreshold): 
-        # this will make sure the delimiter in included, even though we didn't trim
-        read[LOCATIONS] = locations
-        return read
+    if (percIdentity < percIdentityThreshold) or (totIdentity < totIdentityThreshold): return read
 
     seq = seq[:pos]
     quals = quals[:pos]
 
-    # store trimming location
-    if OUTPUT_LOCATIONS: locations += str(pos)
-                
     if DEBUG: 
         misc = name + "\t" + str(percIdentity) + "\t" + str(totIdentity)
-        debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'identityTrimming', misc)
+        read["debug"].append([read[SEQUENCE], length, seq, len(seq), 'identityTrimming', misc])
 
-    if isFirstRead: nFirstContaminantsTrim[name] += 1
-    else: nSecondContaminantsTrim[name] += 1
+    read[FLAGS].append(name)
 
     read[SEQUENCE] = seq
     read[QUALS] = quals
     read[LENGTH] = len(seq)
-    read[LOCATIONS] = locations
     read[TRIMMED] = True
     return read
 
@@ -701,12 +536,8 @@ def removePolyAT(read, trimLength, isFirstRead):
     seq = read[SEQUENCE]
     quals = read[QUALS]
     length = read[LENGTH]
-    locations = read[LOCATIONS]
 
     wasTrimmed = False # local flag for trimming
-
-    # if we're tracking trim locations and we're not the first trim even, then add delimiter
-    if OUTPUT_LOCATIONS and (len(locations) > 0): locations += '\t'
 
     # trim poly-T from 5' of read
     if seq.startswith(POLY_T):
@@ -719,20 +550,12 @@ def removePolyAT(read, trimLength, isFirstRead):
         seq = n_mer + seq[trimLength:]
 
         # need to trim quals to same degree that we trimmed sequence
-        pos = len(quals) - len(seq)
-        quals = quals[pos:]
+        quals = quals[len(quals) - len(seq):]
 
-        # store trimming location
-        if OUTPUT_LOCATIONS: locations += str(pos)
-                
         # flag read as having been trimmed
         wasTrimmed = True
 
-        if isFirstRead: nFirstContaminantsTrim['polyT'] += 1
-        else: nSecondContaminantsTrim['polyT'] += 1
-
-    # if we're tracking trim locations, then add delimiter
-    if OUTPUT_LOCATIONS: locations += '\t'
+	read[FLAGS].append("polyT")
 
     # trim poly-A from 3' end of read
     if seq.endswith(POLY_A):
@@ -746,30 +569,20 @@ def removePolyAT(read, trimLength, isFirstRead):
         seq = seq[:idx] + n_mer
 
         # need to trim quals in same way we trimmed sequence
-        pos = len(seq)
-        quals = quals[:pos]
+        quals = quals[:len(seq)]
 
-        # store trimming location
-        if OUTPUT_LOCATIONS: locations += str(pos)
-                
         # flag read as having been trimmed
         wasTrimmed = True
 
-        if isFirstRead: nFirstContaminantsTrim['polyA'] += 1
-        else: nSecondContaminantsTrim['polyA'] += 1
+	read[FLAGS].append("polyA")
 
     if wasTrimmed:
-        if DEBUG: debugTrimOutput(read[SEQUENCE], length, seq, len(seq), 'removePolyAT', '')
+        if DEBUG: read["debug"].append(read[SEQUENCE], length, seq, len(seq), 'removePolyAT', '')
 
         read[SEQUENCE] = seq
         read[QUALS] = quals
         read[LENGTH] = len(seq)
         read[TRIMMED] = True
-
-    # we need to do this regardless of trimming happening as we need
-    # to pad with \t to preserve column formatting
-    read[LOCATIONS] = locations
-
     return read
 
 #------------------------------------------------------------------------------------------
@@ -820,195 +633,501 @@ def computeKMers(seq, kmerSize, numWindows):
 
     return kmerList
 
-if clArgs.contaminants_fa:
-    try: contFile = open(clArgs.contaminants_fa, 'r')
-    except IOError: print 'ERROR: No such file', clArgs.contaminants_fa
+def debugTrimOutput(origSeq, origLen, trimSeq, trimLen, trimType, misc):
+    """
+    Output information about the trim event.
+    """
+    assert DEBUG == True
+    debugFile.write(origSeq + '\t' + str(origLen) + '\t' + trimSeq + '\t' + str(trimLen) + '\t' + trimType + '\t' + misc + '\n')
 
-    # need to retain order so using tuple instead of set
-    contaminantList = []
-    count = 0
-    for line in contFile:
-        if line.startswith('>'):
-            header = line[1:].strip()
-            # need to process header arguments
-            args = header.split()
+def main():
+    argParser = argparse.ArgumentParser(version=VERSION, 
+					description='Trim NGS reads (requires Python 2.7 or later).',
+					formatter_class=argparse.RawDescriptionHelpFormatter,
+					epilog='' +
+    'Trimming will happen in the following order depending on which options are selected:\n' + 
+    '\t1. Cut 3\' end of read.\n' + 
+    '\t2. Cut 5\' end of read.\n' + 
+    '\t3. Replace any base with N if the quality score is below the Phred threshold. Quality score is not changed.\n' + 
+    '\t4. Remove N\'s from both ends.\n' +
+    '\t5. Process contaminants file, removing contaminants based on their order in the contaminants file.\n' +
+    '\t6a. Single-end: discard read if shorter than the minimum length.\n' + 
+    '\t6b. Paired-end: if only one of the paired reads is shorter than the minimum length, then replace that read\'s sequence with N\'s and replace that read\'s quality scores with #. If both paired reads are shorter than the minimum length, then discard the read pair.\n' + 
+    '\t7. Pad paired reads with N\'s so that they are both the same length. For every N that is added, also add a # to the quality score.\n' + 
+    '\t8. Add "L:X" to the read header with X being the new length of the sequence (including any N\'s that were added to the sequence).\n\n' + 
 
-            # convert options string into set. Initialize values to
-            # defaults. The initialized set doesn't include the name
-            # as name is required.
-            options = { 'method':DEFAULT_METHOD, 
-                        'size':DEFAULT_SIZE_KMER, 
-                        'windows':DEFAULT_WINDOWS_NUMBER,
-                        'percentIdentity':DEFAULT_PERCENT_IDENTITY, 
-                        'totalIdentity':DEFAULT_TOTAL_IDENTITY }
-            for option in args:
-                key, value = option.split(':')
+    'Contaminants file (fasta-like file):\n' + 
+    '\t1. Sequences must be on a single line (ie can\'t contain line breaks).\n' +
+    '\t2. No blank lines in file.\n' +
+    '\t3. Sequence header is space delimited list of options that begins with a \'>\' (similar to fasta files). Option names and values should be separated by a colon. \n' +
+    '\t\t Example header "> name:oligo end:3 size:10 windows:5"\n' +
+    '\t4. Options:\n' +
+    '\t\t * name: this option is required for every sequence\n' +
+    '\t\t * method: there are three trimming methods (0 = full contaminant, 1 = mapped contaminant, 2 = identity based). (default 2)\n' +
+    '\t\t\t 0. Full contaminant trimming means that when a k-mer is mapped then it is expected that the entire contaminant mapped and the read is trimmed accordingly. For example lets assume we have a k-mer that is located 4 bases from the 5\' end of a contaminant. If that k-mer maps then we would shift where we trim the read by 4 bases in the direction of the 5\' end of the read. We would then remove all bases from that position to the 3\' end of the read, regardless of the additional bases mapped to the contaminant.\n' +
+    '\t\t\t 1. Mapped contaminant trimming means that when a k-mer is mapped then we extend the mapping and trimmed accord to the mapping. For example lets assume we have a k-mer that is located 4 bases from the 5\' end of a contaminant. If that k-mer maps then we would extend the mapped region one base at a time, in the 5\' direction until we found a base that didn\'t map. We would then trim from that postion to the 3\' end of the read.\n' +
+    '\t\t\t 2. If a k-mer maps to the read then the location of the mapping is used to anchor the contaminant to the read. The percent and total identity between the contaminant and the read is computed. If both the percent and total identity are above a user-defined threshold then the read is trimmed from the beginning of the contaminant to the 3\' end of the read. If not then the read is not trimmed.\n' +
+    '\t\t * size: size of k-mer (default 7)\n' +
+    '\t\t * windows: how many k-mers to seek. can not be larger than (contaminant length - k-mer). (default 6)\n' +
+    '\t\t * percentIdentity: percent identity threshold for trimming method 2 (0.0 < percentIdentity <= 1.0). (default 0.9)\n' +
+    '\t\t * totalIdentity: total identity threshold for trimming method 2. If this is less than the k-mer size then it will have no impact on trimming. (default 16)\n'
+					)
+    argParser.add_argument( '-p', '--padPaired', dest='padPaired', action='store_true', default=False,
+			    help='Pad paired reads so that they are the same length after all trimming has occured. N\'s will be added to the 3\' end with \'#\' added to the quality score for each N that is added. This will not do anything for single-end reads. (default: no)' )
+    argParser.add_argument( '-m', '--minLen', dest='min_len', action='store', default=0, type=int,
+			    help='Minimum size of trimmed read. If trimmed beyond minLen, then read is discarded. If read is paired then read is replaced with N\'s, unless both reads in pair are smaller than minLen in which case the pair is discarded. (default: no minimum length)' )
+    argParser.add_argument( '-c3', '--cut3', dest='num_cut_3', action='store', default=0, type=int, 
+			    help='number of bases to remove from 3\' end of read. TRUNCATING READS DOES NOT COUNT TOWARD TRIMMING TOTALS. This happens prior to the removing of N\'s and hence prior to contaminant trimming. (default: 0)' )
+    argParser.add_argument( '-c5', '--cut5', dest='num_cut_5', action='store', default=0, type=int, 
+			    help='number of bases to remove from 5\' end of read. TRUNCATING READS DOES NOT COUNT TOWARD TRIMMING TOTALS. This happens prior to the removing of N\'s and hence prior to contaminant trimming. (default: 0)' )
+    argParser.add_argument( '-q', dest='phred_threshold', action='store', default=0, type=int, 
+			    help='threshold for Phred score below which the base will be changed to an N. This happens prior to the removing of N\'s and hence low quality bases at the ends of the read will be removed if this is used in conjunction with the -rN flag. QUALITY SCORES ARE NOT SCALED BASED ON ENCODING SCHEME. For example, use a threshold of 53 to filter Illumina 1.8 fastq files (Phred+33) based on a Phred score of 20. REPLACING BASES WITH N DOES NOT COUNT TOWARD TRIMMING TOTAL. (default: 0)' )
+    argParser.add_argument( '-rN', '--removeNs', dest='removeN', action='store_true', default=False,
+			    help='remove N\'s from both ends of the read. This trimming happens before contaminant trimming. (default: no)' )
+    argParser.add_argument( '-rAT', '--removePolyAT', dest='remove_AT', action='store', default=-1, type=int,
+			    help='length of 3\' poly-A and 5\' poly-T to remove from the respective ends of the read. If all poly A/T is to be removed then the value should be equal to or greater than the length of the read. A minimum of ten A\'s or ten T\'s must exist in order for this trimming to happen, regardless of the trimming length; that is, poly-A and poly-T fragments are defined as being at least 10 nt in length. A sequences of A\'s or T\'s are ignored. This trimming happens after contaminant trimming. (default: no trimming)' )
+    argParser.add_argument( '-c', dest='contaminants_fa', action='store', default=None, 
+			    help='fasta-like file containing list of contaminants to trim from the 3\' end of the read' )
+    argParser.add_argument( '-f', dest='first_fq', action='store', required=True,
+			    help='fastq file with reads to be trimmed' )
+    argParser.add_argument( '-r', dest='second_fq', 
+			    help='second read with paired-end reads. This file is not present for single-end reads.' )
+    argParser.add_argument( '-o', dest='output_prefix', action='store', required=True,
+			    help='prefix for output file(s). A \'_1\' will be appended to the first reads output file and if paired reads then a \'_2\' will be appended to the second reads file. Output files similarly named and with the suffix \'.disc.txt\' will be created to store the fastq headers for reads shorter than the minimum length threshold after trimming.' )
+    argParser.add_argument( '-t', dest='threads', type=int, default=4,
+	    help='Number of worker processes. Set to 1 for serial execution in a single process. Increasing above 5 is unlikely to produce any speedup. (default: 4)' )
+    argParser.add_argument( '-C', '--chunk-size', dest='chunk_size', type=int, default=200,
+			    help='Number of reads passed to each worker thread at a time. For 200 read chunks and 5 threads, blocks of 1000 reads would be read in at a time. The "sweet spot" of low memory usage and high cpu utilization appears to be fairly low, somewhere around 100 to 1000 on test data.' )
+    global clArgs 
+    clArgs = argParser.parse_args() #Again, global so each thread can read it. Should be read-only from here out
+    if DEBUG: print clArgs
 
-                if key == 'method':
-                    value = int(value)
-                    if value != 0 and value != 1 and value != 2:
-                        msg = 'Invalid "method" option (%d) for contaminant. Must be 0, 1, or 2.' % value
-                        quitOnError(msg)
-                elif key == 'size':
-                    value = int(value)
-                elif key == 'windows':
-                    value = int(value)
-                elif key == 'totalIdentity':
-                    value = int(value)
-                elif key == 'percentIdentity':
-                    value = float(value)
-                    if value <= 0.0 or value > 1.0:
-                        msg = 'Invalid "percentIdentity" option (%f) for contaminant. Percent identity must be greater than 0 and less than or equal to 1.' % value
-                        quitOnError(msg)
-                # at this point we've accounted for all options but
-                # the name. If we don't have a name then the option
-                # doesn't exist.
-                elif key != 'name':
-                    msg = 'Invalid contamination option "%s".' % option
-                    quitOnError(msg)
+    # flag if paired-end reads
+    global PAIRED
+    if clArgs.second_fq:
+	PAIRED = True
 
-                # save value in options
-                options[key] = value
 
-            # make sure we loaded a name.
-            if 'name' not in options:
-                quitOnError('Contaminant does not have a name.')
+    if DEBUG:
+	try: 
+	    debugFile = open("debug.tsv", 'w')
+	    debugFile.write('Orig Seq\tLen\tTrimmed Seq\tLen\tTrim Type\tMisc\n')
 
-            # use name to initialize contaminant trimming counts. We
-            # initialize the counts for N and poly A/T removal below
-            # (ie outside of the if/then statement) as we might not
-            # always have a contaminants file.
-            nFirstContaminantsTrim[options['name']] = 0
-            if PAIRED: 
-                nSecondContaminantsTrim[options['name']] = 0
-        else:
-            seq = line.strip().upper()
-
-            # compute set of k-mers
-            kmerList = computeKMers(seq, options['size'], options['windows'])
-
-            if len(seq) < options['size']:
-                msg = 'The k-mer size (%d) must be smaller than the length of the sequence (%s).' % (options['size'], seq)
-                quitOnError(msg)
-
-            # save contaminant and related values in tuple
-            contaminantList.append([options, seq, kmerList])
-
-            count += 1
-
-    contFile.close()
+	except: 
+	    quitOnError('Unable to open output file debug.tsv')
     
-    if DEBUG: 
-        for c in contaminantList: print c
-        print
-    print 'Loaded contaminants: ' + str(count)
+    #------------------------------------------------------------------------------------------
+    # LOAD CONTAMINANTS
+    #------------------------------------------------------------------------------------------
 
-# need to initialize the trim counters for N removal and poly A/T
-# removal. We initialized the counters for contaminants in the if/then
-# statement above.
-nFirstContaminantsTrim['remove5N'] = 0
-nFirstContaminantsTrim['remove3N'] = 0
-nFirstContaminantsTrim['polyA'] = 0
-nFirstContaminantsTrim['polyT'] = 0
-nFirstContaminantsTrim['qualityScoreThreshold'] = 0
-if PAIRED: 
-    nSecondContaminantsTrim['remove5N'] = 0
-    nSecondContaminantsTrim['remove3N'] = 0
-    nSecondContaminantsTrim['polyA'] = 0
-    nSecondContaminantsTrim['polyT'] = 0
-    nSecondContaminantsTrim['qualityScoreThreshold'] = 0
+    nFirstContaminantsTrim = {} # number of each contaminant trimmed from first read
+    nSecondContaminantsTrim = {} # number of each contaminant trimmed from second read
+
+    if clArgs.contaminants_fa:
+	try: contFile = open(clArgs.contaminants_fa, 'r')
+	except IOError: print 'ERROR: No such file', clArgs.contaminants_fa
+
+	# need to retain order so using tuple instead of set
+	global contaminantList
+	contaminantList = []
+	count = 0
+	for line in contFile:
+	    if line.startswith('>'):
+		header = line[1:].strip()
+		# need to process header arguments
+		args = header.split()
+
+		# convert options string into set. Initialize values to
+		# defaults. The initialized set doesn't include the name
+		# as name is required.
+		options = { 'method':DEFAULT_METHOD, 
+			    'size':DEFAULT_SIZE_KMER, 
+			    'windows':DEFAULT_WINDOWS_NUMBER,
+			    'percentIdentity':DEFAULT_PERCENT_IDENTITY, 
+			    'totalIdentity':DEFAULT_TOTAL_IDENTITY }
+		for option in args:
+		    key, value = option.split(':')
+
+		    if key == 'method':
+			value = int(value)
+			if value != 0 and value != 1 and value != 2:
+			    msg = 'Invalid "method" option (%d) for contaminant. Must be 0, 1, or 2.' % value
+			    quitOnError(msg)
+		    elif key == 'size':
+			value = int(value)
+		    elif key == 'windows':
+			value = int(value)
+		    elif key == 'totalIdentity':
+			value = int(value)
+		    elif key == 'percentIdentity':
+			value = float(value)
+			if value <= 0.0 or value > 1.0:
+			    msg = 'Invalid "percentIdentity" option (%f) for contaminant. Percent identity must be greater than 0 and less than or equal to 1.' % value
+			    quitOnError(msg)
+		    # at this point we've accounted for all options but
+		    # the name. If we don't have a name then the option
+		    # doesn't exist.
+		    elif key != 'name':
+			msg = 'Invalid contamination option "%s".' % option
+			quitOnError(msg)
+
+		    # save value in options
+		    options[key] = value
+
+		# make sure we loaded a name.
+		if 'name' not in options:
+		    quitOnError('Contaminant does not have a name.')
+
+		# use name to initialize contaminant trimming counts. We
+		# initialize the counts for N and poly A/T removal below
+		# (ie outside of the if/then statement) as we might not
+		# always have a contaminants file.
+		nFirstContaminantsTrim[options['name']] = 0
+		if PAIRED: 
+		    nSecondContaminantsTrim[options['name']] = 0
+	    else:
+		seq = line.strip().upper()
+
+		# compute set of k-mers
+		kmerList = computeKMers(seq, options['size'], options['windows'])
+
+		if len(seq) < options['size']:
+		    msg = 'The k-mer size (%d) must be smaller than the length of the sequence (%s).' % (options['size'], seq)
+		    quitOnError(msg)
+
+		# save contaminant and related values in tuple
+		contaminantList.append([options, seq, kmerList])
+
+		count += 1
+
+	contFile.close()
+	
+	if DEBUG: 
+	    for c in contaminantList: print c
+	    print
+	print 'Loaded contaminants: ' + str(count)
+
+    #------------------------------------------------------------------------------------------
+    # INITIALIZE STATS
+    #------------------------------------------------------------------------------------------
+
+    # track trimming stats 
+    # TODO: do these still work? 
+    nBothTrimmed = 0 # total number of read pairs in which both reads were trimmed (equal to nFirstTrimmed if single-end)
+    nFirstTrimmed = 0 # num first reads trimmed
+    nSecondTrimmed = 0 # num second reads trimmed
+    nBothDiscarded = 0 # num read pairs discarded (equal to nFirstDiscarded if single-end)
+    nFirstDiscarded = 0 # num of first reads replaced with N's
+    nSecondDiscarded = 0 # num of second reads replaced with N's
+    nTotalReadPairs = 0 # total number of read pairs processed
+    # end TODO
+
+    # need to initialize the trim counters for N removal and poly A/T
+    # removal. We initialized the counters for contaminants in the if/then
+    # statement above.
+    nFirstContaminantsTrim['remove5N'] = 0
+    nFirstContaminantsTrim['remove3N'] = 0
+    nFirstContaminantsTrim['polyA'] = 0
+    nFirstContaminantsTrim['polyT'] = 0
+    nFirstContaminantsTrim['qualityScoreThreshold'] = 0
+    if PAIRED: 
+	nSecondContaminantsTrim['remove5N'] = 0
+	nSecondContaminantsTrim['remove3N'] = 0
+	nSecondContaminantsTrim['polyA'] = 0
+	nSecondContaminantsTrim['polyT'] = 0
+	nSecondContaminantsTrim['qualityScoreThreshold'] = 0
     
-#------------------------------------------------------------------------------------------
-# OPEN READ INPUT AND OUTPUT FILES
-#------------------------------------------------------------------------------------------
+    #------------------------------------------------------------------------------------------
+    # OPEN READ INPUT AND OUTPUT FILES
+    #------------------------------------------------------------------------------------------
 
-# open input file
-firstReadIn = ''
-try: 
-    firstReadIn = open(clArgs.first_fq, 'r')
-except: 
-    msg = 'Unable to load reads file ' + clArgs.first_fq
-    quitOnError(msg)
-
-# open file that will store non-discarded reads
-firstReadOut = ''
-try: 
-    firstReadOut = open(clArgs.output_prefix + "_1.fq", 'w')
-except: 
-    msg = 'Unable to open output file ' + clArgs.output_prefix + "_1.fq"
-    quitOnError(msg)
-
-# open file that will store discarded reads
-firstReadDiscardedOut = ''
-try: 
-    firstReadDiscardedOut = open(clArgs.output_prefix + "_1.disc.txt", 'w')
-except: 
-    msg = 'Unable to open output file ' + clArgs.output_prefix + "_1.disc.txt"
-    quitOnError(msg)
-
-# open file that will store trim locations
-if OUTPUT_LOCATIONS:
-    firstReadTrimLocations = ''
+    # open input file
+    firstReadIn = ''
     try: 
-        firstReadTrimLocations = open(clArgs.output_prefix + "_1.loc.txt", 'w')
+	firstReadIn = open(clArgs.first_fq, 'r')
     except: 
-        msg = 'Unable to open output file ' + clArgs.output_prefix + "_1.loc.txt"
-        quitOnError(msg)
+	msg = 'Unable to load reads file ' + clArgs.first_fq
+	quitOnError(msg)
 
-if PAIRED:
-    secondReadIn = ''
+    # open file that will store non-discarded reads
+    firstReadOut = ''
     try: 
-        secondReadIn = open(clArgs.second_fq, 'r')
+	firstReadOut = open(clArgs.output_prefix + "_1.fq", 'w')
     except: 
-        msg = 'Unable to load reads file ' + clArgs.second_fq
-        quitOnError(msg)
+	msg = 'Unable to open output file ' + clArgs.output_prefix + "_1.fq"
+	quitOnError(msg)
 
-    secondReadOut = ''
+    # open file that will store discarded reads
+    firstReadDiscardedOut = ''
     try: 
-        secondReadOut = open(clArgs.output_prefix + "_2.fq", 'w')
+	firstReadDiscardedOut = open(clArgs.output_prefix + "_1.disc.txt", 'w')
     except: 
-        msg = 'Unable to open output file ' + clArgs.output_prefix + "_2.fq"
-        quitOnError(msg)
+	msg = 'Unable to open output file ' + clArgs.output_prefix + "_1.disc.txt"
+	quitOnError(msg)
 
-    secondReadDiscardedOut = ''
-    try: 
-        secondReadDiscardedOut = open(clArgs.output_prefix + "_2.disc.txt", 'w')
-    except: 
-        msg = 'Unable to open output file ' + clArgs.output_prefix + "_2.disc.txt"
-        quitOnError(msg)
+    if PAIRED:
+	secondReadIn = ''
+	try: 
+	    secondReadIn = open(clArgs.second_fq, 'r')
+	except: 
+	    msg = 'Unable to load reads file ' + clArgs.second_fq
+	    quitOnError(msg)
 
-    if OUTPUT_LOCATIONS:
-        secondReadTrimLocations = ''
-        try: 
-            secondReadTrimLocations = open(clArgs.output_prefix + "_2.loc.txt", 'w')
-        except: 
-            msg = 'Unable to open output file ' + clArgs.output_prefix + "_2.loc.txt"
-            quitOnError(msg)
+	secondReadOut = ''
+	try: 
+	    secondReadOut = open(clArgs.output_prefix + "_2.fq", 'w')
+	except: 
+	    msg = 'Unable to open output file ' + clArgs.output_prefix + "_2.fq"
+	    quitOnError(msg)
 
-#------------------------------------------------------------------------------------------
-# TRIM READS.  LOAD ONE READ FROM BOTH FQ FILES AT SAME TIME. PROCESS
-# READ PAIR TOGETHER AND THEN EITHER WRITE TO OUTPUT FILE OR DISCARD.
-# ------------------------------------------------------------------------------------------
+	secondReadDiscardedOut = ''
+	try: 
+	    secondReadDiscardedOut = open(clArgs.output_prefix + "_2.disc.txt", 'w')
+	except: 
+	    msg = 'Unable to open output file ' + clArgs.output_prefix + "_2.disc.txt"
+	    quitOnError(msg)
 
-while 1:
-    firstRead = nextRead(firstReadIn)
-    if PAIRED: secondRead = nextRead(secondReadIn)
+    #------------------------------------------------------------------------------------------
+    # TRIM READS.  LOAD ONE READ FROM BOTH FQ FILES AT SAME TIME. PROCESS
+    # READ PAIR TOGETHER AND THEN EITHER WRITE TO OUTPUT FILE OR DISCARD.
+    # ------------------------------------------------------------------------------------------
 
-    if firstRead == {}:
-        firstReadIn.close()
-        firstReadOut.close()
-        if OUTPUT_LOCATIONS: firstReadTrimLocations.close()
-        if PAIRED: 
-            secondReadIn.close()
-            secondReadOut.close()
-            if OUTPUT_LOCATIONS: secondReadTrimLocations.close()
-        break
+    if clArgs.threads > 1:
+	pool = multiprocessing.Pool(clArgs.threads)
+
+    #--------------------------------------------------------------------------------------
+    # main loop
+    #--------------------------------------------------------------------------------------
+    done = False
+    runningJob = None
+    running = False
+    results = []
+
+    while not done:
+	
+	#--------------------------------------------------------------------------------------
+	# build read chunk. we use chunks to prevent the memory overhead of splitting all reads at once
+	chunk = []
+	for i in xrange(clArgs.chunk_size * clArgs.threads):
+	    firstRead = nextRead(firstReadIn)
+	    if PAIRED:
+		secondRead = nextRead(secondReadIn)
+	    else:
+		secondRead = None
+	    if firstRead == {}:
+		firstReadIn.close()
+		if PAIRED: 
+		    secondReadIn.close()
+		done = True
+		break
             
-    nTotalReadPairs += 1
+	    nTotalReadPairs += 1
 
-    # use flags since we only want to count once every time a read is trimmed
-    firstReadTrimmed = False
-    secondReadTrimmed = False
+	    # use flags since we only want to count once every time a read is trimmed
+	    #firstReadTrimmed = False # `These were never used, dead code
+	    #secondReadTrimmed = False
+
+	    readPair = (firstRead, secondRead)
+	    chunk.append(readPair)
+
+	#--------------------------------------------------------------------------------------
+	# do mapping
+	if clArgs.threads == 1:
+	    results = [doTrimming(r) for r in chunk] 
+	else:
+	    if running:
+		results = runningJob.get()
+
+	    runningJob = pool.map_async(doTrimming, chunk)
+	    running = True
+	    if done:
+		results.extend(runningJob.get()) # hackish, we just wait until the last chunk finishes and process it w/ 2nd to last chunk
+	        pool.close()
+	        pool.join()
+
+	#--------------------------------------------------------------------------------------
+	# post process chunk
+	#--------------------------------------------------------------------------------------
+	for pair in results: # if results empty, this will skip
+	    firstRead = pair[0]
+	    secondRead = pair[1]
+
+	    if DEBUG:
+		for out in firstRead["debug"]:
+		    debugTrimOutput(*out) # "*" (aka splat) op expands list as arguments 
+		if PAIRED:
+		    for out in secondRead["debug"]:
+			debugTrimOutput(*out) # "*" (aka splat) op expands list as arguments 
+
+
+
+	    #--------------------------------------------------------------------------------------
+	    # compute trimming stats
+	    trimFirst = False
+	    trimSecond = False
+	    if firstRead[TRIMMED]: 
+		nFirstTrimmed += 1
+		trimFirst = True
+	    if PAIRED: 
+		if secondRead[TRIMMED]: 
+		    nSecondTrimmed += 1
+		    trimSecond = True
+		if trimFirst and trimSecond:
+		    # count trimmed pair
+		    nBothTrimmed += 1
+	    elif trimFirst:
+		# not paired, so count single read as pair
+		nBothTrimmed += 1
+	    
+	    # read[FLAGS] should be a _list_ to allow the possibility of a value being added twice (does this ever happen though?)
+	    for flag in firstRead[FLAGS]:
+		assert flag in nFirstContaminantsTrim  # If a stat flag hasn't been initialized, something's wrong
+		nFirstContaminantsTrim[flag] += 1 
+	    if PAIRED:
+		for flag in secondRead[FLAGS]:
+		    assert flag in nSecondContaminantsTrim  # If a stat flag hasn't been initialized, something's wrong
+		    nSecondContaminantsTrim[flag] += 1 
+
+	    if PAIRED:
+		if firstRead[DISCARDED] and secondRead[DISCARDED]:
+		    nFirstDiscarded += 1
+		    nSecondDiscarded += 1
+		    nBothDiscarded += 1
+
+		    # both reads in read pair are discarded so don't write
+		    # them to output file. Instead write the read headers
+		    # to the discard file. We only store the headers in
+		    # the file since, in some cases, the entire sequence
+		    # will have been trimmed and hence this would be an
+		    # invalid fastq file.
+		    firstReadDiscardedOut.write(firstRead[HEADER] + '\n') # header
+		    secondReadDiscardedOut.write(secondRead[HEADER] + '\n') # header
+		    continue
+		elif firstRead[DISCARDED]:
+		    nFirstDiscarded += 1
+		elif secondRead[DISCARDED]:
+		    nSecondDiscarded += 1
+	    elif not PAIRED and firstRead[DISCARDED]:
+		# not paired so count single read as pair
+		nFirstDiscarded += 1
+		nBothDiscarded += 1
+
+		# single-end read being discarded, so don't write to
+		# output file. Instead write the read headers to the
+		# discard file.
+		firstReadDiscardedOut.write(firstRead[HEADER] + '\n') # header
+		continue
+		
+
+	    #--------------------------------------------------------------------------------------
+	    # write read(s) to output file if not over-trimmed
+	    writeRead(firstRead, firstReadOut)
+	    if PAIRED: writeRead(secondRead, secondReadOut)
+	
+    assert done == True
+
+    #------------------------------------------------------------------------------------------
+    # OUTPUT TRIMMING STATS
+    #------------------------------------------------------------------------------------------
+
+    print 'Read pairs processed:', nTotalReadPairs
+    print '\nBoth first and second reads trimmed:', nBothTrimmed
+    print '\tFirst reads trimmed:', nFirstTrimmed
+    print '\tSecond reads trimmed:', nSecondTrimmed
+    print 'Both first and second reads discarded:', nBothDiscarded
+    print '\tFirst reads discarded:', nFirstDiscarded
+    print '\tSecond reads discarded:', nSecondDiscarded
+    print 
+
+    # tab delimited output to facilitate adding stats to compilation file
+    fields = '\nnTotalReadsBeforeTrim\tnBothTrimmed\tnFirstTrimmed\tnSecondTrimmed\tnBothDiscarded\tnFirstDiscarded\tnSecondDiscarded'
+    counts = '%d\t%d\t%d\t%d\t%d\t%d\t%d' % (nTotalReadPairs, nBothTrimmed, nFirstTrimmed, nSecondTrimmed, nBothDiscarded, nFirstDiscarded, nSecondDiscarded)
+
+    if clArgs.phred_threshold:
+	print 'Phred Threshold'
+	print '\tFirst reads trimmed', nFirstContaminantsTrim['qualityScoreThreshold']
+	fields += '\tPhred Threshold (first)'
+	counts += '\t' + str(nFirstContaminantsTrim['qualityScoreThreshold'])
+	if PAIRED: 
+	    print '\tSecond reads trimmed', nSecondContaminantsTrim['qualityScoreThreshold']
+	    fields += '\tPhred Threshold (second)'
+	    counts += '\t' + str(nSecondContaminantsTrim['qualityScoreThreshold'])
+	
+    if clArgs.removeN:
+	print '5\' N Removed'
+	print '\tFirst reads trimmed', nFirstContaminantsTrim['remove5N']
+	fields += '\tremoved5N (first)'
+	counts += '\t' + str(nFirstContaminantsTrim['remove5N'])
+	if PAIRED: 
+	    print '\tSecond reads trimmed', nSecondContaminantsTrim['remove5N']
+	    fields += '\tremoved5N (second)'
+	    counts += '\t' + str(nSecondContaminantsTrim['remove5N'])
+	
+	print '3\' N Removed'
+	print '\tFirst reads trimmed', nFirstContaminantsTrim['remove3N']
+	fields += '\tremoved3N (first)'
+	counts += '\t' + str(nFirstContaminantsTrim['remove3N'])
+	if PAIRED: 
+	    print '\tSecond reads trimmed', nSecondContaminantsTrim['remove3N']
+	    fields += '\tremoved3N (second)'
+	    counts += '\t' + str(nSecondContaminantsTrim['remove3N'])
+
+    if clArgs.contaminants_fa:
+	for contaminant in contaminantList:
+	    name = contaminant[0]['name']
+	    print 'Contaminant: ', name
+	    print '\tFirst reads trimmed', nFirstContaminantsTrim[name]
+	    fields += '\t' + name + ' (first)'
+	    counts += '\t' + str(nFirstContaminantsTrim[name])
+	    if PAIRED: 
+		print '\tSecond reads trimmed', nSecondContaminantsTrim[name]
+		fields += '\t' + name + ' (second)'
+		counts += '\t' + str(nSecondContaminantsTrim[name])
+
+    if clArgs.remove_AT > 0:
+	print '5\' poly-T Removed'
+	print '\tFirst reads trimmed', nFirstContaminantsTrim['polyT']
+	fields += '\t5 polyT (first)'
+	counts += '\t' + str(nFirstContaminantsTrim['polyT'])
+	if PAIRED:
+	    print '\tSecond reads trimmed', nSecondContaminantsTrim['polyT']
+	    fields += '\t5 polyT (second)'
+	    counts += '\t' + str(nSecondContaminantsTrim['polyT'])
+
+	print '3\' poly-A Removed'
+	print '\tFirst reads trimmed', nFirstContaminantsTrim['polyA']
+	fields += '\t3 polyA (first)'
+	counts += '\t' + str(nFirstContaminantsTrim['polyA'])
+	if PAIRED:
+	    print '\tSecond reads trimmed', nSecondContaminantsTrim['polyA']
+	    fields += '\t3 polyA (second)'
+	    counts += '\t' + str(nSecondContaminantsTrim['polyA'])
+	
+    print fields
+    print counts
+
+    firstReadOut.close()
+    if PAIRED:
+	secondReadOut.close()
+
+def doTrimming(pair):
+
+    firstRead, secondRead = pair # Unpack pair tuple. secondRead should be None if not paired
+
+    # store additional read information in read set
+    firstRead[LENGTH] = len(firstRead[SEQUENCE])
+    firstRead[TRIMMED] = False
+    firstRead[FLAGS] = []
+    firstRead[DISCARDED] = False
+
+    if PAIRED:
+	secondRead[LENGTH] = len(secondRead[SEQUENCE])
+	secondRead[TRIMMED] = False
+	secondRead[FLAGS] = []
+	secondRead[DISCARDED] = False
+    else:
+	assert secondRead == None
+
 
     #--------------------------------------------------------------------------------------
     # cut 3' end
@@ -1055,23 +1174,6 @@ while 1:
         firstRead = removePolyAT(firstRead, clArgs.remove_AT, True)
         if PAIRED: secondRead = removePolyAT(secondRead, clArgs.remove_AT, False)
 
-    #--------------------------------------------------------------------------------------
-    # compute trimming stats
-    trimFirst = False
-    trimSecond = False
-    if firstRead[TRIMMED]: 
-        nFirstTrimmed += 1
-        trimFirst = True
-    if PAIRED: 
-        if secondRead[TRIMMED]: 
-            nSecondTrimmed += 1
-            trimSecond = True
-        if trimFirst and trimSecond:
-            # count trimmed pair
-            nBothTrimmed += 1
-    elif trimFirst:
-        # not paired, so count single read as pair
-        nBothTrimmed += 1
 
     #--------------------------------------------------------------------------------------
     # discard reads that are too short
@@ -1079,45 +1181,29 @@ while 1:
         discardFirst = False
         discardSecond = False
         if firstRead[LENGTH] < clArgs.min_len:
-            nFirstDiscarded += 1
-            discardFirst = True
+	    firstRead[DISCARDED] = True
+
         if PAIRED:
             if secondRead[LENGTH] < clArgs.min_len:
-                nSecondDiscarded += 1
-                discardSecond = True
-            if discardFirst and discardSecond:  
-                # count pair
-                nBothDiscarded += 1
-
-                # both reads in read pair are discarded so don't write
-                # them to output file. Instead write the read headers
-                # to the discard file. We only store the headers in
-                # the file since, in some cases, the entire sequence
-                # will have been trimmed and hence this would be an
-                # invalid fastq file.
-                firstReadDiscardedOut.write(firstRead[HEADER] + '\n') # header
-                secondReadDiscardedOut.write(secondRead[HEADER] + '\n') # header
-                continue
-        elif discardFirst:
-            # not paired so count single read as pair
-            nBothDiscarded += 1
-
-            # single-end read being discarded, so don't write to
-            # output file. Instead write the read headers to the
-            # discard file.
-            firstReadDiscardedOut.write(firstRead[HEADER] + '\n') # header
-            continue
+		secondRead[DISCARDED] = True
+            if firstRead[DISCARDED] and secondRead[DISCARDED]: 
+		# Both reads discarded, done with pair
+                return (firstRead, secondRead) 
+        elif firstRead[DISCARDED]:
+	    # Only read discarded, done with read
+            return (firstRead, secondRead)
 
         # if we got this far then paired reads with only one being too
         # small, so replace that one read with N's
-        if discardFirst:
-            firstRead[SEQUENCE] = 'N' * secondRead[LENGTH]
-            firstRead[QUALS] = '#' * secondRead[LENGTH]
-            firstRead[LENGTH] = secondRead[LENGTH]
-        elif discardSecond:
-            secondRead[SEQUENCE] = 'N' * firstRead[LENGTH]
-            secondRead[QUALS] = '#' * firstRead[LENGTH]
-            secondRead[LENGTH] = firstRead[LENGTH]
+	if PAIRED:
+	    if firstRead[DISCARDED]:
+		firstRead[SEQUENCE] = 'N' * secondRead[LENGTH]
+		firstRead[QUALS] = '#' * secondRead[LENGTH]
+		firstRead[LENGTH] = secondRead[LENGTH]
+	    elif secondRead[DISCARDED]:
+		secondRead[SEQUENCE] = 'N' * firstRead[LENGTH]
+		secondRead[QUALS] = '#' * firstRead[LENGTH]
+		secondRead[LENGTH] = firstRead[LENGTH]
 
     #--------------------------------------------------------------------------------------
     # pad paired reads, as needed, so that they are both the same length
@@ -1136,97 +1222,11 @@ while 1:
     firstRead[HEADER] += ' L:%d' % firstRead[LENGTH]
     if PAIRED: secondRead[HEADER] += ' L:%d' % secondRead[LENGTH]
 
-    #--------------------------------------------------------------------------------------
-    # write trimming locations to output file, only if either read is trimmed
-    if OUTPUT_LOCATIONS:
-        if PAIRED:
-            if firstRead[TRIMMED] or secondRead[TRIMMED]:
-                firstReadTrimLocations.write(firstRead[HEADER] + '\t' + firstRead[LOCATIONS] + '\n')
-                secondReadTrimLocations.write(secondRead[HEADER] + '\t' + secondRead[LOCATIONS] + '\n')
-        elif firstRead[TRIMMED]:
-            firstReadTrimLocations.write(firstRead[HEADER] + '\t' + firstRead[LOCATIONS] + '\n')
+    return (firstRead, secondRead)
 
-    #--------------------------------------------------------------------------------------
-    # write read(s) to output file if not over-trimmed
-    writeRead(firstRead, firstReadOut)
-    if PAIRED: writeRead(secondRead, secondReadOut)
 
-#------------------------------------------------------------------------------------------
-# OUTPUT TRIMMING STATS
-#------------------------------------------------------------------------------------------
 
-print 'Read pairs processed:', nTotalReadPairs
-print '\nBoth first and second reads trimmed:', nBothTrimmed
-print '\tFirst reads trimmed:', nFirstTrimmed
-print '\tSecond reads trimmed:', nSecondTrimmed
-print 'Both first and second reads discarded:', nBothDiscarded
-print '\tFirst reads discarded:', nFirstDiscarded
-print '\tSecond reads discarded:', nSecondDiscarded
-print 
 
-# tab delimited output to facilitate adding stats to compilation file
-fields = '\nnTotalReadsBeforeTrim\tnBothTrimmed\tnFirstTrimmed\tnSecondTrimmed\tnBothDiscarded\tnFirstDiscarded\tnSecondDiscarded'
-counts = '%d\t%d\t%d\t%d\t%d\t%d\t%d' % (nTotalReadPairs, nBothTrimmed, nFirstTrimmed, nSecondTrimmed, nBothDiscarded, nFirstDiscarded, nSecondDiscarded)
 
-if clArgs.phred_threshold:
-    print 'Phred Threshold'
-    print '\tFirst reads trimmed', nFirstContaminantsTrim['qualityScoreThreshold']
-    fields += '\tPhred Threshold (first)'
-    counts += '\t' + str(nFirstContaminantsTrim['qualityScoreThreshold'])
-    if PAIRED: 
-        print '\tSecond reads trimmed', nSecondContaminantsTrim['qualityScoreThreshold']
-        fields += '\tPhred Threshold (second)'
-        counts += '\t' + str(nSecondContaminantsTrim['qualityScoreThreshold'])
-    
-if clArgs.removeN:
-    print '5\' N Removed'
-    print '\tFirst reads trimmed', nFirstContaminantsTrim['remove5N']
-    fields += '\tremoved5N (first)'
-    counts += '\t' + str(nFirstContaminantsTrim['remove5N'])
-    if PAIRED: 
-        print '\tSecond reads trimmed', nSecondContaminantsTrim['remove5N']
-        fields += '\tremoved5N (second)'
-        counts += '\t' + str(nSecondContaminantsTrim['remove5N'])
-    
-    print '3\' N Removed'
-    print '\tFirst reads trimmed', nFirstContaminantsTrim['remove3N']
-    fields += '\tremoved3N (first)'
-    counts += '\t' + str(nFirstContaminantsTrim['remove3N'])
-    if PAIRED: 
-        print '\tSecond reads trimmed', nSecondContaminantsTrim['remove3N']
-        fields += '\tremoved3N (second)'
-        counts += '\t' + str(nSecondContaminantsTrim['remove3N'])
-
-if clArgs.contaminants_fa:
-    for contaminant in contaminantList:
-        name = contaminant[0]['name']
-        print 'Contaminant: ', name
-        print '\tFirst reads trimmed', nFirstContaminantsTrim[name]
-        fields += '\t' + name + ' (first)'
-        counts += '\t' + str(nFirstContaminantsTrim[name])
-        if PAIRED: 
-            print '\tSecond reads trimmed', nSecondContaminantsTrim[name]
-            fields += '\t' + name + ' (second)'
-            counts += '\t' + str(nSecondContaminantsTrim[name])
-
-if clArgs.remove_AT > 0:
-    print '5\' poly-T Removed'
-    print '\tFirst reads trimmed', nFirstContaminantsTrim['polyT']
-    fields += '\t5 polyT (first)'
-    counts += '\t' + str(nFirstContaminantsTrim['polyT'])
-    if PAIRED:
-        print '\tSecond reads trimmed', nSecondContaminantsTrim['polyT']
-        fields += '\t5 polyT (second)'
-        counts += '\t' + str(nSecondContaminantsTrim['polyT'])
-
-    print '3\' poly-A Removed'
-    print '\tFirst reads trimmed', nFirstContaminantsTrim['polyA']
-    fields += '\t3 polyA (first)'
-    counts += '\t' + str(nFirstContaminantsTrim['polyA'])
-    if PAIRED:
-        print '\tSecond reads trimmed', nSecondContaminantsTrim['polyA']
-        fields += '\t3 polyA (second)'
-        counts += '\t' + str(nSecondContaminantsTrim['polyA'])
-    
-print fields
-print counts
+if __name__ == "__main__":
+    main()
