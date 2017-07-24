@@ -14,4 +14,3 @@ There is no warranty to the extent permitted by applicable law. Except when othe
 
 In no event unless required by applicable law or agreed to in writing will any copyright holder, or any other party who may modify and/or redistribute these applications as permitted above, be liable to you for damages, including any general, special, incidental or consequential damages arising out of the use or inability to use these applications and data (including but not limited to loss of data or data being rendered inaccurate or losses sustained by you or third parties or a failure of these applications and data to operate with any other programs), even if such holder or other party has been advised of the possibility of such damages.
 
-<img src="http://kim.bio.upenn.edu/cgi-bin/tickle/et.php?prg=ngs">
