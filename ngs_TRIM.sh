@@ -43,7 +43,7 @@ ngsHelp_TRIM() {
 	echo -e "Requires:\n\ttrimReads.py ( https://github.com/safisher/ngs )"
 	echo -e "Options:"
 	echo -e "\t-i inputDir - location of source files (default: init)."
-	echo -e "\t-t numProc - maximum number of cpu to use."
+	echo -e "\t-t numProc - maximum number of cpu to use. Values above 6 will be capped at 6, with more threads overhead excedes gains."
 	echo -e "\t-p - Pad paired reads so that they are the same length after all trimming has occured. N's will be added to the 3' end with '#' added to the quality score for each N that is added. This will not do anything for single-end reads. (default: no padding)."
 	echo -e "\t-c contaminantsFile - file containing contaminants to be trimmed."
 	echo -e "\t-m minLen - Minimum size of trimmed read. If trimmed beyond minLen, then read is discarded. If read is paired then read is replaced with N's, unless both reads in pair are smaller than minLen in which case the pair is discarded. (default: 0)."
@@ -51,6 +51,7 @@ ngsHelp_TRIM() {
 	echo -e "\t-rN - trim N's from both ends of reads (default: do not trim)."
 	echo -e "\t-rAT numBases - number of polyA/T bases to trim (default: 0)."
 	echo -e "\t-se - single-end reads (default: paired-end)\n"
+	echo -e "\t-rPoly - sRemove runs of 6 or more of the same base from either end. Potentially useful for removing poly-G strings created by NextSeq problems, or with protocols that can create long runs of the same base (default: do not trim)\n"
 	echo -e "Runs trimReads.py to trim data. Trimmed data is placed in 'sampleID/trim'. The contaminants file that was used is copied into the trim directory for future reference."
 }
 
@@ -67,6 +68,7 @@ ngsLocal_TRIM_POLYAT_VALUE="0"
 ngsLocal_TRIM_RN_VALUE=false
 ngsLocal_TRIM_PHRED_THRESHOLD_VALUE="0"
 ngsLocal_TRIM_NUMCPU=1
+ngsLocal_TRIM_RPOLY_VALUE=false
 
 ##########################################################################################
 # PROCESSING COMMAND LINE ARGUMENTS
@@ -100,11 +102,17 @@ ngsArgs_TRIM() {
 			-rN) ngsLocal_TRIM_RN_VALUE=true
 				shift;
 				;;
+			-rPoly) ngsLocal_TRIM_RPOLY_VALUE=true
+				shift;
+				;;
 			-rAT) ngsLocal_TRIM_POLYAT_VALUE=$2
 				shift; shift;
 				;;
 			-se) SE=true
 				shift;
+				;;
+			-l) READ_LENGTH=$2
+				shift; shift;
 				;;
 			-*) printf "Illegal option: '%s'\n" "$1"
 				printHelp $COMMAND
@@ -186,27 +194,35 @@ ngsCmd_TRIM() {
 	    ngsLocal_TRIM_NUMCPU=5
 	fi
 
-	if $SE; then
-		# single-end
-		prnCmd "trimReads.py -C 200 -t $ngsLocal_TRIM_NUMCPU $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_PHRED_THRESHOLD $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT $ngsLocal_TRIM_CONTAMINANTS -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt"
-		if ! $DEBUG; then 
-			trimReads.py -C 200 -t $ngsLocal_TRIM_NUMCPU $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_PHRED_THRESHOLD $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT $ngsLocal_TRIM_CONTAMINANTS -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt
-		fi
-		
+
+	if $ngsLocal_TRIM_RPOLY_VALUE; then 
+	    prnCmd "trimReads-dev.py -rPoly -C 200 -t $ngsLocal_TRIM_NUMCPU $ngsLocal_TRIM_PAD $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_PHRED_THRESHOLD $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT $ngsLocal_TRIM_CONTAMINANTS -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt"
+	    if ! $DEBUG; then 
+		trimReads-dev.py -rPoly -C 200 -t $ngsLocal_TRIM_NUMCPU $ngsLocal_TRIM_PAD $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_PHRED_THRESHOLD $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT $ngsLocal_TRIM_CONTAMINANTS -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt
+	    fi
 	else
-		# paired-end
-		prnCmd "trimReads.py -C 200 -t $ngsLocal_TRIM_NUMCPU $ngsLocal_TRIM_PAD $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_PHRED_THRESHOLD $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT $ngsLocal_TRIM_CONTAMINANTS -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt"
+	    if $SE; then
+		# single-end
+		prnCmd "trimReads.py -C 200 -t $ngsLocal_TRIM_NUMCPU  $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_PHRED_THRESHOLD $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT $ngsLocal_TRIM_CONTAMINANTS -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt"
 		if ! $DEBUG; then 
-			trimReads.py -C 200 -t $ngsLocal_TRIM_NUMCPU $ngsLocal_TRIM_PAD $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_PHRED_THRESHOLD $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT $ngsLocal_TRIM_CONTAMINANTS -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt
+		    trimReads.py -C 200 -t $ngsLocal_TRIM_NUMCPU  $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_PHRED_THRESHOLD $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT $ngsLocal_TRIM_CONTAMINANTS -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt
 		fi
+
+	    else
+		# paired-end
+		prnCmd "trimReads.py -C 200 -t $ngsLocal_TRIM_NUMCPU  $ngsLocal_TRIM_PAD $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_PHRED_THRESHOLD $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT $ngsLocal_TRIM_CONTAMINANTS -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt"
+		if ! $DEBUG; then 
+		    trimReads.py -C 200 -t $ngsLocal_TRIM_NUMCPU  $ngsLocal_TRIM_PAD $ngsLocal_TRIM_MINLEN $ngsLocal_TRIM_PHRED_THRESHOLD $ngsLocal_TRIM_RN $ngsLocal_TRIM_POLYAT $ngsLocal_TRIM_CONTAMINANTS -f $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_1.fq -r $SAMPLE/$ngsLocal_TRIM_INP_DIR/unaligned_2.fq -o $SAMPLE/trim/unaligned > $SAMPLE/trim/$SAMPLE.trim.stats.txt
+		fi
+	    fi
 	fi
-	
+
 	# copy contaminants files into trim directory for future reference
 	if [[ -n $ngsLocal_TRIM_CONTAMINANTS_FILE ]]; then
-		prnCmd "cp $ngsLocal_TRIM_CONTAMINANTS_FILE $SAMPLE/trim/."
-		if ! $DEBUG; then
-			cp $ngsLocal_TRIM_CONTAMINANTS_FILE $SAMPLE/trim/.
-		fi
+	    prnCmd "cp $ngsLocal_TRIM_CONTAMINANTS_FILE $SAMPLE/trim/."
+	    if ! $DEBUG; then
+		cp $ngsLocal_TRIM_CONTAMINANTS_FILE $SAMPLE/trim/.
+	    fi
 	fi
 
 	# run error checking
