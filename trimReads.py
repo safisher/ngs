@@ -16,6 +16,7 @@
 
 """
 by: S. Fisher, 2013
+    J. Shallcross, 2017
 
 usage: trimReads.py [-h] [-t THREADS] [-C CHUNK_SIZE] [-v] [-p] [-m MIN_LEN] [-c3 NUM_CUT_3] [-c5 NUM_CUT_5] [-q PHRED] [-rN] [-rAT REMOVE_AT] [-c CONTAMINANTS_FA] -f FIRST_FQ [-r SECOND_FQ] -o OUTPUT_PREFIX
 
@@ -45,7 +46,7 @@ import multiprocessing
 DEBUG = False
 if DEBUG: print 'DEBUG MODE: ON'
 
-VERSION = '0.7.2'
+VERSION = '0.7.4'
 
 PAIRED = False
 
@@ -246,6 +247,67 @@ def removeNs(read, isFirstRead):
         wasTrimmed = True
 
         read["flags"].append('remove3N')
+
+    if wasTrimmed:
+        if DEBUG: read["debug"].append([read[SEQUENCE], length, seq, len(seq), 'removeNs', ''])
+
+        read[SEQUENCE] = seq
+        read[QUALS] = quals
+        read[LENGTH] = len(seq)
+        read[TRIMMED] = True
+    return read
+
+# remove runs of 6 or more of the same base on either end of the read
+def removePolyBases(read, isFirstRead, nMin = 6):
+    """
+    Removes repeated strings of bases from both the 3' and 5' ends of a sequence.
+    """
+    seq = read[SEQUENCE]
+    quals = read[QUALS]
+    length = read[LENGTH]
+
+    # local flag for trimming having occurred. This is unnecessary
+    # since removeNs() is first trimming to happen. However this
+    # prevents possible problem in future if we add another trimming
+    # option prior to removeNs()
+    wasTrimmed = False 
+
+    # only trim each end once
+    leftTrimmed = False
+    rightTrimmed = False
+
+    for base in ['A', 'T', 'C', 'G']:
+
+	if not leftTrimmed:
+	    # trim N from beginning of read (5' end)
+	    if seq.startswith(base * nMin): # 'A' * 4 = 'AAAA' etc
+		# trim sequence
+		seq = seq.lstrip(base)
+
+		# need to trim quals in same way we trimmed sequence
+		quals = quals[len(quals) - len(seq):]
+
+		# flag read as having been trimmed
+		wasTrimmed = True
+		leftTrimmed = True
+
+		if 'remove5'+ base not in read["flags"]:
+		    read["flags"].append('remove5' + base)
+
+	if not rightTrimmed:
+	    # trim N from end of read (3' end)
+	    if seq.endswith(base * nMin):
+		# trim sequence
+		seq = seq.rstrip(base)
+
+		# need to trim quals in same way we trimmed sequence
+		quals = quals[:len(seq)]
+
+		# flag read as having been trimmed
+		wasTrimmed = True
+
+		if 'remove3'+ base not in read["flags"]:
+		    read["flags"].append('remove3' + base)
 
     if wasTrimmed:
         if DEBUG: read["debug"].append([read[SEQUENCE], length, seq, len(seq), 'removeNs', ''])
@@ -686,6 +748,8 @@ def main():
 			    help='remove N\'s from both ends of the read. This trimming happens before contaminant trimming. (default: no)' )
     argParser.add_argument( '-rAT', '--removePolyAT', dest='remove_AT', action='store', default=-1, type=int,
 			    help='length of 3\' poly-A and 5\' poly-T to remove from the respective ends of the read. If all poly A/T is to be removed then the value should be equal to or greater than the length of the read. A minimum of ten A\'s or ten T\'s must exist in order for this trimming to happen, regardless of the trimming length; that is, poly-A and poly-T fragments are defined as being at least 10 nt in length. A sequences of A\'s or T\'s are ignored. This trimming happens after contaminant trimming. (default: no trimming)' )
+    argParser.add_argument( '-rPoly', '--removePolyBases', dest='remove_ATCG', action='store_true', default=False,
+			    help='Remove runs of 6 or more of the same base from either end. Potentially useful for removing poly-G strings created by NextSeq problems, or with protocols that can create long runs of the same base. This trimming happens after contaminant trimming. (default: no trimming)' )
     argParser.add_argument( '-c', dest='contaminants_fa', action='store', default=None, 
 			    help='fasta-like file containing list of contaminants to trim from the 3\' end of the read' )
     argParser.add_argument( '-f', dest='first_fq', action='store', required=True,
@@ -695,9 +759,9 @@ def main():
     argParser.add_argument( '-o', dest='output_prefix', action='store', required=True,
 			    help='prefix for output file(s). A \'_1\' will be appended to the first reads output file and if paired reads then a \'_2\' will be appended to the second reads file. Output files similarly named and with the suffix \'.disc.txt\' will be created to store the fastq headers for reads shorter than the minimum length threshold after trimming.' )
     argParser.add_argument( '-t', dest='threads', type=int, default=4,
-	    help='Number of worker processes. Set to 1 for serial execution in a single process. Increasing above 5 is unlikely to produce any speedup. (default: 4)' )
+	    help='Number of worker processes. Set to 1 for serial execution in a single process. Increasing above 6 is unlikely to produce any speedup. (default: 4)' )
     argParser.add_argument( '-C', '--chunk-size', dest='chunk_size', type=int, default=200,
-			    help='Number of reads passed to each worker thread at a time. For 200 read chunks and 5 threads, blocks of 1000 reads would be read in at a time. The "sweet spot" of low memory usage and high cpu utilization appears to be fairly low, somewhere around 100 to 1000 on test data.' )
+			    help='Number of reads passed to each worker thread at a time. For 200 read chunks and 5 threads, blocks of 1000 reads would be read in at a time and split between those 5 threads. The "sweet spot" of low memory usage and high cpu utilization appears to be fairly low, somewhere between 100-200, in inverse proportion to the number of threads.' )
     global clArgs 
     clArgs = argParser.parse_args() #Again, global so each thread can read it. Should be read-only from here out
     if DEBUG: print clArgs
@@ -830,12 +894,32 @@ def main():
     nFirstContaminantsTrim['polyA'] = 0
     nFirstContaminantsTrim['polyT'] = 0
     nFirstContaminantsTrim['qualityScoreThreshold'] = 0
+
+    # Initialize stat counters for poly base trimming at the end of each read
+    if clArgs.remove_ATCG:
+	nFirstContaminantsTrim['remove5A'] = 0
+	nFirstContaminantsTrim['remove3A'] = 0
+	nFirstContaminantsTrim['remove5T'] = 0
+	nFirstContaminantsTrim['remove3T'] = 0
+	nFirstContaminantsTrim['remove5C'] = 0
+	nFirstContaminantsTrim['remove3C'] = 0
+	nFirstContaminantsTrim['remove5G'] = 0
+	nFirstContaminantsTrim['remove3G'] = 0
     if PAIRED: 
 	nSecondContaminantsTrim['remove5N'] = 0
 	nSecondContaminantsTrim['remove3N'] = 0
 	nSecondContaminantsTrim['polyA'] = 0
 	nSecondContaminantsTrim['polyT'] = 0
 	nSecondContaminantsTrim['qualityScoreThreshold'] = 0
+	if clArgs.remove_ATCG:
+	    nSecondContaminantsTrim['remove5A'] = 0
+	    nSecondContaminantsTrim['remove3A'] = 0
+	    nSecondContaminantsTrim['remove5T'] = 0
+	    nSecondContaminantsTrim['remove3T'] = 0
+	    nSecondContaminantsTrim['remove5C'] = 0
+	    nSecondContaminantsTrim['remove3C'] = 0
+	    nSecondContaminantsTrim['remove5G'] = 0
+	    nSecondContaminantsTrim['remove3G'] = 0
     
     #------------------------------------------------------------------------------------------
     # OPEN READ INPUT AND OUTPUT FILES
@@ -892,6 +976,8 @@ def main():
     # READ PAIR TOGETHER AND THEN EITHER WRITE TO OUTPUT FILE OR DISCARD.
     # ------------------------------------------------------------------------------------------
 
+    # If only one thread, don't use the overhead of starting a pool
+    # Multiprocessing also mangles stack traces, so for debugging 1 thread is desirable
     if clArgs.threads > 1:
 	pool = multiprocessing.Pool(clArgs.threads)
 
@@ -900,48 +986,57 @@ def main():
     #--------------------------------------------------------------------------------------
     done = False
     runningJob = None
-    running = False
     results = []
 
-    while not done:
+    # If there's either a running job to be processed, or we haven't read all the input, loop
+    while runningJob or not done:
 	
 	#--------------------------------------------------------------------------------------
 	# build read chunk. we use chunks to prevent the memory overhead of splitting all reads at once
+
 	chunk = []
-	for i in xrange(clArgs.chunk_size * clArgs.threads):
-	    firstRead = nextRead(firstReadIn)
-	    if PAIRED:
-		secondRead = nextRead(secondReadIn)
-	    else:
-		secondRead = None
-	    if firstRead == {}:
-		firstReadIn.close()
-		if PAIRED: 
-		    secondReadIn.close()
-		done = True
-		break
-            
-	    nTotalReadPairs += 1
+	if not done: #done set to True when we read the last record
+	    for i in xrange(clArgs.chunk_size * clArgs.threads):
+		firstRead = nextRead(firstReadIn)
+		if PAIRED:
+		    secondRead = nextRead(secondReadIn)
+		else:
+		    secondRead = None
+		if firstRead == {}:
+		    firstReadIn.close()
+		    if PAIRED: 
+			secondReadIn.close()
+		    done = True
+		    break
+		
+		nTotalReadPairs += 1
 
-	    # use flags since we only want to count once every time a read is trimmed
-	    #firstReadTrimmed = False # `These were never used, dead code
-	    #secondReadTrimmed = False
+		# use flags since we only want to count once every time a read is trimmed
+		#firstReadTrimmed = False # `These were never used, dead code
+		#secondReadTrimmed = False
 
-	    readPair = (firstRead, secondRead)
-	    chunk.append(readPair)
+		readPair = (firstRead, secondRead)
+		chunk.append(readPair)
 
 	#--------------------------------------------------------------------------------------
-	# do mapping
+	# do trimming
+
+	# If single process, just build results here
 	if clArgs.threads == 1:
 	    results = [doTrimming(r) for r in chunk] 
 	else:
-	    if running:
+	    # If there's jobs running already, wait for them to finish and return results
+	    # This gets skipped on the first loop since runningJob initialized as None
+	    if runningJob:
 		results = runningJob.get()
+		runningJob = None
+	
+	    if chunk: # reads left to map
+		# map_async allows us to do stats and IO work while the subprocesses run
+		runningJob = pool.map_async(doTrimming, chunk)
 
-	    runningJob = pool.map_async(doTrimming, chunk)
-	    running = True
-	    if done:
-		results.extend(runningJob.get()) # hackish, we just wait until the last chunk finishes and process it w/ 2nd to last chunk
+	    # We've read all input, and collected the results of the final map
+	    if done and not runningJob:
 	        pool.close()
 	        pool.join()
 
@@ -1024,7 +1119,6 @@ def main():
 	    writeRead(firstRead, firstReadOut)
 	    if PAIRED: writeRead(secondRead, secondReadOut)
 	
-    assert done == True
 
     #------------------------------------------------------------------------------------------
     # OUTPUT TRIMMING STATS
@@ -1071,6 +1165,79 @@ def main():
 	    print '\tSecond reads trimmed', nSecondContaminantsTrim['remove3N']
 	    fields += '\tremoved3N (second)'
 	    counts += '\t' + str(nSecondContaminantsTrim['remove3N'])
+
+    if clArgs.remove_ATCG:
+	print '5\' A Removed'
+	print '\tFirst reads trimmed', nFirstContaminantsTrim['remove5A']
+	fields += '\tremoved5A (first)'
+	counts += '\t' + str(nFirstContaminantsTrim['remove5A'])
+	if PAIRED: 
+	    print '\tSecond reads trimmed', nSecondContaminantsTrim['remove5A']
+	    fields += '\tremoved5A (second)'
+	    counts += '\t' + str(nSecondContaminantsTrim['remove5A'])
+	
+	print '3\' A Removed'
+	print '\tFirst reads trimmed', nFirstContaminantsTrim['remove3A']
+	fields += '\tremoved3A (first)'
+	counts += '\t' + str(nFirstContaminantsTrim['remove3A'])
+	if PAIRED: 
+	    print '\tSecond reads trimmed', nSecondContaminantsTrim['remove3A']
+	    fields += '\tremoved3A (second)'
+	    counts += '\t' + str(nSecondContaminantsTrim['remove3A'])
+
+	print '5\' T Removed'
+	print '\tFirst reads trimmed', nFirstContaminantsTrim['remove5T']
+	fields += '\tremoved5T (first)'
+	counts += '\t' + str(nFirstContaminantsTrim['remove5T'])
+	if PAIRED: 
+	    print '\tSecond reads trimmed', nSecondContaminantsTrim['remove5T']
+	    fields += '\tremoved5T (second)'
+	    counts += '\t' + str(nSecondContaminantsTrim['remove5T'])
+	
+	print '3\' T Removed'
+	print '\tFirst reads trimmed', nFirstContaminantsTrim['remove3T']
+	fields += '\tremoved3T (first)'
+	counts += '\t' + str(nFirstContaminantsTrim['remove3T'])
+	if PAIRED: 
+	    print '\tSecond reads trimmed', nSecondContaminantsTrim['remove3T']
+	    fields += '\tremoved3T (second)'
+	    counts += '\t' + str(nSecondContaminantsTrim['remove3T'])
+
+	print '5\' C Removed'
+	print '\tFirst reads trimmed', nFirstContaminantsTrim['remove5C']
+	fields += '\tremoved5C (first)'
+	counts += '\t' + str(nFirstContaminantsTrim['remove5C'])
+	if PAIRED: 
+	    print '\tSecond reads trimmed', nSecondContaminantsTrim['remove5C']
+	    fields += '\tremoved5C (second)'
+	    counts += '\t' + str(nSecondContaminantsTrim['remove5C'])
+	
+	print '3\' C Removed'
+	print '\tFirst reads trimmed', nFirstContaminantsTrim['remove3C']
+	fields += '\tremoved3C (first)'
+	counts += '\t' + str(nFirstContaminantsTrim['remove3C'])
+	if PAIRED: 
+	    print '\tSecond reads trimmed', nSecondContaminantsTrim['remove3C']
+	    fields += '\tremoved3C (second)'
+	    counts += '\t' + str(nSecondContaminantsTrim['remove3C'])
+
+	print '5\' G Removed'
+	print '\tFirst reads trimmed', nFirstContaminantsTrim['remove5G']
+	fields += '\tremoved5G (first)'
+	counts += '\t' + str(nFirstContaminantsTrim['remove5G'])
+	if PAIRED: 
+	    print '\tSecond reads trimmed', nSecondContaminantsTrim['remove5G']
+	    fields += '\tremoved5G (second)'
+	    counts += '\t' + str(nSecondContaminantsTrim['remove5G'])
+	
+	print '3\' G Removed'
+	print '\tFirst reads trimmed', nFirstContaminantsTrim['remove3G']
+	fields += '\tremoved3G (first)'
+	counts += '\t' + str(nFirstContaminantsTrim['remove3G'])
+	if PAIRED: 
+	    print '\tSecond reads trimmed', nSecondContaminantsTrim['remove3G']
+	    fields += '\tremoved3G (second)'
+	    counts += '\t' + str(nSecondContaminantsTrim['remove3G'])
 
     if clArgs.contaminants_fa:
 	for contaminant in contaminantList:
@@ -1152,6 +1319,12 @@ def doTrimming(pair):
     if clArgs.removeN:
         firstRead = removeNs(firstRead, True)
         if PAIRED: secondRead = removeNs(secondRead, False)
+
+    #--------------------------------------------------------------------------------------
+    # remove N's
+    if clArgs.remove_ATCG:
+        firstRead = removePolyBases(firstRead, True)
+        if PAIRED: secondRead = removePolyBases(secondRead, False)
 
     #--------------------------------------------------------------------------------------
     # trim contaminants
