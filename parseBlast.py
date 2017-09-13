@@ -74,8 +74,8 @@ elif 'saccer3' in TARGET: targetSpecies = 'yeast'
 elif 'zebrafish' in TARGET or 'zv' in TARGET or 'grcz' in TARGET: targetSpecies = 'fish'
 elif 'ercc' in TARGET: targetSpecies = 'ercc'
 elif 'phix' in TARGET or 'phi-x' in TARGET: targetSpecies = 'phix'
-elif 'galgal4' in TARGET or 'chick' in TARGET: targetSpecies = 'chicken'
-elif 'cj2' in TARGET or 'quail' in TARGET: targetSpecies = 'quail'
+elif 'smed' in TARGET or 'planaria' in TARGET: targetSpecies = 'smed'
+elif 'cel' in TARGET or 'elegans' in TARGET: targetSpecies = 'cel'
 else: raise NotImplementedError(targetSpecies + " not a currently recognized genome")
 
 targetFile = open(BLAST_PATH+targetSpecies+'.tsv', 'w')
@@ -196,6 +196,8 @@ counts['ercc'] = 0
 counts['phix'] = 0
 counts['chicken'] = 0
 counts['quail'] = 0
+counts['smed'] = 0
+counts['cel'] = 0
 
 while True:
     line = blastFile.readline()
