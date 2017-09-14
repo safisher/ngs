@@ -1,5 +1,6 @@
 #!/bin/bash
 
+
 # Copyright (c) 2013, Stephen Fisher and Junhyong Kim, University of
 # Pennsylvania.  All Rights Reserved.
 #
@@ -55,6 +56,9 @@ ngsHelp_STAR() {
 # make sure these variables don't collide with the other modules.
 ##########################################################################################
 
+# Set to true to accept gzipped input files
+ngsLocal_STAR_GZ=""
+
 ngsLocal_STAR_INP_DIR="trim"
 
 # STAR PARAMETERS. These are included here for easy documenting and
@@ -73,7 +77,8 @@ ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS --outFilterScoreMinOverLread 0"
 
 # outFilterMatchNmin              0
 # int: alignment will be output only if the number of matched bases is higher than this value
-ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS --outFilterMatchNmin 30"
+#ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS --outFilterMatchNmin 30"
+# Setting this when we know size 
 
 # outFilterMismatchNmax           10
 # int: alignment will be output only if it has fewer mismatches than this value
@@ -145,6 +150,9 @@ ngsArgs_STAR() {
 			-se) SE=true
 				shift;
 				;;
+			-gz) ngsLocal_STAR_GZ=true
+				shift;
+				;;
 			-*) printf "Illegal option: '%s'\n" "$1"
 				printHelp $COMMAND
 				exit 0
@@ -174,8 +182,13 @@ ngsCmd_STAR() {
 
 	starbin="STAR"
 
-	L=35
-	if [[ $READ_LENGTH -ge  50 ]]; then L=50; fi
+	if [[ $READ_LENGTH -ge  50 ]]; then 
+	    L=50 
+	    ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS --outFilterMatchNmin 30"
+	else    
+	    L=35
+	    ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS --outFilterMatchNmin 20"
+	fi
 	if [[ $READ_LENGTH -ge  75 ]]; then L=75; fi
 	if [[ $READ_LENGTH -ge 100 ]]; then L=100; fi
 	if [[ $READ_LENGTH -ge 150 ]]; then L=150; fi	
@@ -188,7 +201,9 @@ ngsCmd_STAR() {
 	# single-end only has one input file
 	if $SE; then 
 		ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS $ngsLocal_STAR_SE_ARGS --readFilesIn $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq"
-	else 
+	elif [[ -n $ngsLocal_STAR_GZ ]]; then
+		ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS $ngsLocal_STAR_PE_ARGS --readFilesCommand zcat --readFilesIn $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq.gz $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_2.fq.gz"
+	else
 		ngsLocal_STAR_ARGS="$ngsLocal_STAR_ARGS $ngsLocal_STAR_PE_ARGS --readFilesIn $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq $SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_2.fq"
 	fi
 
@@ -203,9 +218,9 @@ ngsCmd_STAR() {
 	# run post processing to generate necessary alignment files
 	starPostProcessing $@
 
-    # print version info in $SAMPLE directory. We do this AFTER STAR
-    # has run because we need to get the version number from the
-    # output file.
+	# print version info in $SAMPLE directory. We do this AFTER STAR
+	# has run because we need to get the version number from the
+	# output file.
 	prnCmd "# STAR version: head -1 $SAMPLE/star/Log.out | awk -F= '{print \$2}'"
 	prnCmd "# samtools version: samtools 2>&1 | grep 'Version:' | awk '{print \$2}'"
 	if ! $DEBUG; then 
@@ -242,53 +257,47 @@ starPostProcessing() {
 		prnCmd "JOURNAL=../../$JOURNAL"
 	fi
 
-	prnCmd "# compress unmapped reads files that SAM created"
-	prnCmd "gzip -f Unmapped.out.*"
-	if ! $DEBUG; then 
+	if ! $small; then 
+	    prnCmd "# compress unmapped reads files that SAM created"
+	    prnCmd "gzip -f Unmapped.out.*"
+	    if ! $DEBUG; then 
 		gzip -f Unmapped.out.*
+	    fi
 	fi
    
-   	# generate BAM file containing all uniquely mapped reads. This variant will
-	# remove mitochondrial genes:
-	#   samtools view -H -S $SAMPLE.star.posSorted.bam > header.sam; $GREPP -v 'chrM\t' $SAMPLE.star.posSorted.bam | $GREPP 'IH:i:1\t' | cat header.sam - | samtools view -bS - > STAR_Unique.bam
 	prnCmd "# generating STAR_Unique.bam file"
 	prnCmd "samtools view -H $ngsLocal_STAR_ALIGN_OUTPUT > header.sam"
 	# (1) extract all mapped reads from SAM file, (2) filter by number of mappings, (3) add header, (4) convert to BAM
 	prnCmd "samtools view -F 0x4 $ngsLocal_STAR_ALIGN_OUTPUT | $GREPP 'NH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.star.unique.bam"
-	#prnCmd "samtools sort -n -@ $NUM_SORT_THREADS -m 16G $SAMPLE.star.tmp.bam $SAMPLE.star.unique.bam"
 	prnCmd "rm header.sam"
 	if ! $DEBUG; then 
 		samtools view -H $ngsLocal_STAR_ALIGN_OUTPUT > header.sam
 		samtools view -F 0x4 $ngsLocal_STAR_ALIGN_OUTPUT | $GREPP 'NH:i:1\t' | cat header.sam - | samtools view -bS - > $SAMPLE.star.unique.bam
-		#samtools sort -n -@ $NUM_SORT_THREADS -m 16G $SAMPLE.star.tmp.bam $SAMPLE.star.unique.bam
 		rm header.sam 
 	fi
    
    
-	NUM_SORT_THREADS=4	
-	if [[ $NUMCPU -lt 4 ]]; then
-	    NUM_SORT_THREADS=$NUMCPU
-	fi
+	if ! $small; then
+	    NUM_SORT_THREADS=4	
+	    if [[ $NUMCPU -lt 4 ]]; then
+		NUM_SORT_THREADS=$NUMCPU
+	    fi
 
-	prnCmd "samtools sort -@ $NUM_SORT_THREADS -m 4G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.posSorted"
-	if ! $DEBUG; then
-	       if ! samtools sort -@ $NUM_SORT_THREADS -m 4G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.posSorted
-	       then
-		   vmstat -s 1>&2
-		   #if multithread sorting fails, try single thread 
-		   prnCmd "samtools sort -m 4G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.posSorted"
-		   samtools sort -m 4G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.posSorted
-	       fi
-	fi
+	    prnCmd "samtools sort -@ $NUM_SORT_THREADS -m 4G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.posSorted"
+	    if ! $DEBUG; then
+		   if ! samtools sort -@ $NUM_SORT_THREADS -m 4G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.posSorted
+		   then
+		       vmstat -s 1>&2
+		       #if multithread sorting fails, try single thread 
+		       prnCmd "samtools sort -m 4G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.posSorted"
+		       samtools sort -m 4G $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.posSorted
+		   fi
+	    fi
 
-	#prnCmd "mv $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.posSorted.bam"
-	#if ! $DEBUG; then 
-	#    mv $ngsLocal_STAR_ALIGN_OUTPUT $SAMPLE.star.posSorted.bam
-	#fi
-	
-	prnCmd "samtools index $SAMPLE.star.posSorted.bam"
-	if ! $DEBUG; then 
-		samtools index $SAMPLE.star.posSorted.bam
+	    prnCmd "samtools index $SAMPLE.star.posSorted.bam"
+	    if ! $DEBUG; then 
+		    samtools index $SAMPLE.star.posSorted.bam
+	    fi
 	fi
 	
 
@@ -327,8 +336,12 @@ ngsErrorChk_STAR() {
 
 	inputFile_1="$SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_1.fq"
 	inputFile_2="$SAMPLE/$ngsLocal_STAR_INP_DIR/unaligned_2.fq"
-	outputFile_1="$SAMPLE/star/$SAMPLE.star.posSorted.bam"
 	outputFile_2="$SAMPLE/star/$SAMPLE.star.unique.bam"
+	if ! $small; then
+	    outputFile_1="$SAMPLE/star/$SAMPLE.star.posSorted.bam"
+	else
+	    outputFile_1="$SAMPLE/star/$SAMPLE.star.unique.bam"
+	fi
 
 	# make sure expected output files exists
 	if [[ ! -s $outputFile_1 || ! -s $outputFile_2 ]]; then
@@ -370,6 +383,10 @@ ngsStats_STAR() {
 	STAR_HEADER="$STAR_HEADER\tAvg Uniq Map Len"
 	STAR_VALUES="$STAR_VALUES\t$avgMapLen"
 
+	mismatchPerc=`grep "Mismatch rate per base" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}' | tr -d '%'`
+	STAR_HEADER="$STAR_HEADER\tPerc Bases Mismatched"
+	STAR_VALUES="$STAR_VALUES\t$mismatchPerc"
+
 	uniqMapNum=`grep "Uniquely mapped reads number" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}'`
 	STAR_HEADER="$STAR_HEADER\tUniq-mapped Reads"
 	STAR_VALUES="$STAR_VALUES\t$uniqMapNum"
@@ -386,6 +403,7 @@ ngsStats_STAR() {
 	multimappedPerc=`grep "% of reads mapped to multiple loci" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}' | tr -d '%'`
 	STAR_HEADER="$STAR_HEADER\tMulti-mapped Perc"
 	STAR_VALUES="$STAR_VALUES\t$multimappedPerc"
+
 
 	# we remove the "%" so we can combine the values
 	unmapped1=`grep "% of reads mapped to too many loci" $SAMPLE/star/$statsFile | awk -F $'\t' '{print $2}' | sed s/%//`
