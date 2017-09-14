@@ -32,7 +32,7 @@
 #    section: ADD MODULE COMMAND FUNCTIONS HERE
 ##########################################################################################
 
-VERSION=2.1
+VERSION=2.2
 
 # each module should output a tab-delimited list of file and program
 # version information. This file should have two lines, the first line

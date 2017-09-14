@@ -82,5 +82,6 @@ for folder in pipeline.v1 analyzed; do
     mv $folder/$FROM $folder/$TO
 done
 
+rename "$FROM" "TO" raw/*.gz
 mv raw/$FROM raw/$TO
 

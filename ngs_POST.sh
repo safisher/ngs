@@ -39,7 +39,7 @@ ngsHelp_POST() {
 	echo -e "Input:\n\tsampleID/INPUTDIR/*.fq"
 	echo -e "Output:\n\tsampleID/INPUTDIR/*.fq.gz\n"
 	echo -e "Compresses all files that end with 'fq'. For example the unaligned_1.fq file in the trim directory will be compressed with gzip and renamed unaligned_1.fq.gz."
-	echo -e "With -g option run chgrp -R [group] on sample."
+	echo -e "-g option will run chgrp -R [group] on all files for this sample.."
 }
 
 ##########################################################################################
