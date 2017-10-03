@@ -2,7 +2,6 @@
 # Jamie Shallcross, 2016
 
 #set -e
-export LD_LIBRARY_PATH=/home/jshall/local/lib64
 cd src/1* #Make sure to change sample 
 
 
