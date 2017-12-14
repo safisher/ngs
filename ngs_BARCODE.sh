@@ -33,7 +33,7 @@ NGS_USAGE+="Return all reads that contain the specified feature, allowing for on
 ##########################################################################################
 
 ngsHelp_BARCODE() {
-	echo -e "Usage: `basename $0` barcode [-i inputDir] [-t numProc] [-p] [-c contaminantsFile] [-m minLen] [-q phredThreshold] [-rN] [-rAT numBases] [-se] sampleID"
+	echo -e "Usage: `basename $0` barcode [-i inputDir] [-t numProc] [-p] [-c contaminantsFile] [-m minLen] [-q phredThreshold] [-rN] [-rAT numBases] [-se] -b barcode sampleID"
 	echo -e "Input:\n\t$REPO_LOCATION/trim/contaminants.fa (file containing contaminants)\n\tsampleID/inputDir/unaligned_1.fq\n\tsampleID/inputDir/unaligned_2.fq (paired-end reads)"
 	echo -e "Output:\n\tsampleID/trim/unaligned_1.fq\n\tsampleID/trim/unaligned_2.fq (paired-end reads)\n\tsampleID/trim/sampleID.trim.stats.txt\n\tsampleID/trim/contaminants.fa (contaminants file)"
 	echo -e "Requires:\n\ttrimReads.py ( https://github.com/safisher/ngs )"
@@ -47,6 +47,7 @@ ngsHelp_BARCODE() {
 	echo -e "\t-suf suffix - sequence to be inserted after barcode sequence (default: none)"
 	echo -e "\t-m [AND|OR] - if a both a prefix and a suffix is given, whether to look for reads with [prefix][barcode][suffix] (AND), or reads with either [prefix][barcode] or [barcode][suffix] (OR)."
 	echo -e "\t-se - single-end reads (default: paired-end)\n"
+	echo -e "\t-b barcode - barcode to be trimmed."
 	echo -e "Runs kmerFind.py to select reads with a specific barcode sequence, optionally trimming with -c. Selected/trimmed data is placed in 'sampleID/barcode.trim'."
 }
 
